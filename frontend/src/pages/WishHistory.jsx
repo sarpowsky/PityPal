@@ -1,7 +1,8 @@
-/* Path: frontend/src/pages/WishHistory.jsx */
+// Path: frontend/src/pages/WishHistory.jsx
 import React, { useState } from 'react';
-import { Calendar, Filter, Download, ChevronDown } from 'lucide-react';
-import { Star } from 'lucide-react';
+import { Calendar, Filter, Download, ChevronDown, Star } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { exportWishHistory } from '../context/appActions';
 
 const WishTypeFilter = ({ active, icon: Icon, label, count, onClick }) => (
   <button
@@ -53,17 +54,17 @@ const WishItem = ({ wish }) => {
           <div className="flex items-center gap-4 text-sm text-white/60">
             <div className="flex items-center gap-1.5">
               <Calendar size={14} />
-              <span>{new Date(wish.date).toLocaleDateString()}</span>
+              <span>{new Date(wish.time).toLocaleDateString()}</span>
             </div>
             <span>•</span>
-            <span>{wish.banner}</span>
+            <span>{wish.bannerType}</span>
           </div>
         </div>
 
         <div className="px-3 py-1 rounded-full text-xs
                      bg-gradient-to-r from-indigo-500/20 to-purple-500/20 
                      border border-purple-500/30">
-          Pity {wish.pityCount}
+          Pity {wish.pity || '0'}
         </div>
       </div>
     </div>
@@ -72,18 +73,26 @@ const WishItem = ({ wish }) => {
 
 const WishHistory = () => {
   const [activeFilter, setActiveFilter] = useState('all');
-  const [wishes] = useState([
-    {
-      id: 1,
-      name: "Kaedehara Kazuha",
-      rarity: 5,
-      image: "/characters/kazuha.jpg",
-      date: "2025-01-15",
-      banner: "Wandering Winds",
-      pityCount: 78
+  const { state } = useApp();
+  const { history } = state.wishes;
+
+  const handleExport = async () => {
+    try {
+      const result = await exportWishHistory();
+      if (result.success) {
+        alert(`Wishes exported to: ${result.path}`);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      alert(`Failed to export wishes: ${error.message}`);
     }
-    // Add more wishes here
-  ]);
+  };
+
+  const filteredWishes = history.filter(wish => {
+    if (activeFilter === 'all') return true;
+    return wish.bannerType === activeFilter;
+  });
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -100,40 +109,37 @@ const WishHistory = () => {
             active={activeFilter === 'all'}
             icon={Star}
             label="All Wishes"
-            count={wishes.length}
+            count={history.length}
             onClick={() => setActiveFilter('all')}
           />
           <WishTypeFilter
             active={activeFilter === 'character'}
             icon={Star}
             label="Character Event"
-            count={wishes.filter(w => w.banner.includes('Character')).length}
+            count={history.filter(w => w.bannerType === 'character').length}
             onClick={() => setActiveFilter('character')}
           />
           <WishTypeFilter
             active={activeFilter === 'weapon'}
             icon={Star}
             label="Weapon Event"
-            count={wishes.filter(w => w.banner.includes('Weapon')).length}
+            count={history.filter(w => w.bannerType === 'weapon').length}
             onClick={() => setActiveFilter('weapon')}
           />
         </div>
 
-        <div className="flex gap-2">
-          <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 
-                         border border-white/10 transition-colors">
-            <Filter size={20} />
-          </button>
-          <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 
-                         border border-white/10 transition-colors">
-            <Download size={20} />
-          </button>
-        </div>
+        <button 
+          onClick={handleExport}
+          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 
+                  border border-white/10 transition-colors"
+        >
+          <Download size={20} />
+        </button>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between text-white/60 text-sm px-4">
-          <span>Showing {wishes.length} wishes</span>
+          <span>Showing {filteredWishes.length} wishes</span>
           <button className="flex items-center gap-1 hover:text-white transition-colors">
             <span>Sort by Date</span>
             <ChevronDown size={16} />
@@ -141,7 +147,7 @@ const WishHistory = () => {
         </div>
 
         <div className="space-y-2">
-          {wishes.map((wish) => (
+          {filteredWishes.map((wish) => (
             <WishItem key={wish.id} wish={wish} />
           ))}
         </div>

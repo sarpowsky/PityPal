@@ -1,6 +1,7 @@
-/* Path: frontend/src/features/characters/CharacterDetails.jsx */
+// Path: frontend/src/features/characters/CharacterDetails.jsx
 import React from 'react';
-import { X, Star, Sword, Shield, Zap } from 'lucide-react';
+import { X, Star, Sword, Shield, Heart } from 'lucide-react';
+import { elementIcons } from '../../data/assets';
 
 const StatBlock = ({ icon: Icon, label, value }) => (
   <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
@@ -21,7 +22,24 @@ const MaterialItem = ({ item }) => (
       <div className="text-sm">{item.name}</div>
       <div className="text-xs text-white/60">{item.type}</div>
     </div>
-    <div className="text-sm font-medium text-white/80">{item.amount}×</div>
+  </div>
+);
+
+const TeamComp = ({ team }) => (
+  <div className="rounded-lg bg-white/5 p-3">
+    <h4 className="text-sm font-medium mb-2">{team.name}</h4>
+    <div className="flex items-center gap-2 mb-2">
+      {team.characters.map((char, index) => (
+        <div key={index} className="w-8 h-8 rounded-lg bg-black/20 overflow-hidden">
+          <img 
+            src={`/characters/${char.toLowerCase()}.png`} 
+            alt={char}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ))}
+    </div>
+    <p className="text-xs text-white/60">{team.description}</p>
   </div>
 );
 
@@ -32,7 +50,6 @@ const CharacterDetails = ({ character, onClose }) => {
     <div className="relative w-full max-w-4xl max-h-[80vh] overflow-hidden rounded-2xl
                   bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-md
                   border border-white/10 shadow-xl animate-fadeIn">
-      {/* Header with character splash art */}
       <div className="relative h-48 overflow-hidden rounded-t-2xl">
         <img 
           src={character.splashArt || character.image} 
@@ -41,7 +58,6 @@ const CharacterDetails = ({ character, onClose }) => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
         
-        {/* Close button */}
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-black/50 backdrop-blur-sm
@@ -50,49 +66,50 @@ const CharacterDetails = ({ character, onClose }) => {
           <X size={20} />
         </button>
 
-        {/* Character name and rarity */}
         <div className="absolute bottom-4 left-4">
           <h2 className="text-2xl font-genshin">{character.name}</h2>
-          <div className="flex items-center gap-1 mt-1">
-            {[...Array(character.rarity)].map((_, i) => (
-              <Star key={i} size={16} className="fill-current text-amber-400" />
-            ))}
+          <div className="flex items-center gap-2 mt-1">
+            <img 
+              src={elementIcons[character.element.toLowerCase()]}
+              alt={character.element}
+              className="w-5 h-5"
+            />
+            <div className="flex items-center gap-1">
+              {[...Array(character.rarity)].map((_, i) => (
+                <Star key={i} size={16} className="fill-current text-amber-400" />
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="p-6 overflow-y-auto max-h-[calc(80vh-12rem)]">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Column */}
           <div className="space-y-6">
-            {/* Basic Stats */}
             <section className="space-y-2">
-              <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">Stats</h3>
+              <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">
+                Base Stats
+              </h3>
               <div className="grid grid-cols-2 gap-2">
-                <StatBlock icon={Sword} label="Base ATK" value="342" />
-                <StatBlock icon={Shield} label="Base DEF" value="791" />
-                <StatBlock icon={Zap} label="Energy Cost" value="60" />
-                <StatBlock icon={Sword} label="Crit Rate" value="5%" />
+                <StatBlock icon={Sword} label="Base ATK" value={character.baseStats.atk} />
+                <StatBlock icon={Shield} label="Base DEF" value={character.baseStats.def} />
+                <StatBlock icon={Heart} label="Base HP" value={character.baseStats.hp} />
               </div>
             </section>
 
-            {/* Ascension Materials */}
             <section className="space-y-2">
               <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">
                 Ascension Materials
               </h3>
               <div className="space-y-2">
-                {character.ascensionMaterials?.map((material, index) => (
+                {character.ascensionMaterials.map((material, index) => (
                   <MaterialItem key={index} item={material} />
                 ))}
               </div>
             </section>
           </div>
 
-          {/* Right Column */}
           <div className="space-y-6">
-            {/* Build */}
             <section className="space-y-2">
               <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">
                 Recommended Build
@@ -101,7 +118,7 @@ const CharacterDetails = ({ character, onClose }) => {
                 <div>
                   <h4 className="text-sm font-medium mb-2">Artifacts</h4>
                   <ul className="space-y-1 text-sm text-white/80">
-                    {character.build?.artifacts.map((artifact, index) => (
+                    {character.build.artifacts.map((artifact, index) => (
                       <li key={index}>{artifact}</li>
                     ))}
                   </ul>
@@ -109,7 +126,7 @@ const CharacterDetails = ({ character, onClose }) => {
                 <div>
                   <h4 className="text-sm font-medium mb-2">Weapons</h4>
                   <ul className="space-y-1 text-sm text-white/80">
-                    {character.build?.weapons.map((weapon, index) => (
+                    {character.build.weapons.map((weapon, index) => (
                       <li key={index}>{weapon}</li>
                     ))}
                   </ul>
@@ -117,27 +134,13 @@ const CharacterDetails = ({ character, onClose }) => {
               </div>
             </section>
 
-            {/* Team Suggestions */}
             <section className="space-y-2">
               <h3 className="text-sm font-medium text-white/60 uppercase tracking-wider">
                 Team Compositions
               </h3>
               <div className="space-y-2">
-                {character.teams?.map((team, index) => (
-                  <div key={index} className="rounded-lg bg-white/5 p-3">
-                    <div className="flex items-center gap-2">
-                      {team.characters.map((char, charIndex) => (
-                        <img 
-                          key={charIndex}
-                          src={char.image} 
-                          alt={char.name}
-                          className="w-10 h-10 rounded-lg object-cover"
-                          title={char.name}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/60 mt-2">{team.description}</p>
-                  </div>
+                {character.teams.map((team, index) => (
+                  <TeamComp key={index} team={team} />
                 ))}
               </div>
             </section>

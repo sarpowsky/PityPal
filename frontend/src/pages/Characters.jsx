@@ -1,8 +1,14 @@
+// Path: frontend/src/pages/Characters.jsx
 import React, { useState } from 'react';
 import { Search, Filter, Star, Sword, Shield, Heart } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { characters } from '../data/characters';
+import { elementIcons, rarityBackgrounds } from '../data/assets';
+import CharacterDetails from '../features/characters/CharacterDetails';
 
-const FilterButton = ({ active, label, count }) => (
+const FilterButton = ({ active, label, count, onClick }) => (
   <button
+    onClick={onClick}
     className={`px-4 py-2 rounded-xl transition-all duration-300
               ${active 
                 ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border-purple-500/50' 
@@ -19,9 +25,7 @@ const FilterButton = ({ active, label, count }) => (
 );
 
 const CharacterCard = ({ character, index, onClick }) => {
-  const rarityGradient = character.rarity === 5 
-    ? 'from-amber-400/20 to-yellow-500/20' 
-    : 'from-purple-400/20 to-violet-500/20';
+  const rarityGradient = rarityBackgrounds[character.rarity];
 
   return (
     <div 
@@ -33,25 +37,18 @@ const CharacterCard = ({ character, index, onClick }) => {
                     bg-gradient-to-br ${rarityGradient} backdrop-blur-sm
                     border border-white/10 transition-all duration-300
                     group-hover:scale-105 group-hover:border-white/20`}>
-        {/* Character Image */}
         <img
           src={character.image}
           alt={character.name}
           className="w-full h-full object-cover"
         />
 
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        {/* Character Info */}
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <div className="flex items-center gap-1 mb-1">
             {[...Array(character.rarity)].map((_, i) => (
-              <Star 
-                key={i} 
-                size={12} 
-                className="fill-current text-amber-400" 
-              />
+              <Star key={i} size={12} className="fill-current text-amber-400" />
             ))}
           </div>
           <h3 className="text-sm font-genshin leading-tight mb-1">
@@ -60,7 +57,7 @@ const CharacterCard = ({ character, index, onClick }) => {
           <div className="flex items-center gap-2 text-xs text-white/60">
             <div className="flex items-center gap-1">
               <img 
-                src={`/elements/${character.element.toLowerCase()}.svg`}
+                src={elementIcons[character.element.toLowerCase()]}
                 alt={character.element}
                 className="w-3 h-3"
               />
@@ -71,12 +68,11 @@ const CharacterCard = ({ character, index, onClick }) => {
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           {[
-            { icon: Sword, value: character.baseAtk },
-            { icon: Shield, value: character.baseDef },
-            { icon: Heart, value: character.baseHp }
+            { icon: Sword, value: character.baseStats.atk },
+            { icon: Shield, value: character.baseStats.def },
+            { icon: Heart, value: character.baseStats.hp }
           ].map(({ icon: Icon, value }, i) => (
             <div key={i} className="p-1.5 rounded-lg bg-black/30 backdrop-blur-sm
                                 text-xs flex items-center gap-1">
@@ -93,20 +89,17 @@ const CharacterCard = ({ character, index, onClick }) => {
 const Characters = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedElement, setSelectedElement] = useState('all');
-  const [characters] = useState([
-    {
-      id: 1,
-      name: "Kaedehara Kazuha",
-      element: "Anemo",
-      weaponType: "Sword",
-      rarity: 5,
-      baseAtk: 297,
-      baseDef: 807,
-      baseHp: 13348,
-      image: "/characters/kazuha.jpg"
-    }
-    // Add more characters...
-  ]);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const { state } = useApp();
+
+  const filteredCharacters = characters.filter(char => {
+    const matchesSearch = char.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesElement = selectedElement === 'all' || 
+                          char.element.toLowerCase() === selectedElement.toLowerCase();
+    return matchesSearch && matchesElement;
+  });
+
+  const elements = ['All', 'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'];
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -116,7 +109,6 @@ const Characters = () => {
           Characters
         </h1>
 
-        {/* Search and Filters */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 max-w-md relative">
             <Search 
@@ -141,9 +133,8 @@ const Characters = () => {
           </button>
         </div>
 
-        {/* Element Filters */}
         <div className="flex flex-wrap gap-2">
-          {['All', 'Pyro', 'Hydro', 'Anemo', 'Electro', 'Dendro', 'Cryo', 'Geo'].map(element => (
+          {elements.map(element => (
             <FilterButton
               key={element}
               active={selectedElement === element.toLowerCase()}
@@ -151,22 +142,32 @@ const Characters = () => {
               count={characters.filter(c => 
                 element === 'All' ? true : c.element === element
               ).length}
+              onClick={() => setSelectedElement(element.toLowerCase())}
             />
           ))}
         </div>
       </header>
 
-      {/* Character Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {characters.map((character, index) => (
+        {filteredCharacters.map((character, index) => (
           <CharacterCard
             key={character.id}
             character={character}
             index={index}
-            onClick={() => {}}
+            onClick={() => setSelectedCharacter(character)}
           />
         ))}
       </div>
+
+      {selectedCharacter && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] 
+                      flex items-center justify-center p-4">
+          <CharacterDetails 
+            character={selectedCharacter} 
+            onClose={() => setSelectedCharacter(null)} 
+          />
+        </div>
+      )}
     </div>
   );
 };

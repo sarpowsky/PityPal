@@ -1,27 +1,51 @@
-/* Path: frontend/src/features/banners/PityTracker.jsx */
-import React from 'react';
+// Path: frontend/src/features/banners/PityTracker.jsx
+import React, { useEffect, useState } from 'react';
 import { Target, Crown } from 'lucide-react';
+import { useApp } from '../../context/AppContext';
+import { waitForPyWebView } from '../../utils/pywebview-bridge';
 
-const PityTracker = ({ currentPity, guaranteed }) => {
-  const softPityStart = 74;
-  const hardPity = 90;
-  const progress = (currentPity / hardPity) * 100;
+const PityTracker = () => {
+  const { state } = useApp();
+  const [pityStats, setPityStats] = useState({
+    current: 0,
+    guaranteed: false,
+    pity_type: null,
+    wishes_to_soft: 0,
+    wishes_to_hard: 0,
+    thresholds: { soft: 74, hard: 90 }
+  });
+
+  useEffect(() => {
+    const fetchPityStats = async () => {
+      try {
+        await waitForPyWebView();
+        const stats = await window.pywebview.api.calculate_pity();
+        setPityStats(stats);
+      } catch (error) {
+        console.error('Failed to fetch pity stats:', error);
+      }
+    };
+
+    fetchPityStats();
+  }, [state.wishes.history]);
 
   const getProgressGradient = () => {
-    if (currentPity >= softPityStart) {
-      return 'from-amber-500 via-yellow-500 to-amber-400';
+    if (pityStats.pity_type === 'soft') {
+      return 'from-amber-500 to-yellow-500';
     }
-    if (guaranteed) {
-      return 'from-emerald-500 via-green-500 to-emerald-400';
+    if (pityStats.guaranteed) {
+      return 'from-emerald-500 to-green-500';
     }
-    return 'from-indigo-500 via-blue-500 to-indigo-400';
+    return 'from-indigo-500 to-blue-500';
   };
 
-  const pityStatus = currentPity >= softPityStart 
-    ? 'Soft pity active!' 
-    : currentPity >= 45 
-      ? 'Getting closer...' 
-      : 'Building pity';
+  const getPityStatus = () => {
+    if (pityStats.pity_type === 'soft') return 'Soft pity active!';
+    if (pityStats.current >= 45) return 'Getting closer...';
+    return 'Building pity';
+  };
+
+  const progress = (pityStats.current / pityStats.thresholds.hard) * 100;
 
   return (
     <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10">
@@ -32,10 +56,10 @@ const PityTracker = ({ currentPity, guaranteed }) => {
             <h3 className="font-genshin text-sm">Pity Status</h3>
           </div>
           <div className={`px-3 py-1 rounded-full text-xs
-            ${guaranteed 
+            ${pityStats.guaranteed 
               ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white' 
               : 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white'}`}>
-            {guaranteed ? 'Guaranteed' : '50/50'}
+            {pityStats.guaranteed ? 'Guaranteed' : '50/50'}
           </div>
         </div>
       </div>
@@ -43,10 +67,10 @@ const PityTracker = ({ currentPity, guaranteed }) => {
       <div className="p-3">
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-white/60">{pityStatus}</div>
+            <div className="text-sm text-white/60">{getPityStatus()}</div>
             <div className="flex items-center gap-1">
               <Crown size={14} className="text-amber-400" />
-              <span className="text-lg font-semibold">{currentPity}</span>
+              <span className="text-lg font-semibold">{pityStats.current}</span>
             </div>
           </div>
 
@@ -62,11 +86,11 @@ const PityTracker = ({ currentPity, guaranteed }) => {
           <span>0</span>
           <div className="flex items-center gap-1">
             <span className="text-amber-400/60">Soft Pity</span>
-            <span>{softPityStart}</span>
+            <span>{pityStats.thresholds.soft}</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-amber-400/60">Hard Pity</span>
-            <span>{hardPity}</span>
+            <span>{pityStats.thresholds.hard}</span>
           </div>
         </div>
       </div>

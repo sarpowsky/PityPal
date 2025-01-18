@@ -1,12 +1,14 @@
-/* Path: frontend/src/pages/Home.jsx */
-import React, { useState } from 'react';
+// Path: frontend/src/pages/Home.jsx
+import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
+import { Star, Circle, Award, GemIcon } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { waitForPyWebView } from '../utils/pywebview-bridge';
 import BannerCarousel from '../features/banners/BannerCarousel';
 import PityTracker from '../features/banners/PityTracker';
 import RecentWishes from '../features/banners/RecentWishes';
 import UrlImporter from '../components/UrlImporter';
 import ImportGuideModal from '../components/ImportGuideModal';
-import { Star, Circle, Award, GemIcon } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
   <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl
@@ -31,17 +33,36 @@ const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
 
 const Home = () => {
   const [showGuide, setShowGuide] = useState(false);
-  const [pityData] = useState({
-    current: 45,
-    guaranteed: false,
-    totalWishes: 248,
-    stats: {
-      fiveStars: 4,
-      fourStars: 32,
-      pity: 45,
-      primogems: 1600
-    }
+  const { state } = useApp();
+  const [stats, setStats] = useState({
+    total_wishes: 0,
+    five_stars: 0,
+    four_stars: 0,
+    primogems_spent: 0
   });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        await waitForPyWebView();
+        const result = await window.pywebview.api.calculate_pity();
+        const history = await window.pywebview.api.get_wish_history();
+        if (history && history.length > 0) {
+          setStats(prevStats => ({
+            ...prevStats,
+            total_wishes: history.length,
+            five_stars: history.filter(wish => wish.rarity === 5).length,
+            four_stars: history.filter(wish => wish.rarity === 4).length,
+            primogems_spent: history.length * 160
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, [state.wishes.history]);
 
   return (
     <div className="space-y-3 max-w-5xl mx-auto animate-fadeIn">
@@ -71,41 +92,35 @@ const Home = () => {
           <StatCard
             icon={GemIcon}
             label="Primogems"
-            value={pityData.stats.primogems}
+            value={stats.primogems_spent.toLocaleString()}
             gradient="from-purple-500/20 to-pink-500/20"
             delay={100}
           />
           <StatCard
             icon={Star}
             label="5★ Characters"
-            value={pityData.stats.fiveStars}
+            value={stats.five_stars}
             gradient="from-amber-500/20 to-orange-500/20"
             delay={200}
           />
           <StatCard
             icon={Circle}
             label="4★ Items"
-            value={pityData.stats.fourStars}
+            value={stats.four_stars}
             gradient="from-indigo-500/20 to-blue-500/20"
             delay={300}
           />
           <StatCard
             icon={Award}
             label="Total Wishes"
-            value={pityData.totalWishes}
+            value={stats.total_wishes.toLocaleString()}
             gradient="from-emerald-500/20 to-green-500/20"
             delay={400}
           />
         </div>
 
-        <div className="col-span-4 transform hover:scale-[1.02] transition-all duration-300 
-                     hover:shadow-lg hover:shadow-purple-500/10 self-start
-                     animate-fadeIn" 
-             style={{ animationDelay: '200ms' }}>
-          <PityTracker 
-            currentPity={pityData.current}
-            guaranteed={pityData.guaranteed}
-          />
+        <div className="col-span-4">
+          <PityTracker />
         </div>
 
         <div className="col-span-4">
@@ -118,7 +133,7 @@ const Home = () => {
               <h2 className="text-sm font-genshin">Recent Wishes</h2>
             </div>
             <div className="p-3 h-[240px] overflow-y-auto">
-              <RecentWishes wishes={[]} />
+              <RecentWishes wishes={state.wishes.history.slice(0, 5)} />
             </div>
           </div>
         </div>
