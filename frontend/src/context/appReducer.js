@@ -1,101 +1,116 @@
 // src/context/appReducer.js
 export const initialState = {
-    wishes: {
-      history: [],
-      pity: {
-        character: {
-          current: 0,
-          guaranteed: false
-        },
-        weapon: {
-          current: 0,
-          guaranteed: false,
-          fatePath: 0
-        }
+  wishes: {
+    history: [],
+    loading: false,
+    error: null,
+    pity: {
+      character: {
+        current: 0,
+        guaranteed: false,
+        pity_type: null,
+        wishes_to_soft: 0,
+        wishes_to_hard: 0,
+        probability: 0
       },
-      stats: {
-        totalWishes: 0,
-        fiveStars: 0,
-        fourStars: 0,
-        primogems: 0
+      weapon: {
+        current: 0,
+        guaranteed: false,
+        pity_type: null,
+        wishes_to_soft: 0,
+        wishes_to_hard: 0,
+        probability: 0,
+        fatePath: 0
       }
     },
-    banners: {
-      current: null,
-      list: []
-    },
-    settings: {
-      volume: 50,
-      autoUpdate: true
+    stats: {
+      total_wishes: 0,
+      five_stars: 0,
+      four_stars: 0,
+      primogems_spent: 0,
+      avg_pity: 0,
+      pity_distribution: {},
+      banner_stats: {}
     }
-  };
-  
-  export const ActionTypes = {
-    ADD_WISHES: 'ADD_WISHES',
-    UPDATE_PITY: 'UPDATE_PITY',
-    UPDATE_STATS: 'UPDATE_STATS',
-    UPDATE_BANNERS: 'UPDATE_BANNERS',
-    UPDATE_SETTINGS: 'UPDATE_SETTINGS',
-    RESET_DATA: 'RESET_DATA'
-  };
-  
-  export const appReducer = (state, action) => {
-    switch (action.type) {
-      case ActionTypes.ADD_WISHES:
-        return {
-          ...state,
-          wishes: {
-            ...state.wishes,
-            history: [...state.wishes.history, ...action.payload]
-          }
-        };
-  
-      case ActionTypes.UPDATE_PITY:
-        return {
-          ...state,
-          wishes: {
-            ...state.wishes,
-            pity: {
-              ...state.wishes.pity,
-              ...action.payload
-            }
-          }
-        };
-  
-      case ActionTypes.UPDATE_STATS:
-        return {
-          ...state,
-          wishes: {
-            ...state.wishes,
-            stats: {
-              ...state.wishes.stats,
-              ...action.payload
-            }
-          }
-        };
-  
-      case ActionTypes.UPDATE_BANNERS:
-        return {
-          ...state,
-          banners: {
-            ...state.banners,
-            ...action.payload
-          }
-        };
-  
-      case ActionTypes.UPDATE_SETTINGS:
-        return {
-          ...state,
-          settings: {
-            ...state.settings,
-            ...action.payload
-          }
-        };
-  
-      case ActionTypes.RESET_DATA:
-        return initialState;
-  
-      default:
-        return state;
-    }
-  };
+  },
+  settings: {
+    volume: 50,
+    autoUpdate: true,
+    theme: 'dark'
+  }
+};
+
+export const ActionTypes = {
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR',
+  ADD_WISHES: 'ADD_WISHES',
+  UPDATE_PITY: 'UPDATE_PITY',
+  UPDATE_STATS: 'UPDATE_STATS',
+  UPDATE_SETTINGS: 'UPDATE_SETTINGS',
+  RESET_DATA: 'RESET_DATA'
+};
+
+export const appReducer = (state, action) => {
+  switch (action.type) {
+    case ActionTypes.SET_LOADING:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          loading: action.payload
+        }
+      };
+
+    case ActionTypes.SET_ERROR:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          error: action.payload
+        }
+      };
+
+    case ActionTypes.ADD_WISHES:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          history: action.payload,
+          error: null
+        }
+      };
+
+    case ActionTypes.UPDATE_PITY:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          pity: action.payload
+        }
+      };
+
+    case ActionTypes.UPDATE_STATS:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          stats: action.payload
+        }
+      };
+
+    case ActionTypes.UPDATE_SETTINGS:
+      return {
+        ...state,
+        settings: {
+          ...state.settings,
+          ...action.payload
+        }
+      };
+
+    case ActionTypes.RESET_DATA:
+      return initialState;
+
+    default:
+      return state;
+  }
+};

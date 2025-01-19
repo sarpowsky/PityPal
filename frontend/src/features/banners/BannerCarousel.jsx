@@ -1,4 +1,4 @@
-/* Path: src/features/banners/BannerCarousel.jsx */
+// src/features/banners/BannerCarousel.jsx
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Clock, Star } from 'lucide-react';
 import { getCurrentBanners, getTimeRemaining } from '../../data/banners';
@@ -6,97 +6,126 @@ import { getCurrentBanners, getTimeRemaining } from '../../data/banners';
 const BannerCarousel = () => {
   const [banners, setBanners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setBanners(getCurrentBanners());
+    const loadBanners = async () => {
+      try {
+        setLoading(true);
+        const currentBanners = getCurrentBanners();
+        if (currentBanners.length === 0) {
+          throw new Error('No active banners found');
+        }
+        setBanners(currentBanners);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBanners();
   }, []);
 
   const nextBanner = () => setCurrentIndex((prev) => (prev + 1) % banners.length);
   const prevBanner = () => setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
 
+  if (loading) {
+    return (
+      <div className="h-56 rounded-xl bg-black/20 backdrop-blur-sm animate-pulse">
+        <div className="h-full flex items-center justify-center text-white/40">
+          Loading banners...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-56 rounded-xl bg-black/20 backdrop-blur-sm border border-red-500/20">
+        <div className="h-full flex items-center justify-center text-red-400">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
   if (!banners.length) return null;
+
+  const currentBanner = banners[currentIndex];
+  const timeLeft = !currentBanner.isPermanent ? getTimeRemaining(currentBanner) : null;
 
   return (
     <div className="relative h-56 rounded-xl overflow-hidden group">
-      {banners.map((banner, index) => {
-        const timeLeft = getTimeRemaining(banner);
-        return (
-          <div
-            key={banner.id}
-            className={`absolute inset-0 transition-all duration-500 ease-out
-              ${index === currentIndex ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'}`}
-          >
-            <img
-              src={banner.image}
-              alt={banner.name}
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            
-            {/* Banner Info */}
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <div className="flex items-center gap-4 mb-2">
-                {!banner.isPermanent && (
-                  <>
-                    <div className="flex items-center gap-2 text-xs text-white/80">
-                      <Calendar size={14} />
-                      <span>Ends {new Date(banner.endDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-white/80">
-                      <Clock size={14} />
-                      <span>{timeLeft.days}d {timeLeft.hours}h remaining</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              <h3 className="text-xl font-genshin mb-1">{banner.name}</h3>
-              
-              {banner.character && (
-                <div className="flex items-center gap-2 text-sm text-white/80">
-                  <span>Featured:</span>
-                  <div className="flex items-center gap-1">
-                    <Star size={14} className="fill-current text-amber-400" />
-                    <span>{banner.character}</span>
-                  </div>
-                </div>
-              )}
-              
-              {banner.fourStars && (
-                <div className="flex items-center gap-2 mt-1 text-xs text-white/60">
-                  <span>Rate Up:</span>
-                  <div className="flex items-center gap-1">
-                    {banner.fourStars.join(' • ')}
-                  </div>
-                </div>
-              )}
+      <div className="absolute inset-0">
+        <img
+          src={currentBanner.image}
+          alt={currentBanner.name}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/banners/placeholder.jpg';
+            e.target.onerror = null;
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        {!currentBanner.isPermanent && timeLeft && (
+          <div className="flex items-center gap-4 mb-2">
+            <div className="flex items-center gap-2 text-xs text-white/80">
+              <Calendar size={14} />
+              <span>Ends {new Date(currentBanner.endDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-white/80">
+              <Clock size={14} />
+              <span>{timeLeft.days}d {timeLeft.hours}h remaining</span>
             </div>
           </div>
-        );
-      })}
-      
-      {/* Navigation Buttons */}
+        )}
+
+        <h3 className="text-xl font-genshin mb-1">{currentBanner.name}</h3>
+
+        {currentBanner.character && (
+          <div className="flex items-center gap-2 text-sm text-white/80">
+            <span>Featured:</span>
+            <div className="flex items-center gap-1">
+              <Star size={14} className="fill-current text-amber-400" />
+              <span>{currentBanner.character}</span>
+            </div>
+          </div>
+        )}
+
+        {currentBanner.fourStars?.length > 0 && (
+          <div className="flex items-center gap-2 mt-1 text-xs text-white/60">
+            <span>Rate Up:</span>
+            <div className="flex items-center gap-1">
+              {currentBanner.fourStars.join(' • ')}
+            </div>
+          </div>
+        )}
+      </div>
+
       {banners.length > 1 && (
         <>
-          <div className="absolute inset-y-0 left-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={prevBanner}
-              className="p-2 m-2 rounded-xl bg-black/30 backdrop-blur-sm text-white
-                       border border-white/10 hover:bg-white/20 transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          </div>
-          <div className="absolute inset-y-0 right-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={nextBanner}
-              className="p-2 m-2 rounded-xl bg-black/30 backdrop-blur-sm text-white
-                       border border-white/10 hover:bg-white/20 transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
+          <button
+            onClick={prevBanner}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full
+                     bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100
+                     transition-opacity"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={nextBanner}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full
+                     bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100
+                     transition-opacity"
+          >
+            <ChevronRight size={20} />
+          </button>
 
-          {/* Pagination Dots */}
           <div className="absolute bottom-4 right-4 flex gap-1">
             {banners.map((_, index) => (
               <button

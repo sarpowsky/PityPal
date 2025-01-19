@@ -1,4 +1,4 @@
-// Path: frontend/src/features/banners/PityTracker.jsx
+// src/features/banners/PityTracker.jsx
 import React, { useEffect, useState } from 'react';
 import { Target, Crown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -6,6 +6,8 @@ import { waitForPyWebView } from '../../utils/pywebview-bridge';
 
 const PityTracker = () => {
   const { state } = useApp();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [pityStats, setPityStats] = useState({
     current: 0,
     guaranteed: false,
@@ -18,16 +20,49 @@ const PityTracker = () => {
   useEffect(() => {
     const fetchPityStats = async () => {
       try {
+        setLoading(true);
         await waitForPyWebView();
-        const stats = await window.pywebview.api.calculate_pity();
-        setPityStats(stats);
-      } catch (error) {
-        console.error('Failed to fetch pity stats:', error);
+        const result = await window.pywebview.api.calculate_pity();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to calculate pity');
+        }
+        
+        setPityStats(result.data.character);
+      } catch (err) {
+        console.error('Failed to fetch pity stats:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchPityStats();
+    if (state.wishes.history.length > 0) {
+      fetchPityStats();
+    } else {
+      setLoading(false);
+    }
   }, [state.wishes.history]);
+
+  if (loading) {
+    return (
+      <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-white/10 rounded w-1/3"></div>
+          <div className="h-8 bg-white/10 rounded"></div>
+          <div className="h-4 bg-white/10 rounded w-2/3"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-red-500/20 p-6">
+        <div className="text-red-400 text-sm">Error: {error}</div>
+      </div>
+    );
+  }
 
   const getProgressGradient = () => {
     if (pityStats.pity_type === 'soft') {

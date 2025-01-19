@@ -2,22 +2,35 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { initialState, appReducer } from './appReducer';
 import { loadState, saveState } from '../utils/localStorage';
+import { loadWishHistory } from './appActions';
 
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState, (initial) => {
-    const savedState = loadState();
-    return savedState || initial;
+    const savedSettings = loadState();
+    return savedSettings ? { ...initial, settings: savedSettings.settings } : initial;
   });
 
-  // Save to localStorage whenever state changes
+  // Load initial wish history
   useEffect(() => {
-    saveState(state);
-  }, [state]);
+    loadWishHistory(dispatch);
+  }, []);
+
+  // Save settings to localStorage
+  useEffect(() => {
+    saveState({ settings: state.settings });
+  }, [state.settings]);
+
+  const value = {
+    state,
+    dispatch,
+    isLoading: state.wishes.loading,
+    error: state.wishes.error
+  };
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
