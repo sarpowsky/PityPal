@@ -1,31 +1,35 @@
 # Path: backend/services/wish_service.py
 import json
+import time
 import sqlite3
 import requests
 import pandas as pd
 from datetime import datetime
-from bs4 import BeautifulSoup
 from pathlib import Path
 import logging
+from typing import Dict, List, Optional, Callable
+from urllib.parse import parse_qs, urlparse
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class WishService:
     def __init__(self):
-        self.api_base = "https://hk4e-api-os.mihoyo.com/event/gacha_info/api"
+        self.api_base = "https://public-operation-hk4e-sg.hoyoverse.com/gacha_info/api"
         self.banner_types = {
-            "301": "character",
-            "302": "weapon",
-            "200": "permanent"
+            "301": "character-1",    # First character event banner
+            "400": "character-2",    # Second character event banner
+            "302": "weapon",         # Weapon banner
+            "200": "permanent",      # Standard banner
+            "500": "chronicled"      # Chronicled wish
         }
+        self.history = []
         self.db_path = Path.home() / "AppData/Local/GenshinWishTracker/wishes.db"
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_database()
         self.load_history()
 
     def init_database(self):
-        """Initialize SQLite database for persistent storage"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.execute('''
@@ -44,7 +48,6 @@ class WishService:
             raise
 
     def load_history(self):
-        """Load wish history from database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 conn.row_factory = sqlite3.Row
@@ -55,8 +58,105 @@ class WishService:
             logger.error(f"Failed to load wish history: {e}")
             self.history = []
 
+    def get_history(self):
+        return self.history
+
+    def parse_url(self, url: str) -> Dict:
+        try:
+            parsed = urlparse(url)
+            params = parse_qs(parsed.query)
+            return {k: v[0] for k, v in params.items()}
+        except Exception as e:
+            logger.error(f"URL parsing failed: {e}")
+            raise ValueError("Invalid URL format")
+
+    def import_from_url(self, url: str, progress_callback: Optional[Callable] = None) -> Dict:
+        try:
+            if progress_callback:
+                progress_callback(5)
+
+            params = self.parse_url(url)
+            if 'authkey' not in params:
+                raise ValueError("Authentication key not found in URL")
+
+            logger.info("Starting wish history fetch...")
+            if progress_callback:
+                progress_callback(10)
+
+            all_wishes = []
+            for banner_id in self.banner_types:
+                current_params = {**params, "gacha_type": banner_id}
+                current_params['page'] = '1'
+                current_params['size'] = '20'
+                current_params['end_id'] = '0'
+
+                while True:
+                    response = requests.get(f"{self.api_base}/getGachaLog", params=current_params)
+                    data = response.json()
+                    
+                    if data["retcode"] != 0:
+                        error_msg = data.get('message', 'Unknown error')
+                        logger.error(f"API Error: {error_msg}")
+                        raise Exception(f"API Error: {error_msg}")
+
+                    wishes = data["data"]["list"]
+                    if not wishes:
+                        break
+
+                    all_wishes.extend(wishes)
+                    current_params['end_id'] = wishes[-1]["id"]
+                    time.sleep(0.5)  # Rate limiting
+
+                    if progress_callback:
+                        progress = min(90, len(all_wishes) / 2)
+                        progress_callback(int(progress))
+
+            if progress_callback:
+                progress_callback(95)
+
+            processed_wishes = self._process_wish_data(all_wishes)
+            self.save_wishes(processed_wishes)
+            self.history = processed_wishes
+
+            if progress_callback:
+                progress_callback(100)
+
+            return {
+                "success": True,
+                "data": processed_wishes,
+                "message": f"Successfully imported {len(processed_wishes)} wishes"
+            }
+
+        except Exception as e:
+            logger.error(f"Wish import failed: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+    def _process_wish_data(self, wishes: List[Dict]) -> List[Dict]:
+        processed_wishes = []
+        for wish in wishes:
+            try:
+                if not all(field in wish for field in ('id', 'name', 'rank_type', 'item_type', 'time', 'gacha_type')):
+                    continue
+                    
+                processed_wish = {
+                    "id": wish["id"],
+                    "name": wish["name"],
+                    "rarity": int(wish["rank_type"]),
+                    "type": wish["item_type"],
+                    "time": wish["time"],
+                    "bannerType": self.banner_types.get(wish["gacha_type"], "unknown")
+                }
+                processed_wishes.append(processed_wish)
+            except (ValueError, KeyError) as e:
+                logger.error(f"Failed to process wish: {e}")
+                continue
+
+        return sorted(processed_wishes, key=lambda x: x["time"], reverse=True)
+
     def save_wishes(self, wishes):
-        """Save wishes to local database"""
         try:
             with sqlite3.connect(self.db_path) as conn:
                 for wish in wishes:
@@ -68,7 +168,7 @@ class WishService:
                         wish['name'],
                         wish['rarity'],
                         wish['type'],
-                        wish['time'].strftime('%Y-%m-%d %H:%M:%S'),
+                        wish['time'],
                         wish['bannerType']
                     ))
                 logger.info(f"Saved {len(wishes)} wishes to database")
@@ -76,123 +176,29 @@ class WishService:
             logger.error(f"Failed to save wishes: {e}")
             raise
 
-    def import_from_url(self, url):
-        """Import wishes from game URL"""
+    def clear_history(self):
         try:
-            auth_key = self._extract_authkey(url)
-            data = self._fetch_all_history(auth_key)
-            processed_wishes = self._process_wish_data(data)
-            self.save_wishes(processed_wishes)
-            self.history = processed_wishes
-            return {"success": True, "data": processed_wishes}
-        except Exception as e:
-            logger.error(f"Wish import failed: {e}")
-            return {"success": False, "error": str(e)}
-
-    def _extract_authkey(self, url):
-        try:
-            if 'authkey' not in url:
-                raise ValueError("Invalid URL: No authkey found")
-            return url.split('authkey=')[1].split('&')[0]
-        except Exception as e:
-            logger.error(f"Authkey extraction failed: {e}")
-            raise ValueError("Failed to extract authkey from URL")
-
-    def _fetch_all_history(self, auth_key):
-        all_wishes = []
-        try:
-            for banner_id in self.banner_types:
-                end_id = "0"
-                while True:
-                    params = {
-                        "authkey_ver": 1,
-                        "authkey": auth_key,
-                        "gacha_type": banner_id,
-                        "page": "1",
-                        "size": "20",
-                        "end_id": end_id
-                    }
-                    response = requests.get(
-                        f"{self.api_base}/getGachaLog",
-                        params=params,
-                        timeout=10
-                    )
-                    response.raise_for_status()
-                    data = response.json()
-                    
-                    if data["retcode"] != 0:
-                        raise Exception(f"API Error: {data['message']}")
-                    
-                    wishes = data["data"]["list"]
-                    if not wishes:
-                        break
-                        
-                    all_wishes.extend(wishes)
-                    end_id = wishes[-1]["id"]
-            
-            logger.info(f"Fetched {len(all_wishes)} wishes")
-            return all_wishes
-        except requests.RequestException as e:
-            logger.error(f"API request failed: {e}")
+            with sqlite3.connect(self.db_path) as conn:
+                conn.execute('DELETE FROM wishes')
+            self.history = []
+            logger.info("Wish history cleared")
+        except sqlite3.Error as e:
+            logger.error(f"Failed to clear history: {e}")
             raise
 
-    def _process_wish_data(self, wishes):
-        """Process and validate wish data"""
-        processed_wishes = []
-        required_fields = ['id', 'name', 'rank_type', 'item_type', 'time', 'gacha_type']
-        
-        for wish in wishes:
-            # Validate required fields
-            if not all(field in wish for field in required_fields):
-                logger.warning(f"Skipping invalid wish data: {wish}")
-                continue
-                
-            try:
-                processed_wish = {
-                    "id": wish["id"],
-                    "name": wish["name"],
-                    "rarity": int(wish["rank_type"]),
-                    "type": wish["item_type"],
-                    "time": datetime.strptime(wish["time"], "%Y-%m-%d %H:%M:%S"),
-                    "bannerType": self.banner_types[wish["gacha_type"]]
-                }
-                processed_wishes.append(processed_wish)
-            except (ValueError, KeyError) as e:
-                logger.error(f"Failed to process wish: {e}")
-                continue
-
-        return sorted(processed_wishes, key=lambda x: x["time"], reverse=True)
-
-    def get_history(self):
-        """Get current wish history"""
-        return self.history
-
     def export_to_excel(self):
-        """Export wish history to Excel"""
         try:
             if not self.history:
                 return {"success": False, "error": "No wish history to export"}
 
             df = pd.DataFrame(self.history)
             
-            # Format datetime
-            df['time'] = pd.to_datetime(df['time']).dt.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Calculate pity for each banner type
-            for banner_type in set(df['bannerType']):
-                mask = df['bannerType'] == banner_type
-                df.loc[mask, 'pity'] = df[mask].groupby(
-                    (df[mask]['rarity'] == 5).cumsum()
-                ).cumcount() + 1
-            
-            # Save to user's documents folder
             documents_path = str(Path.home() / "Documents")
             filename = f"genshin_wishes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             filepath = f"{documents_path}/{filename}"
             
             with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name='Wish History')
-                
                 worksheet = writer.sheets['Wish History']
                 for idx, col in enumerate(df.columns):
                     max_length = max(
@@ -201,7 +207,6 @@ class WishService:
                     )
                     worksheet.column_dimensions[chr(65 + idx)].width = max_length + 2
 
-            logger.info(f"Exported wishes to {filepath}")
             return {
                 "success": True,
                 "path": filepath,

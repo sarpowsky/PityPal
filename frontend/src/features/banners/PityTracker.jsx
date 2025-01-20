@@ -80,7 +80,7 @@ const PityTracker = () => {
     return 'Building pity';
   };
 
-  const progress = (pityStats.current / pityStats.thresholds.hard) * 100;
+  const progress = Math.min(100, (pityStats.current / 90) * 100);
 
   return (
     <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10">

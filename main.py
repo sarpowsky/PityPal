@@ -7,10 +7,7 @@ from pathlib import Path
 from backend.services.wish_service import WishService
 from backend.services.pity_calculator import PityCalculator
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class API:
@@ -19,10 +16,23 @@ class API:
         self.pity_calculator = PityCalculator()
         logger.info("API services initialized")
         
+    def import_wishes(self, url, progress_callback=None):
+        try:
+            result = self.wish_service.import_from_url(url)
+            if result["success"]:
+                # Calculate pities immediately
+                result["data"] = self.pity_calculator.calculate_pull_counts(result["data"])
+            return result
+        except Exception as e:
+            logger.error(f"Failed to import wishes: {e}")
+            return {"success": False, "error": str(e)}
+    
     def get_wish_history(self):
         try:
             history = self.wish_service.get_history()
-            return {"success": True, "data": history}
+            # Calculate pull counts for each wish
+            history_with_pity = self.pity_calculator.calculate_pull_counts(history)
+            return {"success": True, "data": history_with_pity}
         except Exception as e:
             logger.error(f"Failed to get wish history: {e}")
             return {"success": False, "error": str(e)}
@@ -45,38 +55,14 @@ class API:
         except Exception as e:
             logger.error(f"Failed to calculate pity: {e}")
             return {"success": False, "error": str(e)}
-    
-    def import_wishes(self, url):
-        try:
-            result = self.wish_service.import_from_url(url)
-            if result["success"]:
-                self.pity_calculator.clear_cache()
-            return result
-        except Exception as e:
-            logger.error(f"Failed to import wishes: {e}")
-            return {"success": False, "error": str(e)}
-    
-    def export_data(self):
-        try:
-            return self.wish_service.export_to_excel()
-        except Exception as e:
-            logger.error(f"Failed to export data: {e}")
-            return {"success": False, "error": str(e)}
-
-def create_app_folder():
-    app_dir = Path.home() / "AppData/Local/GenshinWishTracker"
-    app_dir.mkdir(parents=True, exist_ok=True)
-    return app_dir
 
 def main():
     try:
-        app_dir = create_app_folder()
-        logger.info(f"Application directory: {app_dir}")
-        
         api = API()
+        
         window = webview.create_window(
             'Genshin Impact Pity Tracker',
-            url='frontend/build/index.html',
+            url='http://localhost:3000',  # Development server URL
             js_api=api,
             width=1200,
             height=800,

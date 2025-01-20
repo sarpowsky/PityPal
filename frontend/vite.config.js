@@ -8,6 +8,8 @@ export default defineConfig({
     port: 3000
   },
   build: {
-    outDir: 'build'
-  }
+    outDir: 'dist',
+    sourcemap: true
+  },
+  base: './'  // This is important for PyWebView
 });

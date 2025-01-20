@@ -1,9 +1,22 @@
 // src/context/appReducer.js
+export const ActionTypes = {
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR',
+  ADD_WISHES: 'ADD_WISHES',
+  SET_WISHES: 'SET_WISHES',
+  UPDATE_PITY: 'UPDATE_PITY',
+  UPDATE_STATS: 'UPDATE_STATS',
+  UPDATE_SETTINGS: 'UPDATE_SETTINGS',
+  UPDATE_PROGRESS: 'UPDATE_PROGRESS',
+  RESET_DATA: 'RESET_DATA'
+};
+
 export const initialState = {
   wishes: {
     history: [],
     loading: false,
     error: null,
+    progress: 0,
     pity: {
       character: {
         current: 0,
@@ -19,8 +32,7 @@ export const initialState = {
         pity_type: null,
         wishes_to_soft: 0,
         wishes_to_hard: 0,
-        probability: 0,
-        fatePath: 0
+        probability: 0
       }
     },
     stats: {
@@ -36,18 +48,9 @@ export const initialState = {
   settings: {
     volume: 50,
     autoUpdate: true,
-    theme: 'dark'
+    theme: 'dark',
+    notifications: true
   }
-};
-
-export const ActionTypes = {
-  SET_LOADING: 'SET_LOADING',
-  SET_ERROR: 'SET_ERROR',
-  ADD_WISHES: 'ADD_WISHES',
-  UPDATE_PITY: 'UPDATE_PITY',
-  UPDATE_STATS: 'UPDATE_STATS',
-  UPDATE_SETTINGS: 'UPDATE_SETTINGS',
-  RESET_DATA: 'RESET_DATA'
 };
 
 export const appReducer = (state, action) => {
@@ -71,6 +74,16 @@ export const appReducer = (state, action) => {
       };
 
     case ActionTypes.ADD_WISHES:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          history: action.payload,
+          error: null
+        }
+      };
+
+    case ActionTypes.SET_WISHES:
       return {
         ...state,
         wishes: {
@@ -107,8 +120,20 @@ export const appReducer = (state, action) => {
         }
       };
 
+    case ActionTypes.UPDATE_PROGRESS:
+      return {
+        ...state,
+        wishes: {
+          ...state.wishes,
+          progress: action.payload
+        }
+      };
+
     case ActionTypes.RESET_DATA:
-      return initialState;
+      return {
+        ...initialState,
+        settings: state.settings // Preserve settings on reset
+      };
 
     default:
       return state;
