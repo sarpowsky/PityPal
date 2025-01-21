@@ -17,6 +17,7 @@ export default {
         'float': 'float 3s ease-in-out infinite',
         'scale': 'scale 0.2s ease-in-out',
         'glow': 'glow 2s ease-in-out infinite',
+        typewriter: 'typewriter 50ms ease-out forwards',
       },
       keyframes: {
         fadeIn: {

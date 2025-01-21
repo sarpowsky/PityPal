@@ -1,8 +1,17 @@
-// Path: frontend/src/pages/WishHistory.jsx
-import React, { useState } from 'react';
-import { Calendar, Filter, Download, ChevronDown, Star } from 'lucide-react';
+// Path: src/pages/WishHistory.jsx
+import React, { useState, useMemo } from 'react';
+import { Calendar, Filter, Download, ChevronDown, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { exportWishHistory } from '../context/appActions';
+
+const ITEMS_PER_PAGE = 10;
+
+const bannerTypes = [
+  { id: 'all', label: 'All Wishes' },
+  { id: 'character', label: 'Character Event' },
+  { id: 'weapon', label: 'Weapon Banner' },
+  { id: 'permanent', label: 'Permanent Banner' }
+];
 
 const WishTypeFilter = ({ active, icon: Icon, label, count, onClick }) => (
   <button
@@ -30,16 +39,23 @@ const WishItem = ({ wish }) => {
     3: 'from-blue-500 to-cyan-500'
   };
 
+  const date = new Date(wish.time);
+  const formattedDate = date.toLocaleDateString();
+  const formattedTime = date.toLocaleTimeString();
+
   return (
-    <div className="group relative rounded-xl bg-black/20 backdrop-blur-sm border border-white/10
+    <div className="group relative rounded-lg bg-black/20 backdrop-blur-sm border border-white/10
                   hover:bg-black/30 transition-all duration-300 animate-fadeIn">
-      <div className="flex items-center gap-4 p-4">
-        <div className={`relative w-16 h-16 rounded-xl overflow-hidden
+      <div className="flex items-center gap-3 p-3">
+        <div className={`relative w-12 h-12 rounded-lg overflow-hidden
                       border-2 bg-gradient-to-br ${rarityColors[wish.rarity]}`}>
           <img 
-            src={wish.image} 
+            src={`/items/${wish.name.toLowerCase().replace(/\s+/g, '-')}.png`}
             alt={wish.name}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = '/items/placeholder.png';
+            }}
           />
           <div className="absolute bottom-0 right-0 px-1.5 py-0.5 
                        bg-black/60 backdrop-blur-sm rounded-tl
@@ -50,12 +66,14 @@ const WishItem = ({ wish }) => {
         </div>
 
         <div className="flex-1">
-          <h3 className="text-lg font-genshin mb-1">{wish.name}</h3>
-          <div className="flex items-center gap-4 text-sm text-white/60">
-            <div className="flex items-center gap-1.5">
-              <Calendar size={14} />
-              <span>{new Date(wish.time).toLocaleDateString()}</span>
+          <h3 className="text-sm font-medium mb-1">{wish.name}</h3>
+          <div className="flex items-center gap-2 text-xs text-white/60">
+            <div className="flex items-center gap-1">
+              <Calendar size={12} />
+              <span>{formattedDate}</span>
             </div>
+            <span>•</span>
+            <span>{formattedTime}</span>
             <span>•</span>
             <span>{wish.bannerType}</span>
           </div>
@@ -71,8 +89,64 @@ const WishItem = ({ wish }) => {
   );
 };
 
+const Pagination = ({ currentPage, totalPages, onPageChange }) => (
+  <div className="flex items-center justify-center gap-2">
+    <button
+      onClick={() => onPageChange(currentPage - 1)}
+      disabled={currentPage === 1}
+      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
+               disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <ChevronLeft size={16} />
+    </button>
+    
+    <div className="flex items-center gap-1">
+      {[...Array(totalPages)].map((_, index) => {
+        const page = index + 1;
+        const isActive = page === currentPage;
+        
+        if (
+          page === 1 ||
+          page === totalPages ||
+          (page >= currentPage - 2 && page <= currentPage + 2)
+        ) {
+          return (
+            <button
+              key={page}
+              onClick={() => onPageChange(page)}
+              className={`w-8 h-8 rounded-lg text-sm transition-colors
+                       ${isActive 
+                         ? 'bg-indigo-500 text-white' 
+                         : 'bg-white/5 hover:bg-white/10 text-white/60'}`}
+            >
+              {page}
+            </button>
+          );
+        } else if (
+          (page === currentPage - 3 && currentPage > 4) ||
+          (page === currentPage + 3 && currentPage < totalPages - 3)
+        ) {
+          return <span key={page} className="text-white/40">...</span>;
+        }
+        return null;
+      })}
+    </div>
+
+    <button
+      onClick={() => onPageChange(currentPage + 1)}
+      disabled={currentPage === totalPages}
+      className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
+               disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <ChevronRight size={16} />
+    </button>
+  </div>
+);
+
 const WishHistory = () => {
   const [activeFilter, setActiveFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState('desc');
   const { state } = useApp();
   const { history } = state.wishes;
 
@@ -89,10 +163,30 @@ const WishHistory = () => {
     }
   };
 
-  const filteredWishes = history.filter(wish => {
-    if (activeFilter === 'all') return true;
-    return wish.bannerType === activeFilter;
-  });
+  const filteredAndSortedWishes = useMemo(() => {
+    const filtered = history.filter(wish => {
+      if (activeFilter === 'all') return true;
+      if (activeFilter === 'character') return wish.bannerType.startsWith('character');
+      return wish.bannerType === activeFilter;
+    });
+    
+    return [...filtered].sort((a, b) => {
+      const dateA = new Date(a.time);
+      const dateB = new Date(b.time);
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [history, activeFilter, sortOrder]);
+
+  const totalPages = Math.ceil(filteredAndSortedWishes.length / ITEMS_PER_PAGE);
+  const currentWishes = filteredAndSortedWishes.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -103,53 +197,68 @@ const WishHistory = () => {
         </h1>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
-          <WishTypeFilter
-            active={activeFilter === 'all'}
-            icon={Star}
-            label="All Wishes"
-            count={history.length}
-            onClick={() => setActiveFilter('all')}
-          />
-          <WishTypeFilter
-            active={activeFilter === 'character'}
-            icon={Star}
-            label="Character Event"
-            count={history.filter(w => w.bannerType === 'character').length}
-            onClick={() => setActiveFilter('character')}
-          />
-          <WishTypeFilter
-            active={activeFilter === 'weapon'}
-            icon={Star}
-            label="Weapon Event"
-            count={history.filter(w => w.bannerType === 'weapon').length}
-            onClick={() => setActiveFilter('weapon')}
-          />
+          {bannerTypes.map(({ id, label }) => (
+            <WishTypeFilter
+              key={id}
+              active={activeFilter === id}
+              icon={Star}
+              label={label}
+              count={id === 'all' 
+                ? history.length 
+                : id === 'character'
+                ? history.filter(w => w.bannerType.startsWith('character')).length
+                : history.filter(w => w.bannerType === id).length}
+              onClick={() => {
+                setActiveFilter(id);
+                setCurrentPage(1);
+              }}
+            />
+          ))}
         </div>
 
-        <button 
-          onClick={handleExport}
-          className="p-2 rounded-xl bg-white/5 hover:bg-white/10 
-                  border border-white/10 transition-colors"
-        >
-          <Download size={20} />
-        </button>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-white/60 text-sm px-4">
-          <span>Showing {filteredWishes.length} wishes</span>
-          <button className="flex items-center gap-1 hover:text-white transition-colors">
-            <span>Sort by Date</span>
-            <ChevronDown size={16} />
+        <div className="flex items-center justify-end gap-2">
+          <button
+            onClick={() => setSortOrder(order => order === 'desc' ? 'asc' : 'desc')}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg 
+                     bg-white/5 hover:bg-white/10 text-sm transition-colors"
+          >
+            <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+            <ChevronDown size={14} className={`transform transition-transform
+                                           ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+          </button>
+          
+          <button 
+            onClick={handleExport}
+            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
+                    transition-colors"
+          >
+            <Download size={18} />
           </button>
         </div>
 
-        <div className="space-y-2">
-          {filteredWishes.map((wish) => (
-            <WishItem key={wish.id} wish={wish} />
-          ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center gap-4 text-white/60 text-sm">
+              <span>Showing {currentWishes.length} of {filteredAndSortedWishes.length} wishes</span>
+              <span>Page {currentPage} of {totalPages}</span>
+            </div>
+            
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            )}
+          </div>
+
+          <div className="space-y-2">
+            {currentWishes.map((wish) => (
+              <WishItem key={wish.id} wish={wish} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
