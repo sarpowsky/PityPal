@@ -1,19 +1,29 @@
-/* Path: frontend/src/components/ImportGuideModal.jsx */
-import React from 'react';
-import { X, ExternalLink, Copy, Info } from 'lucide-react';
+// Path: frontend/src/components/ImportGuideModal.jsx
+import React, { useState } from 'react';
+import { X, ExternalLink, Copy, Info, Terminal } from 'lucide-react';
 
 const ImportGuideModal = ({ onClose }) => {
-  const copyUrl = () => {
-    navigator.clipboard.writeText('https://webstatic-sea.hoyoverse.com/genshin/event/e20190909gacha/');
+  const [copySuccess, setCopySuccess] = useState('');
+  
+  const powershellCommand = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex "&{$((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/sarpowsky/historylinkforGenshin/main/historykey.ps1'))} global"`;
+
+  const copyCommand = async () => {
+    try {
+      await navigator.clipboard.writeText(powershellCommand);
+      setCopySuccess('Copied!');
+      setTimeout(() => setCopySuccess(''), 2000);
+    } catch (err) {
+      setCopySuccess('Failed to copy');
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] 
                   flex items-center justify-center p-4">
-      <div className="relative w-full max-w-2xl bg-gradient-to-b from-gray-900/95 to-black/95 
+      <div className="relative w-full max-w-5xl bg-gradient-to-b from-gray-900/95 to-black/95 
                     rounded-2xl border border-white/10 shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-xl font-genshin">How to Import Wishes</h2>
           <button 
             onClick={onClose}
@@ -24,10 +34,89 @@ const ImportGuideModal = ({ onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4">
+          <div className="grid grid-cols-12 gap-4">
+            {/* Left Column - Important Note and Steps 1-3 */}
+            <div className="col-span-4 space-y-3">      
+              {/* Steps 1-3 */}
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium mb-1">1. Open Genshin Impact</h3>
+                  <p className="text-xs text-white/70">Launch Genshin Impact on your PC.</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-1">2. Access Wish History</h3>
+                  <p className="text-xs text-white/70">Go to the Wish History page and wait for it to load completely.</p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-1">3. Minimize Game</h3>
+                  <p className="text-xs text-white/70">Minimize the game and go back to Windows.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Column - Steps 4-5 with PowerShell Command */}
+            <div className="col-span-5 space-y-3">
+              <div>
+                <h3 className="text-sm font-medium mb-1">4. Open PowerShell</h3>
+                <p className="text-xs text-white/70">
+                  Open the Start menu, search for PowerShell, and open Windows PowerShell.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium mb-1">5. Execute Command</h3>
+                <p className="text-xs text-white/70">
+                  Copy and paste the following command into PowerShell:
+                </p>
+                <div className="relative">
+                  <div className="relative p-3 rounded-lg bg-black/40 border border-white/10">
+                    <div className="absolute left-2 top-2">
+                      <button 
+                        onClick={copyCommand}
+                        className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 
+                                 border border-white/10 transition-colors group"
+                      >
+                        <Copy size={14} className="text-white/40 group-hover:text-white/60" />
+                      </button>
+                    </div>
+                    <div className="pt-8">
+                      <code className="text-xs text-white/70 font-mono break-all">
+                        {powershellCommand}
+                      </code>
+                    </div>
+                  </div>
+                  {copySuccess && (
+                    <div className="absolute right-2 top-0 px-2 py-1 text-xs text-white/60 
+                                 bg-white/10 rounded-md -translate-y-full mb-2">
+                      {copySuccess}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Steps 6-7 */}
+            <div className="col-span-3 space-y-3">
+              <div>
+                <h3 className="text-sm font-medium mb-1">6. Execute Command</h3>
+                <p className="text-xs text-white/70">
+                  Press ENTER to execute the command. The wish history link will be automatically copied to your clipboard.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-1">7. Import URL</h3>
+                <p className="text-xs text-white/70">
+                  Paste the copied link into the URL field above.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Important Note */}
-          <div className="flex items-start gap-3 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-            <Info size={20} className="text-indigo-400 shrink-0 mt-0.5" />
+          <div className="flex items-center gap-3 p-3 mt-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+            <Info size={20} className="text-indigo-400 shrink-0" />
             <div>
               <h3 className="font-medium mb-1">Important Note</h3>
               <p className="text-sm text-white/70">
@@ -36,60 +125,17 @@ const ImportGuideModal = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Steps */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">1. Open Game and History</h3>
-              <p className="text-sm text-white/70">
-                Launch Genshin Impact and open the wish history page by clicking History in any banner.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-medium">2. Open Web History</h3>
-              <p className="text-sm text-white/70">
-                Click on the option that opens the history in your web browser.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-medium">3. Copy URL</h3>
-              <p className="text-sm text-white/70">
-                Copy the URL from your browser's address bar once the page loads.
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 px-4 py-2 rounded-lg bg-white/5 text-sm text-white/40 truncate">
-                  https://webstatic-sea.hoyoverse.com/genshin/event/e20190909gacha/
-                </div>
-                <button 
-                  onClick={copyUrl}
-                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
-                           border border-white/10 transition-colors"
-                >
-                  <Copy size={18} />
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="font-medium">4. Import to App</h3>
-              <p className="text-sm text-white/70">
-                Paste the URL into the import field at the top of the home page and click Import.
-              </p>
-            </div>
-          </div>
-
           {/* Footer */}
-          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
             <a 
-              href="https://docs.genshinwizard.com/wishing-centre/history-link" 
+              href="https://github.com/sarpowsky/historylinkforGenshin"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-indigo-400 
                        hover:text-indigo-300 transition-colors"
             >
               <ExternalLink size={16} />
-              <span>Detailed guide in wiki</span>
+              <span>View on Github</span>
             </a>
             <button
               onClick={onClose}

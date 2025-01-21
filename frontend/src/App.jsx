@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppProvider } from './context/AppContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
 import Background from './components/Background';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
@@ -55,25 +56,27 @@ const App = () => {
   return (
     <BrowserRouter>
       <AppProvider>
-        <AudioProvider>
-          <Background>
-            <div className="flex flex-col min-h-screen">
-              <motion.main 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex-1 pt-6 px-4 md:px-6 pb-32"
-              >
-                <div className="max-w-7xl mx-auto">
-                  <React.Suspense fallback={<LoadingSpinner />}>
-                    <AnimatedRoutes />
-                  </React.Suspense>
-                </div>
-              </motion.main>
-              <Navbar />
-            </div>
-            <PaimonCompanion />
-          </Background>
-        </AudioProvider>
+        <NotificationProvider>
+          <AudioProvider>
+            <Background>
+              <div className="flex flex-col min-h-screen">
+                <motion.main 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex-1 pt-6 px-4 md:px-6 pb-32"
+                >
+                  <div className="max-w-7xl mx-auto">
+                    <React.Suspense fallback={<LoadingSpinner />}>
+                      <AnimatedRoutes />
+                    </React.Suspense>
+                  </div>
+                </motion.main>
+                <Navbar />
+              </div>
+              <PaimonCompanion />
+            </Background>
+          </AudioProvider>
+        </NotificationProvider>
       </AppProvider>
     </BrowserRouter>
   );

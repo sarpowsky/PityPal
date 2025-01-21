@@ -1,16 +1,18 @@
 // Path: frontend/src/components/UrlImporter.jsx
 import React, { useState, useRef } from 'react';
-import { Search, Loader, AlertCircle, X } from 'lucide-react';
+import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { importWishHistory } from '../context/appActions';
+import { useNotification } from '../context/NotificationContext';
+import { motion } from 'framer-motion';
 
 const UrlImporter = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState('');
   const { dispatch } = useApp();
+  const { showNotification, showLoading, updateProgress, dismissNotification } = useNotification();
   const importTimeout = useRef(null);
+  const notificationId = useRef(null);
 
   const validateUrl = (url) => {
     if (!url) return "Please enter a URL";
@@ -22,59 +24,70 @@ const UrlImporter = () => {
   };
 
   const handleImport = async () => {
-    setError('');
     const urlError = validateUrl(url);
     if (urlError) {
-      setError(urlError);
+      showNotification('error', 'Import Error', urlError);
       return;
     }
   
     setLoading(true);
-    setProgress(0);
+    notificationId.current = showLoading(
+      'Importing Wishes',
+      'Please wait while we fetch your wish history...'
+    );
   
     try {
       const result = await importWishHistory(dispatch, url, (progress) => {
-        setProgress(progress);
+        updateProgress(notificationId.current, progress);
       });
   
       if (!result.success) {
         throw new Error(result.error || 'Import failed');
       }
   
-      setUrl('');
-      // Show success state briefly
+      // Delay success notification slightly to show 100% progress
       setTimeout(() => {
-        setLoading(false);
-        setProgress(0);
-      }, 1000);
+        dismissNotification(notificationId.current);
+        showNotification(
+          'success',
+          'Import Complete',
+          'Successfully imported your wish history!'
+        );
+        setUrl('');
+      }, 500);
   
     } catch (error) {
-      setError(error.message);
+      dismissNotification(notificationId.current);
+      showNotification(
+        'error',
+        'Import Failed',
+        error.message || 'Failed to import wish history'
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
+    <div className="relative">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-2"
+      >
         <div className="relative flex-1">
           <input
             type="text"
             value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError('');
-            }}
+            onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste wish history URL here..."
             disabled={loading}
             className={`w-full pl-10 pr-4 py-2.5 rounded-full
                      bg-black/20 backdrop-blur-sm
-                     border ${error ? 'border-red-500/50'
-                     : 'border-white/10'} text-sm text-white 
-                    placeholder-white/40 focus:outline-none 
-                    focus:border-white/20 transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed`}
+                     border border-white/10 text-sm text-white 
+                     placeholder-white/40 focus:outline-none 
+                     focus:border-white/20 transition-colors
+                     disabled:opacity-50 disabled:cursor-not-allowed`}
             onKeyPress={(e) => e.key === 'Enter' && !loading && handleImport()}
           />
           <Search 
@@ -93,7 +106,9 @@ const UrlImporter = () => {
           )}
         </div>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={handleImport}
           disabled={loading || !url}
           className="px-6 py-2.5 rounded-full bg-gradient-to-r 
@@ -106,33 +121,14 @@ const UrlImporter = () => {
         >
           {loading ? (
             <>
-              <Loader className="animate-spin" size={16} />
-              <span>{progress}%</span>
+              <Loader2 className="animate-spin" size={16} />
+              <span>Importing...</span>
             </>
           ) : (
             <span>Import</span>
           )}
-        </button>
-      </div>
-
-      {/* Progress bar */}
-      {loading && (
-        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 
-                     transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
-
-      {/* Error message */}
-      {error && (
-        <div className="flex items-center gap-2 text-sm text-red-400 px-4">
-          <AlertCircle size={16} />
-          <span>{error}</span>
-        </div>
-      )}
+        </motion.button>
+      </motion.div>
     </div>
   );
 };
