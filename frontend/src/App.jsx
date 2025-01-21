@@ -13,7 +13,7 @@ const WishHistory = React.lazy(() => import('./pages/WishHistory'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 
 const LoadingSpinner = () => (
-  <div className="flex items-center justify-center h-[80vh]">
+  <div className="flex items-center justify-center h-screen">
     <div className="relative">
       <div className="w-16 h-16 border-4 border-white/20 border-t-amber-400 
                     rounded-full animate-spin" />
@@ -28,19 +28,21 @@ const App = () => {
       <AppProvider>
         <AudioProvider>
           <Background>
-            <main className="min-h-screen pb-24 pt-6 px-4 md:px-6">
-              <div className="max-w-7xl mx-auto">
-                <React.Suspense fallback={<LoadingSpinner />}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/characters" element={<Characters />} />
-                    <Route path="/history" element={<WishHistory />} />
-                    <Route path="/settings" element={<Settings />} />
-                  </Routes>
-                </React.Suspense>
-              </div>
-            </main>
-            <Navbar />
+            <div className="flex flex-col min-h-screen">
+              <main className="flex-1 pt-6 px-4 md:px-6 pb-32">
+                <div className="max-w-7xl mx-auto">
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/characters" element={<Characters />} />
+                      <Route path="/history" element={<WishHistory />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Routes>
+                  </React.Suspense>
+                </div>
+              </main>
+              <Navbar />
+            </div>
             <PaimonCompanion />
           </Background>
         </AudioProvider>
