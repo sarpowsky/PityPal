@@ -58,8 +58,20 @@ class WishService:
             logger.error(f"Failed to load wish history: {e}")
             self.history = []
 
+    # Path: backend/services/wish_service.py
+
     def get_history(self):
-        return self.history
+        """Get wish history with proper refresh"""
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.execute('SELECT * FROM wishes ORDER BY time DESC')
+                self.history = [dict(row) for row in cursor.fetchall()]
+                logger.info(f"Loaded {len(self.history)} wishes from database")
+                return self.history
+        except sqlite3.Error as e:
+            logger.error(f"Failed to load wish history: {e}")
+            return []
 
     def parse_url(self, url: str) -> Dict:
         try:

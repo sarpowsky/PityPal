@@ -130,10 +130,10 @@ export const appReducer = (state, action) => {
       };
 
     case ActionTypes.RESET_DATA:
-      return {
+    return {
         ...initialState,
-        settings: state.settings // Preserve settings on reset
-      };
+        settings: state.settings // Preserve settings only
+    };
 
     default:
       return state;

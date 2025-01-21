@@ -35,6 +35,10 @@ export default {
           '0%': { transform: 'scale(0.95)' },
           '100%': { transform: 'scale(1)' },
         },
+        typewriter: {
+          from: { opacity: '0' },
+          to: { opacity: '1' }
+        },
         glow: {
           '0%, 100%': { 
             'box-shadow': '0 0 15px rgba(139, 92, 246, 0.5)',

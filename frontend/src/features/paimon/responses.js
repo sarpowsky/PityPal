@@ -1,116 +1,151 @@
-/* Path: src/features/paimon/responses.js */
-
+// Path: src/features/paimon/responses.js
 export const RESPONSE_PATTERNS = {
   greetings: {
     patterns: ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening'],
     responses: [
-      "Hi Traveler! Paimon is here to help!",
-      "Hello! Let's check your wishes together!",
-      "Hey there! Ready to track some wishes?"
+      "Ehehe~ Paimon's here! Need help checking your wishes?",
+      "Oh, hi there Traveler! Paimon was just thinking about mora... er, helping you with wishes!",
+      "Yay, someone to talk to! What should we check first? Wishes? Pity?",
+      "Hey! Paimon missed you! Want to see how close you are to your next 5★?"
     ]
   },
  
   pity: {
-    patterns: ['pity', 'guaranteed', '50/50', 'pulls', 'wishes', 'how many', 'counter'],
+    patterns: ['pity', 'how many', 'wishes', 'pulls', '5 star', '4 star', 'next'],
     responses: [
-      "Your pity is at {pity}! {pityMessage}",
-      "You've made {pity} wishes since your last 5★. {pityMessage}",
-      "Counting... {pity} wishes so far! {pityMessage}"
+      "Hmm, let Paimon check... You've done {pity} wishes so far! {status}",
+      "Paimon's been counting carefully! That's {pity} wishes since your last 5★! {status}",
+      "Oooh, exciting! You're at {pity} pity right now! {status}",
+      "*checking notes* {pity} wishes... {status} Should we do some more pulls?"
     ],
-    formatResponse: (response, pityCount) => {
-      const pityMessage = pityCount >= 74 
-        ? "Soft pity is active! Your next 5★ could be any pull now!" 
-        : pityCount >= 60 
-          ? "Getting close to soft pity! Just a few more pulls!" 
-          : pityCount >= 45
-            ? "Keep wishing! You're making progress!"
-            : "Still building up that pity count!";
-      return response.replace('{pity}', pityCount).replace('{pityMessage}', pityMessage);
+    formatResponse: (response, stats) => {
+      const pity = stats.pity.character.current;
+      let status = "";
+      
+      if (pity >= 85) {
+        status = "WOW! Your next pull is almost definitely going to be golden! Paimon can feel it!";
+      } else if (pity >= 74) {
+        status = "Soft pity is active! Paimon thinks you should definitely wish right now!";
+      } else if (pity >= 65) {
+        status = "Getting really close to soft pity! Just a few more wishes!";
+      } else if (pity >= 45) {
+        status = "We're making progress! Soft pity starts at 74, so keep going!";
+      } else {
+        status = "Still building up that pity... but Paimon believes your luck might be better than the numbers!";
+      }
+      
+      return response
+        .replace('{pity}', pity)
+        .replace('{status}', status);
     }
   },
- 
+
   banners: {
     patterns: ['banner', 'event', 'featured', 'rate up', 'wishing on', 'current'],
     responses: [
-      "You're wishing on {bannerName}! {timeRemaining}",
-      "The {bannerName} banner {timeMessage}",
-      "Featured on {bannerName}: {featured}"
+      "Right now we have {banner_name}! {time_info} {character_info}",
+      "Ooh, Paimon loves this banner! {banner_name} is running, and {character_info} {time_info}",
+      "The current banner is {banner_name}! {character_info} {time_info} Should we do some wishes?",
+      "*excited noises* {banner_name} is here! {character_info} {time_info}"
     ],
-    formatResponse: (response, pityCount, banner) => {
-      if (!banner) return "No active banner selected! Choose one from the banner carousel!";
+    formatResponse: (response, stats, banner) => {
+      if (!banner) return "Eh? Paimon doesn't see any banner selected! Pick one from the banner carousel first!";
       
-      const now = new Date();
-      const endDate = new Date(banner.endDate);
-      const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
-      
-      const timeRemaining = banner.isPermanent 
-        ? "This banner is always available!"
-        : daysRemaining <= 1 
-          ? "Ending today! Better hurry!" 
-          : `${daysRemaining} days remaining!`;
- 
-      const timeMessage = banner.isPermanent
-        ? "is always available"
-        : daysRemaining <= 1
-          ? "ends today! Don't miss out!"
-          : `ends in ${daysRemaining} days`;
- 
+      const timeInfo = banner.isPermanent ? 
+        "This one never goes away!" :
+        banner.endDate ? `Only ${banner.endDate} left! Better hurry!` :
+        "Better wish while you can!";
+        
+      const characterInfo = banner.character ?
+        `featuring the amazing ${banner.character}!` :
+        "it's the standard banner with all kinds of surprises!";
+
       return response
-        .replace('{bannerName}', banner.name)
-        .replace('{timeRemaining}', timeRemaining)
-        .replace('{timeMessage}', timeMessage)
-        .replace('{featured}', banner.character || 'Standard wish');
+        .replace('{banner_name}', banner.name)
+        .replace('{time_info}', timeInfo)
+        .replace('{character_info}', characterInfo);
     }
   },
- 
-  characters: {
-    patterns: ['character', 'who', 'build', 'materials', 'talents', 'ascension'],
+
+  stats: {
+    patterns: ['stats', 'statistics', 'total', 'spent', 'numbers', 'how much'],
     responses: [
-      "Want to learn about {character}? Check the Characters tab!",
-      "Looking for {character}'s materials? I can help you find them!",
-      "Need help building {character}? Let's check their details!"
+      "Let's see... You've spent {primogems} primogems! That's like... *tries to count* a lot of Sticky Honey Roast! Got {five_stars} 5★ characters from it!",
+      "Wow! {total} wishes! Paimon's impressed! That's {five_stars} 5★ and {four_stars} 4★ characters and weapons!",
+      "*checking the records* {total} wishes so far! {primogems} primogems! No wonder Paimon's been so busy counting!",
+      "Paimon's calculations show {total} wishes! You got {five_stars} 5★ friends to play with! That's worth every primogem!"
     ],
-    formatResponse: (response, pityCount, banner) => {
-      const character = banner?.character || "characters";
-      return response.replace('{character}', character);
+    formatResponse: (response, stats) => {
+      const data = stats.wishes.stats;
+      return response
+        .replace('{primogems}', (data.total_wishes * 160).toLocaleString())
+        .replace('{total}', data.total_wishes.toLocaleString())
+        .replace('{five_stars}', data.total_five_stars)
+        .replace('{four_stars}', data.total_four_stars);
     }
   },
- 
+
+  guarantee: {
+    patterns: ['guaranteed', '50/50', 'chance', 'probability', 'will i get', 'next character'],
+    responses: [
+      "For your next 5★... {status}! {details}",
+      "Paimon checked the rules! {status}! {details}",
+      "*flips through notes* Oh! {status}! {details}",
+      "About your next 5★... {status}! {details}"
+    ],
+    formatResponse: (response, stats) => {
+      const isGuaranteed = stats.pity.character.guaranteed;
+      const status = isGuaranteed ? 
+        "you're GUARANTEED to get the featured character" : 
+        "it's a 50/50 chance for the featured character";
+      const details = isGuaranteed ? 
+        "Paimon's so excited to see who you'll get!" : 
+        "Paimon will be cheering for your luck! Maybe we should get some lucky items first?";
+
+      return response
+        .replace('{status}', status)
+        .replace('{details}', details);
+    }
+  },
+
+  luck: {
+    patterns: ['lucky', 'hope', 'wish me', 'bless', 'please'],
+    responses: [
+      "Paimon's sending all the luck your way! Maybe we should go to the sacred sakura tree first?",
+      "Paimon knows you'll get something amazing! Just don't forget to share some mora in return, ehehe~",
+      "*throws confetti* Lucky charm activated! Now your next wish will definitely be special!",
+      "Good luck! Paimon thinks Lady Fortune is definitely on your side today!"
+    ]
+  },
+
+  celebration: {
+    patterns: ['got', 'pulled', 'won', 'finally'],
+    responses: [
+      "Yaaaaay! Paimon's so happy for you! See? Paimon's the best lucky charm!",
+      "Wow! Amazing! Paimon knew you could do it! Should we celebrate with a feast?",
+      "That's incredible! Paimon's happy dance time! *spins around*",
+      "See? Paimon's calculations were right! Your luck was just waiting for the right moment!"
+    ]
+  },
+
+  disappointment: {
+    patterns: ['lost', 'failed', 'didn\'t get', 'sad', 'bad luck', 'qiqi'],
+    responses: [
+      "Aww, don't be sad! Remember, a guaranteed featured 5★ is waiting for you now!",
+      "Paimon thinks your next wishes will be much luckier! The gacha gods are just saving your luck!",
+      "Hey, hey! Even Qiqi is a 5★! Plus, now you're guaranteed the featured character next time!",
+      "Don't worry! Paimon's seen worse luck... wait, that's not helping, is it? Your next wishes will be better for sure!"
+    ]
+  },
+
   help: {
-    patterns: ['help', 'how', 'what', 'guide', 'explain', 'tutorial', 'confused'],
+    patterns: ['help', 'guide', 'what can', 'how do', 'confused'],
     responses: [
-      "Paimon can help! You can ask about:\n• Your pity count\n• Current banners\n• Character info",
-      "Need help? Paimon knows about:\n• Wish history\n• Banner details\n• Pity tracking",
-      "Here's what Paimon can help with:\n• Tracking wishes\n• Finding materials\n• Banner info"
-    ]
-  },
- 
-  tips: {
-    patterns: ['tip', 'advice', 'should', 'better', 'suggest', 'recommendation'],
-    responses: [
-      "Pro tip: Save your primogems if you're waiting for a specific character!",
-      "Remember: Soft pity starts at 74 pulls, giving you better 5★ chances!",
-      "Here's a tip: Track your 50/50 status to know if your next 5★ is guaranteed!"
-    ]
-  },
-
-  jokes: {
-    patterns: ['joke', 'funny', 'laugh', 'humor', 'emergency food'],
-    responses: [
-      "Hey! Paimon is NOT emergency food! 😠",
-      "Paimon thinks the best joke is getting Qiqi on your 50/50... Wait, that's not funny...",
-      "What's a Hilichurl's favorite food? Mora meat! ...Paimon needs to work on better jokes."
-    ]
-  },
-
-  complaints: {
-    patterns: ['lost', 'failed', 'bad luck', 'unlucky', 'qiqi', 'sad'],
-    responses: [
-      "Don't worry! Your next 5★ will come home soon!",
-      "Keep your spirits up! Every pull brings you closer to pity!",
-      "Remember, losing the 50/50 means your next 5★ is guaranteed!"
+      "Paimon's here to help! You can ask about:\n• Your pity count (how close to 5★)\n• Banner details\n• Wish history\n• 50/50 status\nJust ask naturally!",
+      "Need guidance? Paimon knows everything about wishes! Try asking about your pity, current banners, or wish history! Paimon will explain everything!",
+      "Paimon's your best companion! Ask about your wishes, pity, or banners - Paimon will help! You can even check how many primogems you've spent (though maybe that's scary...)"
     ]
   }
 };
- 
-export const DEFAULT_RESPONSE = "Paimon's not sure about that. Try asking about wishes, characters, or banners!";
+
+export const DEFAULT_RESPONSE = "Eh? Paimon's not sure what you mean... Try asking about wishes, banners, or pity! Or say 'help' for some guidance!";
