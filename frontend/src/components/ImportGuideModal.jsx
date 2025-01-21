@@ -9,7 +9,7 @@ const ImportGuideModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] 
-                  flex items-center justify-center p-4 animate-fadeIn">
+                  flex items-center justify-center p-4">
       <div className="relative w-full max-w-2xl bg-gradient-to-b from-gray-900/95 to-black/95 
                     rounded-2xl border border-white/10 shadow-xl">
         {/* Header */}

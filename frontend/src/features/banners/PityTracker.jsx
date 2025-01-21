@@ -1,133 +1,127 @@
 // src/features/banners/PityTracker.jsx
-import React, { useEffect, useState } from 'react';
-import { Target, Crown } from 'lucide-react';
+import React from 'react';
+import { Target, Crown, Star, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { waitForPyWebView } from '../../utils/pywebview-bridge';
+
+const AnimatedNumber = ({ value }) => (
+  <div className="tabular-nums transition-all duration-300">
+    {value}
+  </div>
+);
+
+const PityStages = ({ current }) => {
+  const stages = [
+    { at: 0, label: 'Base', rate: '0.6%' },
+    { at: 74, label: 'Soft', rate: '32.4%' },
+    { at: 90, label: 'Hard', rate: '100%' }
+  ];
+
+  return (
+    <div className="flex justify-between items-center px-2">
+      {stages.map((stage) => {
+        const isPast = current >= stage.at;
+        return (
+          <div key={stage.at} className="flex flex-col items-center gap-1">
+            <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300
+                         ${isPast ? 'bg-purple-400/80 scale-125' : 'bg-white/10'}`} />
+            <div className="flex flex-col items-center">
+              <span className={`text-xs ${isPast ? 'text-white/80' : 'text-white/40'}`}>
+                {stage.label}
+              </span>
+              <span className={`text-[10px] ${isPast ? 'text-purple-400/80' : 'text-white/40'}`}>
+                {stage.rate}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const PityTracker = () => {
   const { state } = useApp();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [pityStats, setPityStats] = useState({
-    current: 0,
-    guaranteed: false,
-    pity_type: null,
-    wishes_to_soft: 0,
-    wishes_to_hard: 0,
-    thresholds: { soft: 74, hard: 90 }
-  });
-
-  useEffect(() => {
-    const fetchPityStats = async () => {
-      try {
-        setLoading(true);
-        await waitForPyWebView();
-        const result = await window.pywebview.api.calculate_pity();
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to calculate pity');
-        }
-        
-        setPityStats(result.data.character);
-      } catch (err) {
-        console.error('Failed to fetch pity stats:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (state.wishes.history.length > 0) {
-      fetchPityStats();
-    } else {
-      setLoading(false);
-    }
-  }, [state.wishes.history]);
-
-  if (loading) {
-    return (
-      <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 p-6">
-        <div className="animate-pulse space-y-4">
-          <div className="h-4 bg-white/10 rounded w-1/3"></div>
-          <div className="h-8 bg-white/10 rounded"></div>
-          <div className="h-4 bg-white/10 rounded w-2/3"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-red-500/20 p-6">
-        <div className="text-red-400 text-sm">Error: {error}</div>
-      </div>
-    );
-  }
+  const pityStats = state.wishes.pity.character;
+  if (!pityStats) return null;
 
   const getProgressGradient = () => {
-    if (pityStats.pity_type === 'soft') {
-      return 'from-amber-500 to-yellow-500';
-    }
-    if (pityStats.guaranteed) {
-      return 'from-emerald-500 to-green-500';
-    }
-    return 'from-indigo-500 to-blue-500';
-  };
-
-  const getPityStatus = () => {
-    if (pityStats.pity_type === 'soft') return 'Soft pity active!';
-    if (pityStats.current >= 45) return 'Getting closer...';
-    return 'Building pity';
+    if (pityStats.current >= 85) return 'from-amber-500/80 to-yellow-500/80';
+    if (pityStats.current >= 74) return 'from-purple-500/80 to-violet-500/80';
+    return 'from-indigo-500/80 to-blue-500/80';
   };
 
   const progress = Math.min(100, (pityStats.current / 90) * 100);
 
   return (
-    <div className="w-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10">
-      <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-sm p-3 rounded-t-xl">
+    <div className="w-full rounded-xl border border-white/10 
+                  bg-black/20 backdrop-blur-sm
+                  transition-all duration-300 hover:bg-black/30">
+      <div className="p-4 space-y-6">
+        {/* Header with 50/50 Status */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Target size={16} className="text-white/60" />
-            <h3 className="font-genshin text-sm">Pity Status</h3>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-white/5">
+              <Crown size={18} className="text-amber-400/90" />
+            </div>
+            <div>
+              <h3 className="font-genshin text-sm">Pity Counter</h3>
+              <div className="text-xs text-white/60">Character Event Banner</div>
+            </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-xs
-            ${pityStats.guaranteed 
-              ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white' 
-              : 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white'}`}>
+          <div className={`px-4 py-1.5 rounded-full font-medium text-sm border
+                       ${pityStats.guaranteed 
+                         ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400/90' 
+                         : 'bg-red-500/10 border-red-500/20 text-red-400/90'}`}>
             {pityStats.guaranteed ? 'Guaranteed' : '50/50'}
           </div>
         </div>
-      </div>
 
-      <div className="p-3">
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm text-white/60">{getPityStatus()}</div>
-            <div className="flex items-center gap-1">
-              <Crown size={14} className="text-amber-400" />
-              <span className="text-lg font-semibold">{pityStats.current}</span>
+        {/* Main Pity Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-center mb-4">
+            <div className="w-28 flex items-center justify-center px-3 py-1 border border-white/10 rounded-lg bg-white/5">
+              <div className={`flex items-center gap-1 text-xl font-medium
+                          ${pityStats.current >= 85 
+                            ? 'text-amber-400/90' 
+                            : pityStats.current >= 74 
+                              ? 'text-purple-400/90' 
+                              : 'text-white/90'}`}>
+                <AnimatedNumber value={pityStats.current} />
+              </div>
             </div>
           </div>
 
-          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+          <div className="h-2.5 bg-white/5 rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-300 bg-gradient-to-r ${getProgressGradient()}`}
+              className={`h-full transition-all duration-1000 ease-out 
+                       bg-gradient-to-r ${getProgressGradient()}`}
               style={{ width: `${progress}%` }}
             />
           </div>
+          <PityStages current={pityStats.current} />
         </div>
 
-        <div className="flex justify-between text-xs text-white/40">
-          <span>0</span>
-          <div className="flex items-center gap-1">
-            <span className="text-amber-400/60">Soft Pity</span>
-            <span>{pityStats.thresholds.soft}</span>
+        {/* Status Card */}
+        {pityStats.current >= 74 && (
+          <div className={`flex items-center gap-3 p-3 rounded-lg border
+                        ${pityStats.current >= 85 
+                          ? 'bg-amber-500/10 border-amber-500/20' 
+                          : 'bg-purple-500/10 border-purple-500/20'}`}>
+            <AlertTriangle size={20} className={pityStats.current >= 85 
+              ? 'text-amber-400/90' 
+              : 'text-purple-400/90'} />
+            <div>
+              <div className={`font-medium ${pityStats.current >= 85 
+                ? 'text-amber-400/90' 
+                : 'text-purple-400/90'}`}>
+                {pityStats.current >= 85 ? '5★ Incoming!' : 'Soft Pity Active'}
+              </div>
+              <div className="text-xs text-white/60">
+                Rate significantly increased!
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-amber-400/60">Hard Pity</span>
-            <span>{pityStats.thresholds.hard}</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

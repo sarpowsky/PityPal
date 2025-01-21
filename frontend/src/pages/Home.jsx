@@ -15,7 +15,7 @@ const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
                   bg-gradient-to-br ${gradient} backdrop-blur-sm
                   border border-white/10 transition-all duration-300
                   hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5
-                  animate-fadeIn hover:-translate-y-0.5`}
+                  hover:-translate-y-0.5`}
        style={{ animationDelay: `${delay}ms` }}>
     <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 
                   transition-colors duration-300">
@@ -65,7 +65,7 @@ const Home = () => {
   }, [state.wishes.history]);
 
   return (
-    <div className="space-y-3 max-w-5xl mx-auto animate-fadeIn">
+    <div className="space-y-3 max-w-5xl mx-auto">
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowGuide(true)}
@@ -126,8 +126,7 @@ const Home = () => {
         <div className="col-span-4">
           <div className="h-full rounded-xl bg-black/20 backdrop-blur-sm border border-white/10 
                        overflow-hidden transform hover:scale-[1.02] transition-all duration-300
-                       hover:shadow-lg hover:shadow-purple-500/10
-                       animate-fadeIn" 
+                       hover:shadow-lg hover:shadow-purple-500/10" 
                style={{ animationDelay: '300ms' }}>
             <div className="p-3 border-b border-white/10">
               <h2 className="text-sm font-genshin">Recent Wishes</h2>

@@ -17,6 +17,8 @@ export default {
         'float': 'float 3s ease-in-out infinite',
         'scale': 'scale 0.2s ease-in-out',
         'glow': 'glow 2s ease-in-out infinite',
+        'slide-up': 'slideUp 0.5s ease-out',
+        'scale-in': 'scaleIn 0.3s ease-out',
         typewriter: 'typewriter 50ms ease-out forwards',
       },
       keyframes: {
@@ -35,6 +37,14 @@ export default {
         scale: {
           '0%': { transform: 'scale(0.95)' },
           '100%': { transform: 'scale(1)' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(20px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' }
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' }
         },
         typewriter: {
           from: { opacity: '0' },

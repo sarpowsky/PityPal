@@ -1,9 +1,7 @@
 // src/features/banners/RecentWishes.jsx
-import React, { useState, useEffect } from 'react';
-import { Star, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import React from 'react';
+import { Star, Clock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-
-const ITEMS_PER_PAGE = 10;
 
 const WishItem = ({ wish }) => {
   const getRarityColors = (rarity) => {
@@ -54,9 +52,11 @@ const WishItem = ({ wish }) => {
           </div>
         </div>
 
-        <div className="px-2 py-1 rounded-full text-xs bg-white/10">
-          Pity #{wish.pity || '?'}
-        </div>
+        {wish.pity > 0 && (
+          <div className="px-2 py-1 rounded-full text-xs bg-white/10">
+            Pity #{wish.pity}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -64,24 +64,6 @@ const WishItem = ({ wish }) => {
 
 const RecentWishes = () => {
   const { state } = useApp();
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filter, setFilter] = useState('all');
-  const [sortedWishes, setSortedWishes] = useState([]);
-
-  useEffect(() => {
-    const wishes = state.wishes.history;
-    const filtered = filter === 'all' 
-      ? wishes 
-      : wishes.filter(w => w.bannerType === filter);
-      
-    setSortedWishes(filtered);
-  }, [state.wishes.history, filter]);
-
-  const totalPages = Math.ceil(sortedWishes.length / ITEMS_PER_PAGE);
-  const pageWishes = sortedWishes.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE, 
-    currentPage * ITEMS_PER_PAGE
-  );
 
   if (state.wishes.loading) {
     return (
@@ -93,7 +75,7 @@ const RecentWishes = () => {
     );
   }
 
-  if (!sortedWishes.length) {
+  if (!state.wishes.history.length) {
     return (
       <div className="text-center py-8 text-white/60">
         <p>No wishes recorded yet</p>
@@ -101,53 +83,13 @@ const RecentWishes = () => {
     );
   }
 
+  const recentWishes = state.wishes.history.slice(0, 5);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4">
-        {['all', 'character', 'weapon', 'standard'].map(type => (
-          <button
-            key={type}
-            onClick={() => {
-              setFilter(type);
-              setCurrentPage(1);
-            }}
-            className={`px-3 py-1 rounded-full text-sm transition-colors
-                     ${filter === type 
-                       ? 'bg-indigo-500 text-white' 
-                       : 'bg-white/10 text-white/60 hover:bg-white/20'}`}
-          >
-            {type.charAt(0).toUpperCase() + type.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        {pageWishes.map(wish => (
-          <WishItem key={wish.id} wish={wish} />
-        ))}
-      </div>
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-2 rounded-lg bg-white/10 disabled:opacity-50"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="text-sm text-white/60">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="p-2 rounded-lg bg-white/10 disabled:opacity-50"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
+    <div className="space-y-2">
+      {recentWishes.map(wish => (
+        <WishItem key={wish.id} wish={wish} />
+      ))}
     </div>
   );
 };
