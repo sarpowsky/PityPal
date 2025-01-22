@@ -1,10 +1,11 @@
-// Path: frontend/src/pages/Home.jsx
+// src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
 import { Star, Circle, Award, GemIcon } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { waitForPyWebView } from '../utils/pywebview-bridge';
 import BannerCarousel from '../features/banners/BannerCarousel';
+import EventCarousel from '../features/events/EventCarousel';
 import PityTracker from '../features/banners/PityTracker';
 import RecentWishes from '../features/banners/RecentWishes';
 import UrlImporter from '../components/UrlImporter';
@@ -65,7 +66,7 @@ const Home = () => {
   }, [state.wishes.history]);
 
   return (
-    <div className="space-y-3 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowGuide(true)}
@@ -82,9 +83,11 @@ const Home = () => {
         <UrlImporter />
       </div>
 
-      <div className="transform hover:scale-[1.01] transition-transform duration-300
-                    hover:shadow-lg hover:shadow-purple-500/10 rounded-xl">
-        <BannerCarousel />
+      <div className=" transition-transform duration-300 rounded-xl">
+        <div className="flex gap-6">
+          <BannerCarousel />
+          <EventCarousel />
+        </div>
       </div>
 
       <div className="grid grid-cols-12 gap-3">
