@@ -1,6 +1,6 @@
 // Path: frontend/src/components/ToastNotification.jsx
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Check, AlertCircle, X, Loader2 } from 'lucide-react';
 
 const NOTIFICATION_DURATION = 5000;
@@ -13,20 +13,21 @@ export const NotificationTypes = {
 
 const NotificationWrapper = ({ children, onRemove }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+    initial={{ opacity: 0, y: -20, scale: 0.95 }}
     animate={{ opacity: 1, y: 0, scale: 1 }}
     exit={{ opacity: 0, y: -20, scale: 0.95 }}
-    className="fixed top-36 left-1/3 transform -translate-x-1/3 z-50 max-w-sm w-full shadow-lg"
+    transition={{ duration: 0.2 }}
+    className="fixed top-6 right-6 z-50 max-w-sm w-full shadow-lg"
   >
     <div className="relative bg-gray-900/95 border border-white/10 rounded-lg 
-                  backdrop-blur-md shadow-xl">
+                  backdrop-blur-md shadow-xl overflow-hidden">
       {children}
       <button
         onClick={onRemove}
         className="absolute top-2 right-2 p-1 rounded-lg hover:bg-white/10 
                  transition-colors"
       >
-        <X size={14} />
+        <X size={14} className="text-white/60" />
       </button>
     </div>
   </motion.div>
@@ -86,7 +87,7 @@ const ToastNotification = ({
       </div>
 
       {type === NotificationTypes.LOADING && (
-        <div className="h-1 bg-white/10 rounded-b-lg overflow-hidden">
+        <div className="h-1 bg-white/10 overflow-hidden">
           <div
             className="h-full bg-blue-500 transition-all duration-300"
             style={{ width: `${progress}%` }}

@@ -1,5 +1,5 @@
 // Path: frontend/src/components/UrlImporter.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, Loader2, AlertCircle, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { importWishHistory } from '../context/appActions';
@@ -9,10 +9,31 @@ import { motion } from 'framer-motion';
 const UrlImporter = () => {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
   const { dispatch } = useApp();
   const { showNotification, showLoading, updateProgress, dismissNotification } = useNotification();
   const importTimeout = useRef(null);
   const notificationId = useRef(null);
+  const progressInterval = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (progressInterval.current) clearInterval(progressInterval.current);
+    };
+  }, []);
+
+  const simulateProgress = () => {
+    let currentProgress = 0;
+    progressInterval.current = setInterval(() => {
+      currentProgress += Math.random() * 2;
+      if (currentProgress > 90) {
+        clearInterval(progressInterval.current);
+        return;
+      }
+      setDisplayProgress(Math.min(Math.round(currentProgress), 90));
+    }, 200);
+  };
 
   const validateUrl = (url) => {
     if (!url) return "Please enter a URL";
@@ -31,21 +52,32 @@ const UrlImporter = () => {
     }
   
     setLoading(true);
+    setProgress(0);
+    setDisplayProgress(0);
+    simulateProgress();
+    
     notificationId.current = showLoading(
       'Importing Wishes',
       'Please wait while we fetch your wish history...'
     );
   
     try {
-      const result = await importWishHistory(dispatch, url, (progress) => {
-        updateProgress(notificationId.current, progress);
+      const result = await importWishHistory(dispatch, url, (currentProgress) => {
+        setProgress(currentProgress);
+        updateProgress(notificationId.current, currentProgress);
       });
   
       if (!result.success) {
         throw new Error(result.error || 'Import failed');
       }
   
-      // Delay success notification slightly to show 100% progress
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+      
+      setDisplayProgress(100);
+      updateProgress(notificationId.current, 100);
+  
       setTimeout(() => {
         dismissNotification(notificationId.current);
         showNotification(
@@ -54,22 +86,30 @@ const UrlImporter = () => {
           'Successfully imported your wish history!'
         );
         setUrl('');
+        setLoading(false);
+        setProgress(0);
+        setDisplayProgress(0);
       }, 500);
   
     } catch (error) {
+      if (progressInterval.current) {
+        clearInterval(progressInterval.current);
+      }
+      
       dismissNotification(notificationId.current);
       showNotification(
         'error',
         'Import Failed',
         error.message || 'Failed to import wish history'
       );
-    } finally {
       setLoading(false);
+      setProgress(0);
+      setDisplayProgress(0);
     }
   };
 
   return (
-    <div className="relative">
+    <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -122,13 +162,31 @@ const UrlImporter = () => {
           {loading ? (
             <>
               <Loader2 className="animate-spin" size={16} />
-              <span>Importing...</span>
+              <span>{displayProgress}%</span>
             </>
           ) : (
             <span>Import</span>
           )}
         </motion.button>
       </motion.div>
+
+      {/* Progress bar */}
+      {loading && (
+        <div className="mt-4 space-y-2">
+          <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${displayProgress}%` }}
+              transition={{ type: "spring", stiffness: 50, damping: 20 }}
+              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+            />
+          </div>
+          <div className="flex justify-between text-xs text-white/60">
+            <span>Importing wish history...</span>
+            <span>{displayProgress}% complete</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
