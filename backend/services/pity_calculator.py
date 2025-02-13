@@ -8,6 +8,9 @@ logger = logging.getLogger(__name__)
 
 class PityCalculator:
     def __init__(self):
+        self.standard_5_stars = [
+            "Diluc", "Jean", "Keqing", "Mona", "Qiqi", "Tighnari", "Dehya"
+        ]
         self.banner_rules = {
             'character-1': {'soft_pity': 74, 'hard_pity': 90},
             'character-2': {'soft_pity': 74, 'hard_pity': 90},
@@ -28,7 +31,6 @@ class PityCalculator:
         return self.calculate_banner_pity(wishes, banner_type)
 
     def calculate_banner_pity(self, wishes: List[Dict], banner_type: str) -> Dict:
-        # For character banners, combine both banners' wishes
         if banner_type.startswith('character'):
             banner_wishes = [w for w in wishes if w['bannerType'].startswith('character')]
         else:
@@ -37,12 +39,19 @@ class PityCalculator:
         banner_wishes.sort(key=lambda x: x['time'], reverse=True)
         
         current_pity = 0
+        guaranteed = False
+
         for wish in banner_wishes:
             current_pity += 1
             if wish['rarity'] == 5:
+                # If they got a standard 5★, next is guaranteed
+                if wish['name'] in self.standard_5_stars:
+                    guaranteed = True
+                else:
+                    guaranteed = False
                 break
 
-        return self._create_pity_stats(current_pity, banner_type)
+        return self._create_pity_stats(current_pity, banner_type, guaranteed)
 
     def calculate_pull_counts(self, wishes: List[Dict]) -> List[Dict]:
         # Group wishes by pity sharing and pre-sort

@@ -58,8 +58,6 @@ class WishService:
             logger.error(f"Failed to load wish history: {e}")
             self.history = []
 
-    # Path: backend/services/wish_service.py
-
     def get_history(self):
         """Get wish history with proper refresh"""
         try:
@@ -155,7 +153,7 @@ class WishService:
                     
                 processed_wish = {
                     "id": wish["id"],
-                    "name": wish["name"],
+                    "name": wish["name"].strip(),  # Ensure clean character names
                     "rarity": int(wish["rank_type"]),
                     "type": wish["item_type"],
                     "time": wish["time"],
