@@ -5,7 +5,7 @@ import { X, ExternalLink, Copy, Info, Terminal } from 'lucide-react';
 const ImportGuideModal = ({ onClose }) => {
   const [copySuccess, setCopySuccess] = useState('');
   
-  const powershellCommand = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex "&{$((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/sarpowsky/historylinkforGenshin/main/historykey.ps1'))} global"`;
+  const powershellCommand = `Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex "&{$((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/sarpowsky/WishHistoryLinkGrabber/refs/heads/main/historykey.ps1'))} global"`;
 
   const copyCommand = async () => {
     try {
@@ -128,7 +128,7 @@ const ImportGuideModal = ({ onClose }) => {
           {/* Footer */}
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
             <a 
-              href="https://github.com/sarpowsky/historylinkforGenshin"
+              href="https://github.com/sarpowsky/WishHistoryLinkGrabber"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-indigo-400 

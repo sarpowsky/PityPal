@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Star, Sword, Shield, Heart } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { characters } from '../data/characters';
+import { characters } from '../data/characters/index';
 import { elementIcons, rarityBackgrounds } from '../data/assets';
 import CharacterDetails from '../features/characters/CharacterDetails';
 

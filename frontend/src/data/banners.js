@@ -44,7 +44,7 @@ export const banners = [
     id: 'wanderlust',
     type: bannerTypes.STANDARD,
     name: "Wanderlust Invocation",
-    image: "/banners/wanderlust.jpg",
+    image: "/banners/wanderlust.png",
     isPermanent: true
   }
 ];

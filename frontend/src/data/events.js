@@ -12,8 +12,8 @@ export const eventTypes = {
       type: eventTypes.MAIN,
       name: "Springtime Charms",
       description: "Celebrate Liyue's biggest festival with new mini-games and rewards!",
-      startDate: "2025-01-24T18:00:00+01:00",
-      endDate: "2025-02-09T14:59:59+01:00",
+      startDate: "2025-01-24T10:00:00+01:00", // Adjusted
+      endDate: "2025-02-09T03:59:59+01:00",   // Adjusted
       image: "/events/springtime-charms.png",
       rewards: [
         "Primogems x1600",
@@ -27,7 +27,7 @@ export const eventTypes = {
       type: eventTypes.SIDE,
       name: "Fortune's Coming",
       description: "Daily login event offering Intertwined Fates and other rewards.",
-      startDate: "2025-01-22T18:00:00+01:00",
+      startDate: "2025-01-22T04:00:00+01:00", // Adjusted
       endDate: "2025-02-11T14:59:59+01:00",
       image: "/events/fortunes-coming.png",
       rewards: [
@@ -41,8 +41,8 @@ export const eventTypes = {
       type: eventTypes.SIDE,
       name: "Overflowing Abundance",
       description: "Double rewards from Talent Level-Up and Weapon Material Domains.",
-      startDate: "2025-02-03T18:00:00+01:00",
-      endDate: "2025-02-10T14:59:59+01:00",
+      startDate: "2025-02-03T04:00:00+01:00", // Adjusted
+      endDate: "2025-02-10T03:59:59+01:00",   // Adjusted
       image: "/events/overflowing-abundance.png",
       rewards: [
         "2x Talent Materials",

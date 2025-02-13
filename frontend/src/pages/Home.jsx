@@ -39,31 +39,57 @@ const Home = () => {
     total_wishes: 0,
     five_stars: 0,
     four_stars: 0,
-    primogems_spent: 0
+    primogems_spent: 0,
+    average_pity: 0,
+    guaranteed: false
   });
 
   useEffect(() => {
     const fetchStats = async () => {
+      console.log("Fetching stats...");
       try {
         await waitForPyWebView();
+        
         const result = await window.pywebview.api.calculate_pity();
-        const history = await window.pywebview.api.get_wish_history();
-        if (history && history.length > 0) {
-          setStats(prevStats => ({
-            ...prevStats,
-            total_wishes: history.length,
-            five_stars: history.filter(wish => wish.rarity === 5).length,
-            four_stars: history.filter(wish => wish.rarity === 4).length,
-            primogems_spent: history.length * 160
-          }));
+        console.log("Pity calculation result:", result);
+        
+        const wishHistory = await window.pywebview.api.get_wish_history();
+        console.log("Wish history:", wishHistory);
+
+        if (!wishHistory.success) {
+          console.error("Failed to fetch wish history:", wishHistory.error);
+          return;
         }
+
+        const history = wishHistory.data;
+        const characterWishes = history.filter(w => 
+          w.bannerType.startsWith('character')
+        );
+        console.log("Character wishes:", characterWishes);
+
+        const fiveStars = history.filter(w => w.rarity === 5);
+        const fourStars = history.filter(w => w.rarity === 4);
+        
+        const averagePity = characterWishes.length ? 
+          (characterWishes.reduce((acc, w) => acc + (w.pity || 0), 0) / 
+           characterWishes.filter(w => w.rarity === 5).length).toFixed(1) : 0;
+
+        setStats({
+          total_wishes: history.length,
+          five_stars: fiveStars.length,
+          four_stars: fourStars.length,
+          primogems_spent: history.length * 160,
+          average_pity: averagePity,
+          guaranteed: result.success ? result.data.character.guaranteed : false
+        });
+
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error('Failed to calculate stats:', error);
       }
     };
 
     fetchStats();
-  }, [state.wishes.history]);
+  }, []);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -101,14 +127,14 @@ const Home = () => {
           />
           <StatCard
             icon={Star}
-            label="5★ Characters"
+            label="5★ Characters/Items"
             value={stats.five_stars}
             gradient="from-amber-500/20 to-orange-500/20"
             delay={200}
           />
           <StatCard
             icon={Circle}
-            label="4★ Items"
+            label="4★ Characters/Items"
             value={stats.four_stars}
             gradient="from-indigo-500/20 to-blue-500/20"
             delay={300}
