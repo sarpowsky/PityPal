@@ -1,5 +1,4 @@
-// Path: frontend/src/App.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AppProvider } from './context/AppContext';
@@ -8,25 +7,22 @@ import Navbar from './components/Navbar';
 import Background from './components/Background';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
 import { AudioProvider } from './features/audio/AudioSystem';
+import Home from './pages/Home';
+import Characters from './pages/Characters';
+import WishHistory from './pages/WishHistory';
+import Settings from './pages/Settings';
 
-const Home = React.lazy(() => import('./pages/Home'));
-const Characters = React.lazy(() => import('./pages/Characters'));
-const WishHistory = React.lazy(() => import('./pages/WishHistory'));
-const Settings = React.lazy(() => import('./pages/Settings'));
-
-const LoadingSpinner = () => (
-  <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="flex items-center justify-center h-screen"
-  >
-    <div className="relative">
-      <div className="w-16 h-16 border-4 border-white/20 border-t-amber-400 
-                    rounded-full animate-spin" />
-      <div className="mt-4 text-white/60 text-sm text-center">Loading...</div>
+const LoadingScreen = () => (
+  <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+    <div className="space-y-4 text-center">
+      <img 
+        src="/loading.gif" 
+        alt="Loading"
+        className="w-32 h-32 object-contain animate-bounce-slow"
+      />
+      <div className="text-lg font-genshin">Loading...</div>
     </div>
-  </motion.div>
+  </div>
 );
 
 const AnimatedRoutes = () => {
@@ -53,6 +49,19 @@ const AnimatedRoutes = () => {
 };
 
 const App = () => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Preload Home component
+    import('./pages/Home').then(() => {
+      setTimeout(() => setIsLoading(false), 3500);
+    });
+  }, []);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <BrowserRouter>
       <AppProvider>
@@ -66,9 +75,12 @@ const App = () => {
                   className="flex-1 pt-6 px-4 md:px-6 pb-32"
                 >
                   <div className="max-w-7xl mx-auto">
-                    <React.Suspense fallback={<LoadingSpinner />}>
-                      <AnimatedRoutes />
-                    </React.Suspense>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/characters" element={<Characters />} />
+                      <Route path="/history" element={<WishHistory />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Routes>
                   </div>
                 </motion.main>
                 <Navbar />

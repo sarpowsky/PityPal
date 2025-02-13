@@ -88,7 +88,7 @@ def main():
         
         window = webview.create_window(
             'Genshin Impact Pity Tracker',
-            url='http://localhost:3000',  # Development server URL
+            url='web/index.html',  # Path to built frontend
             js_api=api,
             width=1200,
             height=800,
