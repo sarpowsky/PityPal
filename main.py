@@ -86,9 +86,14 @@ def main():
     try:
         api = API()
         
+        # Development URL for hot reloading 
+        DEV_URL = 'http://localhost:5173'
+        # Production URL pointing to built files
+        PROD_URL = 'web/index.html'  # Current URL, commented out for now
+
         window = webview.create_window(
             'Genshin Impact Pity Tracker',
-            url='web/index.html',  # Path to built frontend
+            url=DEV_URL,
             js_api=api,
             width=1200,
             height=800,
