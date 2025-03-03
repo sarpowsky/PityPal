@@ -11,6 +11,7 @@ import Home from './pages/Home';
 import Characters from './pages/Characters';
 import WishHistory from './pages/WishHistory';
 import Settings from './pages/Settings';
+import Analytics from './pages/Analytics';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -41,6 +42,7 @@ const AnimatedRoutes = () => {
           <Route path="/" element={<Home />} />
           <Route path="/characters" element={<Characters />} />
           <Route path="/history" element={<WishHistory />} />
+          <Route path="/analytics" element={<Analytics />} /> 
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </motion.div>
@@ -79,6 +81,7 @@ const App = () => {
                       <Route path="/" element={<Home />} />
                       <Route path="/characters" element={<Characters />} />
                       <Route path="/history" element={<WishHistory />} />
+                      <Route path="/analytics" element={<Analytics />} /> 
                       <Route path="/settings" element={<Settings />} />
                     </Routes>
                   </div>

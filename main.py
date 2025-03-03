@@ -1,4 +1,7 @@
 # Path: main.py
+
+from backend.services.pity_predictor.predictor_service import PredictorService
+from backend.services.pity_predictor.model_trainer_service import ModelTrainerService
 import webview
 import json
 import os
@@ -7,6 +10,8 @@ from pathlib import Path
 from backend.services.wish_service import WishService
 from backend.services.pity_calculator import PityCalculator
 from backend.services.data_service import DataService
+# Import the base model creator
+from backend.services.pity_predictor.create_base_model import create_base_model
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,6 +21,8 @@ class API:
         self.wish_service = WishService()
         self.pity_calculator = PityCalculator()
         self.data_service = DataService()
+        self.predictor_service = PredictorService()
+        self.model_trainer_service = ModelTrainerService()
         logger.info("API services initialized")
         
     def import_wishes(self, url, progress_callback=None):
@@ -26,6 +33,30 @@ class API:
             return result
         except Exception as e:
             logger.error(f"Failed to import wishes: {e}")
+            return {"success": False, "error": str(e)}
+        
+    def predict_wishes(self, current_pity, banner_type, guaranteed=False, pulls=40):
+        try:
+            result = self.predictor_service.predict(
+                current_pity, banner_type, guaranteed, pulls
+            )
+            return result
+        except Exception as e:
+            logger.error(f"Failed to predict wishes: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def train_prediction_model(self):
+        try:
+            # Get current wish history
+            history = self.wish_service.get_history()
+            if not history:
+                return {"success": False, "error": "No wish history available for training"}
+            
+            # Train model with the wish history
+            result = self.model_trainer_service.train_model_with_user_data(history)
+            return result
+        except Exception as e:
+            logger.error(f"Failed to train model: {e}")
             return {"success": False, "error": str(e)}
     
     def get_wish_history(self):
@@ -84,16 +115,24 @@ class API:
 
 def main():
     try:
+        # Create base model if it doesn't exist
+        create_base_model()
+        
         api = API()
         
         # Development URL for hot reloading 
         DEV_URL = 'http://localhost:5173'
         # Production URL pointing to built files
-        PROD_URL = 'web/index.html'  # Current URL, commented out for now
+        PROD_URL = 'web/index.html'  # For deployment, use this
+        
+        # Choose the appropriate URL based on environment
+        url_to_use = DEV_URL
+        if not os.environ.get('DEVELOPMENT') and os.path.exists('web/index.html'):
+            url_to_use = PROD_URL
 
         window = webview.create_window(
             'Genshin Impact Pity Tracker',
-            url=DEV_URL,
+            url=url_to_use,
             js_api=api,
             width=1200,
             height=800,
