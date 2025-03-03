@@ -2,6 +2,7 @@
 import json
 import sqlite3
 import shutil
+import platform
 from datetime import datetime
 from pathlib import Path
 import logging
@@ -11,7 +12,13 @@ logger = logging.getLogger(__name__)
 
 class DataService:
     def __init__(self):
-        self.app_data_path = Path.home() / "AppData/Local/GenshinWishTracker"
+        if platform.system() == "Windows":
+            self.app_data_path = Path.home() / "AppData/Local/GenshinWishTracker"
+        elif platform.system() == "Darwin":  # macOS
+            self.app_data_path = Path.home() / "Library/Application Support/GenshinWishTracker"
+        else:  # Linux and others
+            self.app_data_path = Path.home() / ".genshinwishtracker"
+            
         self.db_path = self.app_data_path / "wishes.db"
         self.backups_path = self.app_data_path / "backups"
         self.backups_path.mkdir(parents=True, exist_ok=True)
@@ -34,6 +41,10 @@ class DataService:
                 bannerType TEXT NOT NULL
             )
         ''')
+        # Add indexes for performance
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_time ON wishes(time)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_bannerType ON wishes(bannerType)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_rarity ON wishes(rarity)')
         conn.commit()
 
     def get_wishes(self) -> List[Dict]:

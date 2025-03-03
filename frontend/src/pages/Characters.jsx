@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext';
 import { characters } from '../data/characters/index';
 import { elementIcons, rarityBackgrounds } from '../data/assets';
 import CharacterDetails from '../features/characters/CharacterDetails';
+import SafeImage from '../components/SafeImage';
 
 const FilterButton = ({ active, label, count, onClick }) => (
   <button
@@ -37,10 +38,11 @@ const CharacterCard = ({ character, index, onClick }) => {
                     bg-gradient-to-br ${rarityGradient} backdrop-blur-sm
                     border border-white/10 transition-all duration-300
                     group-hover:scale-105 group-hover:border-white/20`}>
-        <img
+        <SafeImage
           src={character.image}
           alt={character.name}
           className="w-full h-full object-cover"
+          fallbackSrc="/characters/placeholder.png"
         />
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -59,10 +61,11 @@ const CharacterCard = ({ character, index, onClick }) => {
         {/* Element Icon */}
         <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full
                     bg-black/30 backdrop-blur-sm flex items-center justify-center">
-          <img 
+          <SafeImage 
             src={elementIcons[character.element.toLowerCase()]}
             alt={character.element}
             className="w-4 h-4"
+            fallbackSrc="/elements/placeholder.svg"
           />
         </div>
 
@@ -139,7 +142,7 @@ const Characters = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-10 gap-2">
           {filteredCharacters.map((character, index) => (
             <CharacterCard
               key={character.id}

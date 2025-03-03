@@ -29038,3 +29038,7 @@ venv/Scripts/pythonw_d.exe
 venv/Scripts/pythonw.exe
 venv/Scripts/__pycache__/bottle.cpython-311.pyc
 venv/libs/cx_Logging.lib
+frontend/node_modules/.vite/deps/@tanstack_react-virtual.js
+frontend/node_modules/.vite/deps/@tanstack_react-virtual.js.map
+frontend/node_modules/.vite/deps/recharts.js
+frontend/node_modules/.vite/deps/recharts.js.map

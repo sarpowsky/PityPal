@@ -10,6 +10,7 @@ from pathlib import Path
 from backend.services.wish_service import WishService
 from backend.services.pity_calculator import PityCalculator
 from backend.services.data_service import DataService
+from backend.services.update_service import UpdateService
 # Import the base model creator
 from backend.services.pity_predictor.create_base_model import create_base_model
 
@@ -23,6 +24,7 @@ class API:
         self.data_service = DataService()
         self.predictor_service = PredictorService()
         self.model_trainer_service = ModelTrainerService()
+        self.update_service = UpdateService(current_version="1.0.0")
         logger.info("API services initialized")
         
     def import_wishes(self, url, progress_callback=None):
@@ -111,6 +113,14 @@ class API:
             return result
         except Exception as e:
             logger.error(f"Failed to reset data: {e}")
+            return {"success": False, "error": str(e)}
+
+    def check_for_updates(self):
+        """Check if an update is available"""
+        try:
+            return self.update_service.check_for_updates()
+        except Exception as e:
+            logger.error(f"Failed to check for updates: {e}")
             return {"success": False, "error": str(e)}
 
 def main():

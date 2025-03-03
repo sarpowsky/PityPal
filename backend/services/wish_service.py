@@ -4,11 +4,14 @@ import time
 import sqlite3
 import requests
 import pandas as pd
+import platform
 from datetime import datetime
 from pathlib import Path
 import logging
 from typing import Dict, List, Optional, Callable
 from urllib.parse import parse_qs, urlparse
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,10 +27,30 @@ class WishService:
             "500": "chronicled"      # Chronicled wish
         }
         self.history = []
-        self.db_path = Path.home() / "AppData/Local/GenshinWishTracker/wishes.db"
+        if platform.system() == "Windows":
+            self.db_path = Path.home() / "AppData/Local/GenshinWishTracker/wishes.db"
+        elif platform.system() == "Darwin":  # macOS
+            self.db_path = Path.home() / "Library/Application Support/GenshinWishTracker/wishes.db"
+        else:  # Linux and others
+            self.db_path = Path.home() / ".genshinwishtracker/wishes.db"
+            
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_database()
         self.load_history()
+        self.session = self._create_session()
+    
+    def _create_session(self):
+        session = requests.Session()
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["GET"]
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
+        return session
 
     def init_database(self):
         try:
@@ -42,6 +65,9 @@ class WishService:
                         bannerType TEXT NOT NULL
                     )
                 ''')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_time ON wishes(time)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_bannerType ON wishes(bannerType)')
+                conn.execute('CREATE INDEX IF NOT EXISTS idx_wishes_rarity ON wishes(rarity)')
                 logger.info("Database initialized successfully")
         except sqlite3.Error as e:
             logger.error(f"Database initialization failed: {e}")
@@ -101,25 +127,33 @@ class WishService:
                 current_params['end_id'] = '0'
 
                 while True:
-                    response = requests.get(f"{self.api_base}/getGachaLog", params=current_params)
-                    data = response.json()
-                    
-                    if data["retcode"] != 0:
-                        error_msg = data.get('message', 'Unknown error')
-                        logger.error(f"API Error: {error_msg}")
-                        raise Exception(f"API Error: {error_msg}")
+                    try:
+                        response = self.session.get(
+                            f"{self.api_base}/getGachaLog", 
+                            params=current_params,
+                            timeout=(5, 15)  # Connect timeout, Read timeout
+                        )
+                        data = response.json()
+                        
+                        if data["retcode"] != 0:
+                            error_msg = data.get('message', 'Unknown error')
+                            logger.error(f"API Error: {error_msg}")
+                            raise Exception(f"API Error: {error_msg}")
 
-                    wishes = data["data"]["list"]
-                    if not wishes:
-                        break
+                        wishes = data["data"]["list"]
+                        if not wishes:
+                            break
 
-                    all_wishes.extend(wishes)
-                    current_params['end_id'] = wishes[-1]["id"]
-                    time.sleep(0.5)  # Rate limiting
+                        all_wishes.extend(wishes)
+                        current_params['end_id'] = wishes[-1]["id"]
+                        time.sleep(0.5)  # Rate limiting
 
-                    if progress_callback:
-                        progress = min(90, len(all_wishes) / 2)
-                        progress_callback(int(progress))
+                        if progress_callback:
+                            progress = min(90, len(all_wishes) / 2)
+                            progress_callback(int(progress))
+                    except requests.RequestException as e:
+                        logger.error(f"Network error: {e}")
+                        raise Exception(f"Failed to connect to wish history server: {e}")
 
             if progress_callback:
                 progress_callback(95)

@@ -1,8 +1,10 @@
 // Path: src/pages/WishHistory.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Calendar, Filter, Download, ChevronDown, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { exportWishHistory } from '../context/appActions';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import SafeImage from '../components/SafeImage';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -49,13 +51,11 @@ const WishItem = ({ wish }) => {
       <div className="flex items-center gap-3 p-3">
         <div className={`relative w-12 h-12 rounded-lg overflow-hidden
                       border-2 bg-gradient-to-br ${rarityColors[wish.rarity]}`}>
-          <img 
+          <SafeImage 
             src={`/items/${wish.name.toLowerCase().replace(/\s+/g, '-')}.png`}
             alt={wish.name}
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.target.src = '/items/placeholder.png';
-            }}
+            fallbackSrc="/items/placeholder.png"
           />
           <div className="absolute bottom-0 right-0 px-1.5 py-0.5 
                        bg-black/60 backdrop-blur-sm rounded-tl
@@ -147,6 +147,7 @@ const WishHistory = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState('desc');
+  const parentRef = useRef(null);
   const { state } = useApp();
   const { history } = state.wishes;
 
@@ -177,11 +178,12 @@ const WishHistory = () => {
     });
   }, [history, activeFilter, sortOrder]);
 
-  const totalPages = Math.ceil(filteredAndSortedWishes.length / ITEMS_PER_PAGE);
-  const currentWishes = filteredAndSortedWishes.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const rowVirtualizer = useVirtualizer({
+    count: filteredAndSortedWishes.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 84,
+    overscan: 5
+  });
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -238,26 +240,40 @@ const WishHistory = () => {
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between px-4">
-            <div className="flex items-center gap-4 text-white/60 text-sm">
-              <span>Showing {currentWishes.length} of {filteredAndSortedWishes.length} wishes</span>
-              <span>Page {currentPage} of {totalPages}</span>
-            </div>
-            
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            )}
+        <div className="flex items-center justify-between px-4">
+          <div className="flex items-center gap-4 text-white/60 text-sm">
+            <span>Showing {filteredAndSortedWishes.length} wishes</span>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            {currentWishes.map((wish) => (
-              <WishItem key={wish.id} wish={wish} />
-            ))}
+        <div 
+          ref={parentRef}
+          className="h-[600px] max-h-[calc(100vh-300px)] overflow-auto"
+        >
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map(virtualRow => {
+              const wish = filteredAndSortedWishes[virtualRow.index];
+              return (
+                <div
+                  key={wish.id}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <WishItem wish={wish} />
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
