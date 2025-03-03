@@ -8,45 +8,85 @@ export const eventTypes = {
   
   export const events = [
     {
-      id: 'lantern-rite-2025',
-      type: eventTypes.MAIN,
-      name: "Springtime Charms",
-      description: "Celebrate Liyue's biggest festival with new mini-games and rewards!",
-      startDate: "2025-01-24T10:00:00+01:00", // Adjusted
-      endDate: "2025-02-09T03:59:59+01:00",   // Adjusted
-      image: "/events/springtime-charms.png",
+      id: "travelers-tales-5.4",
+      type: "eventTypes.MAIN",
+      name: "Travelers' Tales: Anthology Chapter",
+      description: "Visit different regions to hear your companions' stories and earn rewards.",
+      startDate: "2025-02-12T18:00:00+01:00",
+      endDate: "2025-03-25T14:59:59+01:00",
+      image: "/events/travelers-tales-5.4.png",
       rewards: [
-        "Primogems x1600",
-        "Intertwined Fate x10",
-        "Xiangling's 'New Year's Cheer' outfit",
-        "Free 4-star Liyue character"
+        "Primogems x500",
+        "Storybook Fragments",
+        "Companion Gifts"
       ]
     },
     {
-      id: 'fortunes-coming',
-      type: eventTypes.SIDE,
-      name: "Fortune's Coming",
-      description: "Daily login event offering Intertwined Fates and other rewards.",
-      startDate: "2025-01-22T04:00:00+01:00", // Adjusted
-      endDate: "2025-02-11T14:59:59+01:00",
-      image: "/events/fortunes-coming.png",
+      id: "realm-tempered-valor-5.4",
+      type: "eventTypes.MAIN",
+      name: "Realm of Tempered Valor",
+      description: "Clear 25 floors of combat challenges to earn exclusive rewards.",
+      startDate: "2025-02-24T18:00:00+01:00",
+      endDate: "2025-03-10T14:59:59+01:00",
+      image: "/events/realm-tempered-valor.png",
       rewards: [
-        "Intertwined Fate x10",
+        "Event-exclusive Namecard",
+        "Primogems x300",
+        "Bonus EXP Materials"
+      ]
+    },
+    {
+      id: "mikawa-festival-5.4",
+      type: "eventTypes.MAIN",
+      name: "Enchanted Tales of the Mikawa Festival",
+      description: "Participate in festive mini-games and narrative quests to celebrate the Mikawa Festival.",
+      startDate: "2025-02-14T18:00:00+01:00",
+      endDate: "2025-03-03T14:59:59+01:00",
+      image: "/events/mikawa-festival.png",
+      rewards: [
+        "Primogems x400",
+        "Festival Tokens",
+        "Tamayuratei no Ohanashi (4-star Polearm)"
+      ]
+    },
+    {
+      id: "invasive-fish-wrangler-5.4",
+      type: "eventTypes.UPCOMING",
+      name: "Invasive Fish Wrangler",
+      description: "Help tackle an ecological crisis by catching invasive fish in designated zones.",
+      startDate: "2025-03-05T18:00:00+01:00",
+      endDate: "2025-03-17T14:59:59+01:00",
+      image: "/events/invasive-fish-wrangler.png",
+      rewards: [
+        "Primogems x200",
         "Mora",
-        "Mystic Enhancement Ore"
+        "Fishing Rewards"
       ]
     },
     {
-      id: 'overflowing-abundance',
-      type: eventTypes.SIDE,
-      name: "Overflowing Abundance",
-      description: "Double rewards from Talent Level-Up and Weapon Material Domains.",
-      startDate: "2025-02-03T04:00:00+01:00", // Adjusted
-      endDate: "2025-02-10T03:59:59+01:00",   // Adjusted
-      image: "/events/overflowing-abundance.png",
+      id: "reel-ad-venture-5.4",
+      type: "eventTypes.UPCOMING",
+      name: "Reel Ad-Venture",
+      description: "Assist in a creative ad project by capturing and editing film footage.",
+      startDate: "2025-03-12T18:00:00+01:00",
+      endDate: "2025-03-24T14:59:59+01:00",
+      image: "/events/reel-ad-venture.png",
       rewards: [
-        "2x Talent Materials",
-        "2x Weapon Ascension Materials"
+        "Primogems x150",
+        "Exclusive Ad Rewards"
+      ]
+    },
+    {
+      id: "ley-line-overflow-5.4",
+      type: "eventTypes.UPCOMING",
+      name: "Ley Line Overflow",
+      description: "Claim double rewards from leyline outcrops for a limited time.",
+      startDate: "2025-03-17T18:00:00+01:00",
+      endDate: "2025-03-24T14:59:59+01:00",
+      image: "/events/ley-line-overflow.png",
+      rewards: [
+        "Double Mora",
+        "Double Character EXP Materials"
       ]
     }
   ];
