@@ -1,12 +1,13 @@
 // Path: frontend/src/pages/Settings.jsx
-import React, { useState } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { ActionTypes } from '../context/appReducer';
 import { loadWishHistory } from '../context/appActions';
+import { requestNotificationPermission } from '../services/desktopNotificationService';
 
 const SettingsSection = ({ title, children }) => (
   <div className="space-y-4">

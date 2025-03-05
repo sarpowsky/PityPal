@@ -1,6 +1,7 @@
 // Path: frontend/src/context/NotificationContext.jsx
 import React, { createContext, useContext, useState } from 'react';
 import ToastNotification, { NotificationTypes } from '../components/ToastNotification';
+import { getDueReminders } from '../services/reminderService';
 
 const NotificationContext = createContext(null);
 

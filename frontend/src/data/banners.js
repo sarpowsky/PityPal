@@ -30,17 +30,6 @@ export const banners = [
     isFeatured: true
   },
   {
-    id: "weapon-5.4-phase1",
-    type: "bannerTypes.WEAPON",
-    name: "Epitome Invocation",
-    weapons: ["Sunny Morning Sleep-In"],
-    startDate: "2025-02-12T18:00:00+01:00",
-    endDate: "2025-03-04T14:59:59+01:00",
-    image: "/banners/weapon-5.4.png",
-    fourStars: ["Sacrificial Bow", "The Widsith", "Lion's Roar", "Dragon's Bane", "Rainslasher"],
-    isFeatured: true
-  },
-  {
     id: "furina-5.4",
     type: "bannerTypes.CHARACTER",
     name: "Chanson of Many Waters",
@@ -60,6 +49,17 @@ export const banners = [
     endDate: "2025-03-25T14:59:59+01:00",
     image: "/banners/wriothesley.png",
     fourStars: ["Charlotte", "Chongyun", "Mika"],
+    isFeatured: true
+  },
+  {
+    id: "weapon-5.4-phase2",
+    type: "bannerTypes.WEAPON",
+    name: "Epitome Invocation",
+    weapons: ["Sunny Morning Sleep-In"],
+    startDate: "2025-03-04T18:00:00+01:00",
+    endDate: "2025-03-25T14:59:59+01:00",
+    image: "/banners/weapon-5.4.png",
+    fourStars: ["Sacrificial Bow", "The Widsith", "Lion's Roar", "Dragon's Bane", "Rainslasher"],
     isFeatured: true
   },
   {

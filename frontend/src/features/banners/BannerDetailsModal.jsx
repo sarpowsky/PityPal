@@ -1,8 +1,9 @@
 // Path: src/features/banners/BannerDetailsModal.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Star, Clock, Info } from 'lucide-react';
+import { X, Star, Clock, Info, Bell } from 'lucide-react';
 import BannerCountdown from './BannerCountdown';
+import BannerReminderDialog from '../../components/reminders/BannerReminderDialog';
 
 const BannerDetailsModal = ({ banner, onClose }) => {
   if (!banner) return null;

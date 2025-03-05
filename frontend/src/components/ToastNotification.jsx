@@ -63,16 +63,18 @@ const ToastNotification = ({
   title,
   message,
   progress = 0,
+  autoClose = true,
+  actions = [],
   onRemove
 }) => {
   useEffect(() => {
-    if (type !== NotificationTypes.LOADING) {
+    if (type !== NotificationTypes.LOADING && autoClose) {
       const timer = setTimeout(() => {
         onRemove();
       }, NOTIFICATION_DURATION);
       return () => clearTimeout(timer);
     }
-  }, [type, onRemove]);
+  }, [type, autoClose, onRemove]);
 
   return (
     <NotificationWrapper onRemove={onRemove}>

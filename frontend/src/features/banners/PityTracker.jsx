@@ -2,6 +2,7 @@
 import React from 'react';
 import { Target, Crown, Star, AlertTriangle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import PityReminderButton from '../../components/reminders/PityReminderButton';
 
 const AnimatedNumber = ({ value }) => (
   <div className="tabular-nums transition-all duration-300">

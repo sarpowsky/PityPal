@@ -10,6 +10,7 @@ import PityTracker from '../features/banners/PityTracker';
 import RecentWishes from '../features/banners/RecentWishes';
 import UrlImporter from '../components/UrlImporter';
 import ImportGuideModal from '../components/ImportGuideModal';
+import RemindersButton from '../components/reminders/RemindersButton';
 
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
   <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl
@@ -93,6 +94,11 @@ const Home = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Fixed Reminders Button in Top Left */}
+      <div className="fixed top-6 left-6 z-50">
+        <RemindersButton />
+      </div>
+      
       <div className="flex justify-end mb-4">
         <button
           onClick={() => setShowGuide(true)}
