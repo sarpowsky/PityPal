@@ -11,6 +11,7 @@ import RecentWishes from '../features/banners/RecentWishes';
 import UrlImporter from '../components/UrlImporter';
 import ImportGuideModal from '../components/ImportGuideModal';
 import RemindersButton from '../components/reminders/RemindersButton';
+import { calculateRateComparison } from '../services/analyticsService';
 
 const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
   <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl
@@ -47,50 +48,44 @@ const Home = () => {
 
   useEffect(() => {
     const fetchStats = async () => {
-      console.log("Fetching stats...");
       try {
         await waitForPyWebView();
         
-        const result = await window.pywebview.api.calculate_pity();
-        console.log("Pity calculation result:", result);
-        
-        const wishHistory = await window.pywebview.api.get_wish_history();
-        console.log("Wish history:", wishHistory);
-
-        if (!wishHistory.success) {
-          console.error("Failed to fetch wish history:", wishHistory.error);
+        // Get pity calculation
+        const pityResult = await window.pywebview.api.calculate_pity();
+        if (!pityResult.success) {
+          console.error("Failed to calculate pity:", pityResult.error);
           return;
         }
-
-        const history = wishHistory.data;
-        const characterWishes = history.filter(w => 
-          w.bannerType.startsWith('character')
-        );
-        console.log("Character wishes:", characterWishes);
-
-        const fiveStars = history.filter(w => w.rarity === 5);
-        const fourStars = history.filter(w => w.rarity === 4);
         
-        const averagePity = characterWishes.length ? 
-          (characterWishes.reduce((acc, w) => acc + (w.pity || 0), 0) / 
-           characterWishes.filter(w => w.rarity === 5).length).toFixed(1) : 0;
-
+        // Get wish history only once
+        const history = state.wishes.history;
+        if (!history || history.length === 0) return;
+        
+        // Use analytics service to calculate stats
+        const rateComparison = calculateRateComparison(history);
+        
+        // Calculate average pity using pull distribution
+        const characterWishes = history.filter(w => w.bannerType.startsWith('character'));
+        const fiveStarWishes = characterWishes.filter(w => w.rarity === 5 && w.pity);
+        const averagePity = fiveStarWishes.length ? 
+          (fiveStarWishes.reduce((acc, w) => acc + w.pity, 0) / fiveStarWishes.length).toFixed(1) : 0;
+        
         setStats({
           total_wishes: history.length,
-          five_stars: fiveStars.length,
-          four_stars: fourStars.length,
+          five_stars: rateComparison.counts.fiveStar,
+          four_stars: rateComparison.counts.fourStar,
           primogems_spent: history.length * 160,
           average_pity: averagePity,
-          guaranteed: result.success ? result.data.character.guaranteed : false
+          guaranteed: pityResult.data.character.guaranteed
         });
-
       } catch (error) {
         console.error('Failed to calculate stats:', error);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [state.wishes.history]);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -167,7 +162,7 @@ const Home = () => {
               <h2 className="text-sm font-genshin">Recent Wishes</h2>
             </div>
             <div className="p-3 h-[240px] overflow-y-auto">
-              <RecentWishes wishes={state.wishes.history.slice(0, 5)} />
+              <RecentWishes />
             </div>
           </div>
         </div>

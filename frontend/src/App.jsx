@@ -8,7 +8,6 @@ import Background from './components/Background';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
 import { AudioProvider } from './features/audio/AudioSystem';
 import Home from './pages/Home';
-import Characters from './pages/Characters';
 import WishHistory from './pages/WishHistory';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
@@ -41,7 +40,6 @@ const AnimatedRoutes = () => {
       >
         <Routes location={location}>
           <Route path="/" element={<Home />} />
-          <Route path="/characters" element={<Characters />} />
           <Route path="/history" element={<WishHistory />} />
           <Route path="/analytics" element={<Analytics />} /> 
           <Route path="/simulator" element={<WishSimulator />} />
@@ -79,14 +77,7 @@ const App = () => {
                   className="flex-1 pt-6 px-4 md:px-6 pb-32"
                 >
                   <div className="max-w-7xl mx-auto">
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/characters" element={<Characters />} />
-                      <Route path="/history" element={<WishHistory />} />
-                      <Route path="/analytics" element={<Analytics />} /> 
-                      <Route path="/simulator" element={<WishSimulator />} />
-                      <Route path="/settings" element={<Settings />} />
-                    </Routes>
+                    <AnimatedRoutes />
                   </div>
                 </motion.main>
                 <Navbar />

@@ -1,4 +1,4 @@
-// Path: src/features/paimon/responses.js
+// Path: frontend/src/features/paimon/responses.js
 export const RESPONSE_PATTERNS = {
   greetings: {
     patterns: ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening'],
@@ -7,7 +7,17 @@ export const RESPONSE_PATTERNS = {
       "Oh, hi there Traveler! Paimon was just thinking about mora... er, helping you with wishes!",
       "Yay, someone to talk to! What should we check first? Wishes? Pity?",
       "Hey! Paimon missed you! Want to see how close you are to your next 5★?"
-    ]
+    ],
+    formatResponse: (response, formatData) => {
+      // Add context awareness based on current page
+      const page = formatData.currentPage;
+      if (page === 'characters') {
+        return response + " Or do you want help with character builds?";
+      } else if (page === 'analytics') {
+        return response + " Looking at your stats, hmm?";
+      }
+      return response;
+    }
   },
  
   pity: {
@@ -34,6 +44,10 @@ export const RESPONSE_PATTERNS = {
         status = "Still building up that pity... but Paimon believes your luck might be better than the numbers!";
       }
       
+      if (stats.pity.character.guaranteed) {
+        status += " And you're GUARANTEED to get the featured character on your next 5★! That's awesome!";
+      }
+      
       return response
         .replace('{pity}', pity)
         .replace('{status}', status);
@@ -53,7 +67,7 @@ export const RESPONSE_PATTERNS = {
       
       const timeInfo = banner.isPermanent ? 
         "This one never goes away!" :
-        banner.endDate ? `Only ${banner.endDate} left! Better hurry!` :
+        banner.endDate ? `Only ${Math.ceil((new Date(banner.endDate) - new Date()) / (1000 * 60 * 60 * 24))} days left! Better hurry!` :
         "Better wish while you can!";
         
       const characterInfo = banner.character ?
@@ -145,7 +159,63 @@ export const RESPONSE_PATTERNS = {
       "Need guidance? Paimon knows everything about wishes! Try asking about your pity, current banners, or wish history! Paimon will explain everything!",
       "Paimon's your best companion! Ask about your wishes, pity, or banners - Paimon will help! You can even check how many primogems you've spent (though maybe that's scary...)"
     ]
+  },
+  
+  navigation: {
+    patterns: ['where am i', 'show me', 'go to', 'take me to', 'navigate'],
+    responses: [
+      "Where would you like to go? Home page? Character page? Wish history? Analytics? Settings? Just tell Paimon!",
+      "Paimon can help you get around! Just say where you want to go!"
+    ]
+  },
+  
+  reminders: {
+    patterns: ['remind', 'notification', 'alert', 'don\'t forget'],
+    responses: [
+      "What would you like Paimon to remind you about? Banner endings? Approaching soft pity?",
+      "Paimon can set reminders for you! Just tell me what you need to remember!"
+    ]
+  },
+  
+  characters: {
+    patterns: ['character', 'build', 'artifact', 'weapon', 'team'],
+    responses: [
+      "Looking for character info? You can check builds and team comps in the Characters section!",
+      "Need help with character builds? The Characters page has all the details!"
+    ],
+    formatResponse: (response, stats) => {
+      // If already on characters page, give more specific guidance
+      if (stats.currentPage === 'characters') {
+        return "Just click on any character card to see their details, builds, and recommended teams!";
+      }
+      return response;
+    }
+  },
+  
+  import: {
+    patterns: ['import', 'get wishes', 'url', 'fetch', 'load data'],
+    responses: [
+      "To import your wishes, you need to copy the URL from your in-game wish history! Need help with that?",
+      "Want to import wishes? Paimon can show you how to get your wish history URL from the game!",
+      "Importing wishes is easy! Just click the 'How to Import Wishes' button and follow the steps!"
+    ]
   }
+};
+
+export const HELP_RESPONSES = {
+  home: "On the Home page, you can see:\n• Your current pity status\n• Recent banners\n• Latest events\n• Recent wishes\n\nYou can also import your wish history using the URL bar at the top. Need help with that?",
+  
+  characters: "The Characters page shows all Genshin Impact characters with their rarity and elements. Click on any character to see:\n• Recommended builds\n• Best artifact sets\n• Team compositions\n• Ascension materials",
+  
+  history: "This is your Wish History page. Here you can:\n• View all your wishes sorted by date\n• Filter by banner type\n• Export your wish data\n• See the pity count for each pull",
+  
+  analytics: "The Analytics page shows statistics about your wishes including:\n• Pull rate analysis\n• Pity distribution\n• Banner distribution\n• 5★ and 4★ item analysis\n\nYou can also predict your chances of getting a 5★ based on your current pity!",
+  
+  simulator: "The Wish Simulator lets you practice wishing without spending real primogems! Features include:\n• Accurate banner mechanics and rates\n• Real soft pity and hard pity systems\n• 50/50 and guarantee mechanics\n• Wish animation for single and ten-pulls\n• History tracking of simulated wishes",
+  
+  settings: "In Settings, you can:\n• Import or export your wish data\n• Change app appearance\n• Check for updates\n• Reset your data (be careful with this!)",
+  
+  default: "This is the Genshin Impact Pity Tracker! You can:\n• Track your wish pity for all banner types\n• Import your wish history\n• Analyze your pull statistics\n• Get predictions for future wishes\n\nWhat would you like help with?"
 };
 
 export const DEFAULT_RESPONSE = "Eh? Paimon's not sure what you mean... Try asking about wishes, banners, or pity! Or say 'help' for some guidance!";

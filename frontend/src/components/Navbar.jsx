@@ -1,14 +1,13 @@
 // Path: frontend/src/components/Navbar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Users, History, Settings, BarChart2, GemIcon,} from 'lucide-react';
+import { Home, History, Settings, BarChart2, GemIcon,} from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   
   const links = [
     { to: '/', icon: Home, label: 'Home' },
-    { to: '/characters', icon: Users, label: 'Characters' },
     { to: '/history', icon: History, label: 'History' },
     { to: '/analytics', icon: BarChart2, label: 'Analytics' },
     { to: '/simulator', icon: GemIcon, label: 'Simulator' },
