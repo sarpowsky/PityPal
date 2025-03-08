@@ -1,10 +1,14 @@
 // Path: frontend/src/components/reminders/RemindersButton.jsx
 import React, { useState, useEffect } from 'react';
-import { BellRing, Bell, Plus } from 'lucide-react';
+import { BellRing, Bell, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getDueReminders, getReminders } from '../../services/reminderService';
+import { 
+  getDueReminders, 
+  getReminders, 
+  REMINDER_TYPES 
+} from '../../services/reminderService';
 import RemindersList from './RemindersList';
-import CustomReminderDialog from './CustomReminderDialog';
+import ReminderDialog from './ReminderDialog';
 
 const RemindersButton = () => {
   const [showReminders, setShowReminders] = useState(false);
@@ -42,8 +46,17 @@ const RemindersButton = () => {
     setShowReminders(false);
   };
   
+  const updateReminderCounts = () => {
+    const allReminders = getReminders();
+    const dueReminders = getDueReminders(24);
+    
+    setReminderCount(allReminders.length);
+    setDueCount(dueReminders.length);
+  };
+  
   return (
     <div className="relative">
+      {/* Bell button with badge indicator */}
       <button
         onClick={toggleReminders}
         className="relative p-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30
@@ -60,6 +73,7 @@ const RemindersButton = () => {
         )}
       </button>
       
+      {/* Reminders panel */}
       <AnimatePresence>
         {showReminders && (
           <motion.div
@@ -73,24 +87,28 @@ const RemindersButton = () => {
                           backdrop-blur-sm overflow-hidden">
               <div className="flex items-center justify-between p-3 border-b border-white/10">
                 <h3 className="font-medium">Reminders</h3>
-                <button
-                  onClick={handleCreateClick}
-                  className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <Plus size={16} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleCreateClick}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors
+                             flex items-center gap-1 text-xs"
+                  >
+                    <Plus size={14} />
+                    <span>New</span>
+                  </button>
+                  <button
+                    onClick={() => setShowReminders(false)}
+                    className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
               </div>
               
               <div className="max-h-[400px] overflow-y-auto p-3">
                 <RemindersList
                   onReminderClick={() => setShowReminders(false)}
-                  onUpdate={() => {
-                    const allReminders = getReminders();
-                    const dueReminders = getDueReminders(24);
-                    
-                    setReminderCount(allReminders.length);
-                    setDueCount(dueReminders.length);
-                  }}
+                  onUpdate={updateReminderCounts}
                 />
               </div>
               
@@ -104,19 +122,14 @@ const RemindersButton = () => {
         )}
       </AnimatePresence>
       
+      {/* Create reminder dialog */}
       {showCreateDialog && (
-        <CustomReminderDialog
+        <ReminderDialog
           onClose={() => setShowCreateDialog(false)}
           onCreated={() => {
             setShowCreateDialog(false);
             setShowReminders(true);
-            
-            // Update counts
-            const allReminders = getReminders();
-            const dueReminders = getDueReminders(24);
-            
-            setReminderCount(allReminders.length);
-            setDueCount(dueReminders.length);
+            updateReminderCounts();
           }}
         />
       )}

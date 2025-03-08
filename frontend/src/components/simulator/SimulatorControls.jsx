@@ -1,6 +1,6 @@
 // Path: frontend/src/components/simulator/SimulatorControls.jsx
 import React from 'react';
-import { GemIcon, Star, RotateCw, Cpu, Loader2 } from 'lucide-react';
+import { GemIcon, Star, RotateCw, Cpu, Loader2, Info } from 'lucide-react';
 
 const SimulatorControls = ({ 
   onWish, 
@@ -47,6 +47,19 @@ const SimulatorControls = ({
               }`}>
                 {guaranteed5Star ? 'Guaranteed' : '50/50'}
               </div>
+            </div>
+          </div>
+          
+          {/* Capturing Radiance Info */}
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <div className="p-1 rounded-full bg-yellow-500/20 mt-0.5">
+              <Info size={14} className="text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-yellow-400">Capturing Radiance System</p>
+              <p className="text-xs text-white/70 mt-1">
+                When you lose the 50/50, there's a 10% chance of triggering "Capturing Radiance" which will still give you the featured 5★ character!
+              </p>
             </div>
           </div>
           

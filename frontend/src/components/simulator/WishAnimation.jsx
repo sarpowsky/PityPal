@@ -1,6 +1,7 @@
 // Path: frontend/src/components/simulator/WishAnimation.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAudio } from '../../features/audio/AudioSystem';
 
 const starColors = {
   3: '#4D6B96', // Blue
@@ -8,95 +9,251 @@ const starColors = {
   5: '#C0973A'  // Gold
 };
 
-const WishAnimation = ({ results, onAnimationComplete }) => {
+// Animation video paths
+const animationPaths = {
+  threeStarSingle: '/animations/3star-single.mp4',
+  fourStarSingle: '/animations/4star-single.mp4',
+  fiveStarSingle: '/animations/5star-single.mp4',
+  threeStarMulti: '/animations/3star-multi.mp4',
+  fourStarMulti: '/animations/4star-multi.mp4',
+  fiveStarMulti: '/animations/5star-multi.mp4',
+  capturingRadiance: '/animations/capturing-radiance.mp4'
+};
+
+// Audio paths
+const audioPaths = {
+  threeStarReveal: '/audio/3star-reveal.mp3',
+  fourStarReveal: '/audio/4star-reveal.mp3',
+  fiveStarReveal: '/audio/5star-reveal.mp3',
+  capturingRadianceReveal: '/audio/capturing-radiance-reveal.mp3',
+  wishClick: '/audio/wish-click.mp3',
+  wishResultAppear: '/audio/result-appear.mp3',
+  qiqiEasterEgg: '/audio/qiqi-easter-egg.mp3' // Easter egg sound for Qiqi
+};
+
+const WishAnimation = ({ results, onAnimationComplete, simulationState }) => {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [showResults, setShowResults] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [animationSource, setAnimationSource] = useState('');
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef(null);
+  const { playAudio } = useAudio();
   
-  // Start animation when results are provided
-  useEffect(() => {
-    if (results && results.length > 0) {
-      // Reset animation state
-      setCurrentIndex(-1);
-      setShowResults(false);
-      
-      // Start animation sequence
-      const timer = setTimeout(() => {
-        startAnimation();
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [results]);
-  
-  const startAnimation = () => {
-    // Check if we have 4★ or 5★ items to determine animation duration
-    const hasRare = results.some(item => item.rarity >= 4);
+  // Function to determine which animation to show
+  const determineAnimation = () => {
+    if (!results || results.length === 0) return '';
     
-    // Start showing results after the animation
-    // Adding 500ms more to the animation duration
-    setTimeout(() => {
-      setShowResults(true);
-      showItemsSequentially();
-    }, hasRare ? 3000 : 2000); // Increased from 2500/1500 to 3000/2000
+    const isMultiWish = results.length > 1;
+    const hasCapturingRadiance = results.some(item => item.isCapturingRadiance);
+    const hasFiveStar = results.some(item => item.rarity === 5);
+    const hasFourStar = results.some(item => item.rarity === 4);
+    
+    // Animation priority: Capturing Radiance > 5★ > 4★ > 3★
+    if (hasCapturingRadiance) {
+      return animationPaths.capturingRadiance;
+    } else if (hasFiveStar) {
+      return isMultiWish ? animationPaths.fiveStarMulti : animationPaths.fiveStarSingle;
+    } else if (hasFourStar) {
+      return isMultiWish ? animationPaths.fourStarMulti : animationPaths.fourStarSingle;
+    } else {
+      return isMultiWish ? animationPaths.threeStarMulti : animationPaths.threeStarSingle;
+    }
   };
   
+  // Play sound
+  const playSound = (src) => {
+    // Create and play audio using Web Audio API for better browser compatibility
+    const audio = new Audio(src);
+    audio.volume = 1.0;
+    
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.error("Audio play error:", error);
+      });
+    }
+  };
+  
+  // Function to play appropriate sound for the wish
+  const playWishSound = () => {
+    if (!results || results.length === 0) return;
+    
+    // Check for Qiqi easter egg first
+    const hasQiqi = results.some(item => 
+      item.name === "Qiqi" && 
+      (simulationState?.bannerType?.startsWith('character') || 
+       simulationState?.bannerType === 'permanent')
+    );
+    
+    if (hasQiqi) {
+      playSound(audioPaths.qiqiEasterEgg);
+      return;
+    }
+    
+    // Regular sound logic
+    const hasCapturingRadiance = results.some(item => item.isCapturingRadiance);
+    const hasFiveStar = results.some(item => item.rarity === 5);
+    const hasFourStar = results.some(item => item.rarity === 4);
+    
+    if (hasCapturingRadiance) {
+      playSound(audioPaths.capturingRadianceReveal);
+    } else if (hasFiveStar) {
+      playSound(audioPaths.fiveStarReveal);
+    } else if (hasFourStar) {
+      playSound(audioPaths.fourStarReveal);
+    } else {
+      playSound(audioPaths.threeStarReveal);
+    }
+  };
+  
+  // Handle video loaded metadata
+  const handleVideoLoaded = () => {
+    console.log("Video metadata loaded");
+    setVideoLoaded(true);
+    
+    // Try to play video with explicit user interaction simulation
+    if (videoRef.current) {
+      videoRef.current.muted = true; // Start muted for autoplay policy
+      
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log("Video playing successfully");
+            // Unmute after successful play (after a short delay)
+            setTimeout(() => {
+              if (videoRef.current) {
+                videoRef.current.muted = false;
+              }
+            }, 100);
+          })
+          .catch(error => {
+            console.error("Video play error:", error);
+            setVideoError(true);
+            // Go directly to results if video won't play
+            handleVideoComplete();
+          });
+      }
+    }
+  };
+  
+  // Handle video play error
+  const handleVideoError = (e) => {
+    console.error("Video error:", e);
+    setVideoError(true);
+    // Go directly to results if video has error
+    handleVideoComplete();
+  };
+  
+  // Handle video ended or skipped
+  const handleVideoComplete = () => {
+    // Stop video if still playing
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+    
+    // Play wish sound for the appropriate star level
+    playWishSound();
+    
+    // Show results
+    setShowResults(true);
+    showItemsSequentially();
+  };
+  
+  // Skip button handler
+  const handleSkip = () => {
+    if (!showResults) {
+      // If video is still playing, skip to results
+      handleVideoComplete();
+    } else {
+      // If results are showing, close the animation completely
+      onAnimationComplete();
+    }
+  };
+  
+  // Show each item in sequence
   const showItemsSequentially = () => {
     // Show items one by one
     let index = 0;
     const interval = setInterval(() => {
       if (index < results.length) {
         setCurrentIndex(index);
+        playSound(audioPaths.wishResultAppear);
         index++;
       } else {
         clearInterval(interval);
-        // Animation finished, notify parent
-        setTimeout(() => {
-          if (onAnimationComplete) onAnimationComplete();
-        }, 1000);
+        // Do not automatically close - user must click skip
       }
     }, 300);
   };
   
-  // Determine if it's a multi-wish (10 pull)
-  const isMultiWish = results && results.length > 1;
+  // Initialize animation when results change
+  useEffect(() => {
+    if (results && results.length > 0) {
+      // Reset state
+      setCurrentIndex(-1);
+      setShowResults(false);
+      setVideoLoaded(false);
+      setVideoError(false);
+      
+      // Determine animation to show
+      const animSrc = determineAnimation();
+      setAnimationSource(animSrc);
+      
+      // Play click sound
+      playSound(audioPaths.wishClick);
+    }
+  }, [results]);
   
   return (
-    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
-      {/* Initial animation - Custom image/gif that fills the screen */}
+    <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-50 bg-black flex items-center justify-center" 
+         style={{ margin: 0, height: '100vh', width: '100vw' }}>
+      
+      {/* Skip button - always visible, fixed position */}
+      <div className="fixed bottom-8 right-8 z-[999]">
+        <button
+          onClick={handleSkip}
+          className="px-6 py-2 bg-black/70 hover:bg-black/90 
+                   text-white font-medium border border-white/30
+                   rounded-lg transition-colors animate-pulse"
+        >
+          {showResults ? "Close" : "Skip"}
+        </button>
+      </div>
+      
+      {/* Initial animation */}
       <AnimatePresence>
         {!showResults && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 w-full h-full"
+            className="absolute inset-0 top-0 left-0 right-0 bottom-0 w-full h-full overflow-hidden"
           >
-            <div className="w-full h-full">
-              {/* Full screen animation */}
-              <img 
-                src="/animations/wish-animation.gif" 
-                alt="Wish Animation"
+            {animationSource && !videoError ? (
+              <video
+                ref={videoRef}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback if the image doesn't exist
-                  e.target.style.display = 'none';
-                  
-                  // Create a div with text as fallback
-                  const container = e.target.parentNode;
-                  container.classList.add("flex", "items-center", "justify-center");
-                  
-                  const fallback = document.createElement('div');
-                  fallback.className = "text-4xl font-genshin text-white text-center";
-                  fallback.textContent = isMultiWish ? "10-Wish Animation" : "Wish Animation";
-                  container.appendChild(fallback);
-                }}
+                onLoadedMetadata={handleVideoLoaded}
+                onError={handleVideoError}
+                onEnded={handleVideoComplete}
+                playsInline
+                src={animationSource}
+                preload="auto"
               />
-            </div>
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-4xl font-genshin text-white text-center">
+                  {results && results.length > 1 ? "10-Wish Animation" : "Wish Animation"}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
         
-      {/* Results display - Showing cards one by one */}
+      {/* Results display */}
       <AnimatePresence>
         {showResults && (
           <motion.div
@@ -105,7 +262,7 @@ const WishAnimation = ({ results, onAnimationComplete }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 max-w-4xl p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 max-w-4xl p-4 pb-20">
               {results.map((item, index) => (
                 <motion.div
                   key={item.id || index}
@@ -162,6 +319,14 @@ const WishAnimation = ({ results, onAnimationComplete }) => {
                         >★</div>
                       ))}
                     </div>
+                    
+                    {/* Capturing Radiance indicator */}
+                    {item.isCapturingRadiance && (
+                      <div className="absolute top-2 right-2 px-2 py-1 bg-yellow-500/80 
+                                    text-white text-xs rounded-full animate-pulse">
+                        Capturing Radiance!
+                      </div>
+                    )}
                   </div>
                   
                   {/* Item name */}
@@ -170,25 +335,21 @@ const WishAnimation = ({ results, onAnimationComplete }) => {
                     style={{ color: item.rarity >= 4 ? starColors[item.rarity] : 'white' }}
                   >
                     {item.name}
-                    {item.isLostFiftyFifty && (
-                      <div className="mt-1 text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 inline-block">
-                        Lost 50/50
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center gap-1 mt-1">
+                      {item.isLostFiftyFifty && (
+                        <div className="text-xs px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 inline-block">
+                          Lost 50/50
+                        </div>
+                      )}
+                      {item.isCapturingRadiance && (
+                        <div className="text-xs px-2 py-0.5 rounded bg-yellow-500/40 text-white inline-block">
+                          Capturing Radiance
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}
-            </div>
-            
-            {/* Skip button */}
-            <div className="absolute bottom-8 right-8">
-              <button
-                onClick={onAnimationComplete}
-                className="px-6 py-2 bg-white/10 hover:bg-white/20 
-                         rounded-lg transition-colors"
-              >
-                Skip
-              </button>
             </div>
           </motion.div>
         )}

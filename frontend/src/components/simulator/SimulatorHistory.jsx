@@ -1,6 +1,6 @@
 // Path: frontend/src/components/simulator/SimulatorHistory.jsx
 import React from 'react';
-import { Star, Trash2 } from 'lucide-react';
+import { Star, Trash2, Sparkles } from 'lucide-react';
 
 const rarityColors = {
   3: 'text-blue-400',
@@ -30,17 +30,27 @@ const WishItem = ({ item, index }) => {
           <span className={`text-sm font-medium ${rarityColors[item.rarity]}`}>
             {item.name}
           </span>
+          {item.isCapturingRadiance && (
+            <Sparkles size={14} className="text-yellow-400" />
+          )}
         </div>
         <div className="text-xs text-white/60">
           {item.type}
         </div>
       </div>
       
-      {item.isLostFiftyFifty && (
-        <div className="px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
-          Lost 50/50
-        </div>
-      )}
+      <div className="flex flex-col items-end gap-1">
+        {item.isLostFiftyFifty && (
+          <div className="px-1.5 py-0.5 rounded text-xs bg-yellow-500/20 text-yellow-400">
+            Lost 50/50
+          </div>
+        )}
+        {item.isCapturingRadiance && (
+          <div className="px-1.5 py-0.5 rounded text-xs bg-yellow-500/30 text-yellow-400 whitespace-nowrap">
+            Capturing Radiance
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -51,6 +61,9 @@ const SimulatorHistory = ({ history, onClear }) => {
     acc[item.rarity] = (acc[item.rarity] || 0) + 1;
     return acc;
   }, {});
+  
+  // Count Capturing Radiance occurrences
+  const capturingRadianceCount = history.filter(item => item.isCapturingRadiance).length;
   
   return (
     <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10">
@@ -85,6 +98,14 @@ const SimulatorHistory = ({ history, onClear }) => {
                 <div className="text-xl font-genshin text-purple-400">{counts[4] || 0}</div>
               </div>
             </div>
+            
+            {/* Capturing Radiance Stats (if any) */}
+            {capturingRadianceCount > 0 && (
+              <div className="p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-center mb-4">
+                <div className="text-xs text-white/60">Capturing Radiance</div>
+                <div className="text-xl font-genshin text-yellow-400">{capturingRadianceCount}</div>
+              </div>
+            )}
             
             {/* History list */}
             <div className="space-y-1 max-h-[400px] overflow-y-auto scrollbar-thin pr-2">

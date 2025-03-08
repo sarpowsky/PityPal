@@ -42,7 +42,9 @@ const WishSimulator = () => {
     fiveStars: 0, 
     fourStars: 0,
     threeStars: 0,
-    spent: 0
+    spent: 0,
+    qiqiPulls: 0,
+    capturingRadiance: 0
   });
   
   // Track pity separately for each banner type
@@ -132,7 +134,9 @@ const WishSimulator = () => {
       fiveStars: prev.fiveStars + (result.rarity === 5 ? 1 : 0),
       fourStars: prev.fourStars + (result.rarity === 4 ? 1 : 0),
       threeStars: prev.threeStars + (result.rarity === 3 ? 1 : 0),
-      spent: prev.spent + 160
+      spent: prev.spent + 160,
+      qiqiPulls: prev.qiqiPulls + (result.name === "Qiqi" ? 1 : 0),
+      capturingRadiance: prev.capturingRadiance + (result.isCapturingRadiance ? 1 : 0)
     }));
     
     // Update simulation state with history
@@ -163,7 +167,9 @@ const WishSimulator = () => {
       fiveStars: prev.fiveStars + results.filter(r => r.rarity === 5).length,
       fourStars: prev.fourStars + results.filter(r => r.rarity === 4).length,
       threeStars: prev.threeStars + results.filter(r => r.rarity === 3).length,
-      spent: prev.spent + 1600
+      spent: prev.spent + 1600,
+      qiqiPulls: prev.qiqiPulls + results.filter(r => r.name === "Qiqi").length,
+      capturingRadiance: prev.capturingRadiance + results.filter(r => r.isCapturingRadiance).length
     }));
     
     // Update simulation state with history
@@ -246,7 +252,9 @@ const WishSimulator = () => {
       fiveStars: 0, 
       fourStars: 0,
       threeStars: 0,
-      spent: 0
+      spent: 0,
+      qiqiPulls: 0,
+      capturingRadiance: 0
     });
   };
 
@@ -281,7 +289,8 @@ const WishSimulator = () => {
             <p className="mb-2">This simulator uses actual game rates and pity mechanics!</p>
             <p className="mb-2">• Character banners share pity across both featured character banners</p>
             <p className="mb-2">• Weapon and Standard banners each have separate pity counters</p>
-            <p>• Soft pity increases your 5★ chance starting at 74 pulls for characters and 63 for weapons</p>
+            <p className="mb-2">• Soft pity increases your 5★ chance starting at 74 pulls for characters and 63 for weapons</p>
+            <p>• When you lose the 50/50, there's a 10% chance to trigger "Capturing Radiance" and still get the featured character!</p>
           </InfoCard>
         </motion.div>
       )}
@@ -326,6 +335,26 @@ const WishSimulator = () => {
               value={stats.spent.toLocaleString()} 
             />
           </div>
+          
+          {/* Special Stats */}
+          {(stats.qiqiPulls > 0 || stats.capturingRadiance > 0) && (
+            <div className="grid grid-cols-2 gap-2">
+              {stats.qiqiPulls > 0 && (
+                <StatCard 
+                  label="Qiqi Pulls" 
+                  value={stats.qiqiPulls} 
+                  color="blue" 
+                />
+              )}
+              {stats.capturingRadiance > 0 && (
+                <StatCard 
+                  label="Capturing Radiance" 
+                  value={stats.capturingRadiance} 
+                  color="yellow" 
+                />
+              )}
+            </div>
+          )}
           
           {/* Pity Status */}
           {currentSimState && formattedBanner && (
@@ -386,6 +415,7 @@ const WishSimulator = () => {
       {showAnimation && (
         <WishAnimation
           results={wishResults}
+          simulationState={currentSimState}
           onAnimationComplete={handleAnimationComplete}
         />
       )}

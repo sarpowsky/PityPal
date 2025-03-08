@@ -14,7 +14,8 @@ const RATES = {
     softPity4Start: 8,
     hardPity4: 10,
     featuredChance5Star: 0.5, // 50% chance for featured 5★
-    featuredChance4Star: 0.5  // 50% chance for featured 4★
+    featuredChance4Star: 0.5,  // 50% chance for featured 4★
+    capturingRadianceChance: 0.1 // 10% chance after losing 50/50
   },
   weapon: {
     base5StarRate: 0.007, // 0.7%
@@ -71,58 +72,58 @@ const STANDARD_5_WEAPONS = [
 * Get the appropriate rate config for a banner type
 */
 function getBannerRates(bannerType) {
-if (bannerType.startsWith('character')) {
-  return RATES.character;
-} else if (bannerType === 'weapon') {
-  return RATES.weapon;
-} else {
-  return RATES.standard;
-}
+  if (bannerType.startsWith('character')) {
+    return RATES.character;
+  } else if (bannerType === 'weapon') {
+    return RATES.weapon;
+  } else {
+    return RATES.standard;
+  }
 }
 
 /**
 * Calculate the probability of getting a 5★ based on current pity
 */
 function calculate5StarProbability(pity, bannerType) {
-const rates = getBannerRates(bannerType);
+  const rates = getBannerRates(bannerType);
 
-// Hard pity
-if (pity >= rates.hardPity5) {
-  return 1.0;
-}
+  // Hard pity
+  if (pity >= rates.hardPity5) {
+    return 1.0;
+  }
 
-// Soft pity - increases rate significantly
-if (pity >= rates.softPity5Start) {
-  // Each pull in soft pity zone increases rate by about 7%
-  const softPityPulls = pity - rates.softPity5Start + 1;
-  const softPityBoost = softPityPulls * 0.07;
-  return Math.min(rates.base5StarRate + softPityBoost, 1.0);
-}
+  // Soft pity - increases rate significantly
+  if (pity >= rates.softPity5Start) {
+    // Each pull in soft pity zone increases rate by about 7%
+    const softPityPulls = pity - rates.softPity5Start + 1;
+    const softPityBoost = softPityPulls * 0.07;
+    return Math.min(rates.base5StarRate + softPityBoost, 1.0);
+  }
 
-// Base rate
-return rates.base5StarRate;
+  // Base rate
+  return rates.base5StarRate;
 }
 
 /**
 * Calculate the probability of getting a 4★ based on current 4★ pity
 */
 function calculate4StarProbability(pity4, bannerType) {
-const rates = getBannerRates(bannerType);
+  const rates = getBannerRates(bannerType);
 
-// Hard pity for 4★
-if (pity4 >= rates.hardPity4) {
-  return 1.0;
-}
+  // Hard pity for 4★
+  if (pity4 >= rates.hardPity4) {
+    return 1.0;
+  }
 
-// Soft pity for 4★
-if (pity4 >= rates.softPity4Start) {
-  const softPityPulls = pity4 - rates.softPity4Start + 1;
-  const softPityBoost = softPityPulls * 0.2;
-  return Math.min(rates.base4StarRate + softPityBoost, 1.0);
-}
+  // Soft pity for 4★
+  if (pity4 >= rates.softPity4Start) {
+    const softPityPulls = pity4 - rates.softPity4Start + 1;
+    const softPityBoost = softPityPulls * 0.2;
+    return Math.min(rates.base4StarRate + softPityBoost, 1.0);
+  }
 
-// Base rate
-return rates.base4StarRate;
+  // Base rate
+  return rates.base4StarRate;
 }
 
 /**
@@ -147,6 +148,7 @@ function simulateWish(simulationState, banner) {
   const random = Math.random();
   let result;
   let isLostFiftyFifty = false;
+  let isCapturingRadiance = false;
 
   // Updates to pity counters
   let newPity5 = pity5 + 1;
@@ -208,14 +210,26 @@ function simulateWish(simulationState, banner) {
         };
         newGuaranteed5Star = false;
       } else {
-        // Lost 50/50, get standard 5★ character
-        const randomStandard = STANDARD_5_STARS[Math.floor(Math.random() * STANDARD_5_STARS.length)];
-        result = {
-          ...randomStandard,
-          id: `sim-${Date.now()}-${Math.random()}`
-        };
-        newGuaranteed5Star = true; // Next 5★ is guaranteed to be featured
-        isLostFiftyFifty = true;
+        // Lost 50/50, check for Capturing Radiance (10% chance)
+        if (Math.random() < rates.capturingRadianceChance) {
+          // Capturing Radiance triggered - get featured character anyway
+          result = {
+            ...banner.featured5Star,
+            id: `sim-${Date.now()}-${Math.random()}`,
+            isCapturingRadiance: true // Flag for special animation
+          };
+          newGuaranteed5Star = false;
+          isCapturingRadiance = true;
+        } else {
+          // Truly lost 50/50, get standard 5★ character
+          const randomStandard = STANDARD_5_STARS[Math.floor(Math.random() * STANDARD_5_STARS.length)];
+          result = {
+            ...randomStandard,
+            id: `sim-${Date.now()}-${Math.random()}`
+          };
+          newGuaranteed5Star = true; // Next 5★ is guaranteed to be featured
+          isLostFiftyFifty = true;
+        }
       }
     } else if (bannerType === 'weapon') {
       // Weapon banner logic - 75% for featured
@@ -300,6 +314,11 @@ function simulateWish(simulationState, banner) {
   if (isLostFiftyFifty) {
     result.isLostFiftyFifty = true;
   }
+  
+  // Add isCapturingRadiance flag if needed
+  if (isCapturingRadiance) {
+    result.isCapturingRadiance = true;
+  }
 
   // Return result and updated state
   return {
@@ -318,93 +337,93 @@ function simulateWish(simulationState, banner) {
 * Simulate a 10-pull
 */
 function simulateTenPull(simulationState, banner) {
-const results = [];
-let currentState = { ...simulationState };
+  const results = [];
+  let currentState = { ...simulationState };
 
-for (let i = 0; i < 10; i++) {
-  const { result, newState } = simulateWish(currentState, banner);
-  results.push(result);
-  currentState = newState;
-}
+  for (let i = 0; i < 10; i++) {
+    const { result, newState } = simulateWish(currentState, banner);
+    results.push(result);
+    currentState = newState;
+  }
 
-return {
-  results,
-  newState: currentState
-};
+  return {
+    results,
+    newState: currentState
+  };
 }
 
 /**
 * Format a banner object for simulation
 */
 function formatBanner(banner) {
-// For character banner
-if (banner.character) {
-  return {
-    id: banner.id,
-    name: banner.name,
-    bannerType: 'character-1',
-    featured5Star: {
-      name: banner.character,
-      type: 'Character',
-      rarity: 5,
-      element: banner.element || 'Unknown'
-    },
-    featured4Stars: (banner.fourStars || []).map(name => ({
-      name,
-      type: 'Character',
-      rarity: 4,
-      element: 'Unknown' // Would need a character database to determine this
-    }))
-  };
-}
-// For weapon banner
-else if (banner.weapons) {
-  return {
-    id: banner.id,
-    name: banner.name,
-    bannerType: 'weapon',
-    featured5Star: banner.weapons.map(name => ({
-      name,
-      type: 'Weapon',
-      rarity: 5,
-      weaponType: 'Unknown' // Would need a weapon database for this
-    })),
-    featured4Stars: (banner.fourStars || []).map(name => ({
-      name,
-      type: 'Weapon',
-      rarity: 4,
-      weaponType: 'Unknown'
-    }))
-  };
-}
-// Standard banner
-else {
-  return {
-    id: banner.id,
-    name: banner.name,
-    bannerType: 'permanent'
-  };
-}
+  // For character banner
+  if (banner.character) {
+    return {
+      id: banner.id,
+      name: banner.name,
+      bannerType: banner.id.includes('-2') ? 'character-2' : 'character-1', // Determine banner type from ID
+      featured5Star: {
+        name: banner.character,
+        type: 'Character',
+        rarity: 5,
+        element: banner.element || 'Unknown'
+      },
+      featured4Stars: (banner.fourStars || []).map(name => ({
+        name,
+        type: 'Character',
+        rarity: 4,
+        element: 'Unknown' // Would need a character database to determine this
+      }))
+    };
+  }
+  // For weapon banner
+  else if (banner.weapons) {
+    return {
+      id: banner.id,
+      name: banner.name,
+      bannerType: 'weapon',
+      featured5Star: banner.weapons.map(name => ({
+        name,
+        type: 'Weapon',
+        rarity: 5,
+        weaponType: 'Unknown' // Would need a weapon database for this
+      })),
+      featured4Stars: (banner.fourStars || []).map(name => ({
+        name,
+        type: 'Weapon',
+        rarity: 4,
+        weaponType: 'Unknown'
+      }))
+    };
+  }
+  // Standard banner
+  else {
+    return {
+      id: banner.id,
+      name: banner.name,
+      bannerType: 'permanent'
+    };
+  }
 }
 
 /**
 * Initialize a new simulation state
 */
 function createNewSimulationState(bannerType) {
-return {
-  pity5: 0,
-  pity4: 0,
-  guaranteed5Star: false,
-  guaranteed4Star: false,
-  bannerType,
-  history: []
-};
+  return {
+    pity5: 0,
+    pity4: 0,
+    guaranteed5Star: false,
+    guaranteed4Star: false,
+    bannerType,
+    history: []
+  };
 }
 
 // Export functions
 export {
-simulateWish,
-simulateTenPull,
-formatBanner,
-createNewSimulationState
+  simulateWish,
+  simulateTenPull,
+  formatBanner,
+  createNewSimulationState
 };
