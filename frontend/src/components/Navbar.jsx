@@ -1,17 +1,16 @@
-// Path: frontend/src/components/Navbar.jsx
+// src/components/Navbar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, History, Settings, BarChart2, GemIcon,} from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   
   const links = [
-    { to: '/', icon: Home, label: 'Home' },
-    { to: '/history', icon: History, label: 'History' },
-    { to: '/analytics', icon: BarChart2, label: 'Analytics' },
-    { to: '/simulator', icon: GemIcon, label: 'Simulator' },
-    { to: '/settings', icon: Settings, label: 'Settings' }
+    { to: '/', icon: '/icons/navigation/home.png', label: 'Home' },
+    { to: '/history', icon: '/icons/navigation/history.png', label: 'History' },
+    { to: '/analytics', icon: '/icons/navigation/analytics.png', label: 'Analytics' },
+    { to: '/simulator', icon: '/icons/navigation/simulator.png', label: 'Simulator' },
+    { to: '/settings', icon: '/icons/navigation/settings.png', label: 'Settings' }
   ];
 
   return (
@@ -22,7 +21,7 @@ const Navbar = () => {
                     transition-all duration-300 ease-in-out
                     shadow-lg hover:shadow-purple-500/20">
           <div className="flex items-center gap-1">
-            {links.map(({ to, icon: Icon, label }) => {
+            {links.map(({ to, icon, label }) => {
               const isActive = location.pathname === to;
               return (
                 <Link
@@ -36,12 +35,14 @@ const Navbar = () => {
                                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500' 
                                  : 'hover:bg-white/10'}`}
                   >
-                    <Icon 
-                      size={24} 
+                    {/* Icon */}
+                    <img 
+                      src={icon}
+                      alt={label}
+                      width={36}
+                      height={36}
                       className={`transform transition-all duration-300
-                               ${isActive 
-                                 ? 'text-white scale-110' 
-                                 : 'text-white/60 group-hover:text-white'}`}
+                        ${isActive ? 'scale-110 brightness-125' : 'opacity-60 group-hover:opacity-100'}`}
                     />
                     
                     {/* Active Glow Effect */}
@@ -59,7 +60,6 @@ const Navbar = () => {
                                translate-y-2 group-hover:translate-y-0
                                pointer-events-none">
                     <span className="text-white text-xs whitespace-nowrap">{label}</span>
-                    {/* Tooltip Arrow */}
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
                                  w-2 h-2 bg-black/90 rotate-45" />
                   </div>
