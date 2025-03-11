@@ -1,10 +1,9 @@
 // Path: src/pages/WishHistory.jsx
 import React, { useState, useMemo, useRef } from 'react';
-import { Calendar, Filter, Download, ChevronDown, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { exportWishHistory } from '../context/appActions';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import SafeImage from '../components/SafeImage';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -15,7 +14,7 @@ const bannerTypes = [
   { id: 'permanent', label: 'Permanent Banner' }
 ];
 
-const WishTypeFilter = ({ active, icon: Icon, label, count, onClick }) => (
+const WishTypeFilter = ({ active, icon, label, count, onClick }) => (
   <button
     onClick={onClick}
     className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all
@@ -24,7 +23,7 @@ const WishTypeFilter = ({ active, icon: Icon, label, count, onClick }) => (
                 : 'bg-white/5 hover:bg-white/10 border-white/10'}
               border backdrop-blur-sm`}
   >
-    <Icon size={18} className={active ? 'text-purple-400' : 'text-white/60'} />
+    <Icon name={icon} size={18} className={active ? 'text-purple-400' : 'text-white/60'} />
     <span className={active ? 'text-white' : 'text-white/60'}>{label}</span>
     {count > 0 && (
       <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs">
@@ -36,9 +35,9 @@ const WishTypeFilter = ({ active, icon: Icon, label, count, onClick }) => (
 
 const WishItem = ({ wish }) => {
   const rarityColors = {
-    5: 'from-amber-500 to-yellow-500',
-    4: 'from-purple-500 to-violet-500',
-    3: 'from-blue-500 to-cyan-500'
+    5: 'text-amber-400',
+    4: 'text-purple-400',
+    3: 'text-blue-400'
   };
 
   const date = new Date(wish.time);
@@ -49,27 +48,15 @@ const WishItem = ({ wish }) => {
     <div className="group relative rounded-lg bg-black/20 backdrop-blur-sm border border-white/10
                   hover:bg-black/30 transition-all duration-300 animate-fadeIn">
       <div className="flex items-center gap-3 p-3">
-        <div className={`relative w-12 h-12 rounded-lg overflow-hidden
-                      border-2 bg-gradient-to-br ${rarityColors[wish.rarity]}`}>
-          <SafeImage 
-            src={`/items/${wish.name.toLowerCase().replace(/\s+/g, '-')}.png`}
-            alt={wish.name}
-            className="w-full h-full object-cover"
-            fallbackSrc="/items/placeholder.png"
-          />
-          <div className="absolute bottom-0 right-0 px-1.5 py-0.5 
-                       bg-black/60 backdrop-blur-sm rounded-tl
-                       flex items-center gap-0.5 text-xs">
-            <Star size={10} className="fill-current" />
-            <span>{wish.rarity}</span>
-          </div>
+        <div className={`flex items-center justify-center w-10 ${rarityColors[wish.rarity]}`}>
+          <div className="font-semibold text-lg">{wish.rarity}★</div>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <h3 className="text-sm font-medium mb-1">{wish.name}</h3>
           <div className="flex items-center gap-2 text-xs text-white/60">
             <div className="flex items-center gap-1">
-              <Calendar size={12} />
+              <Icon name="calendar" size={12} />
               <span>{formattedDate}</span>
             </div>
             <span>•</span>
@@ -97,7 +84,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => (
       className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
                disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <ChevronLeft size={16} />
+      <Icon name="chevron-left" size={16} />
     </button>
     
     <div className="flex items-center gap-1">
@@ -138,7 +125,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => (
       className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
                disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <ChevronRight size={16} />
+      <Icon name="chevron-right" size={16} />
     </button>
   </div>
 );
@@ -205,7 +192,7 @@ const WishHistory = () => {
             <WishTypeFilter
               key={id}
               active={activeFilter === id}
-              icon={Star}
+              icon="star"
               label={label}
               count={id === 'all' 
                 ? history.length 
@@ -227,8 +214,11 @@ const WishHistory = () => {
                      bg-white/5 hover:bg-white/10 text-sm transition-colors"
           >
             <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
-            <ChevronDown size={14} className={`transform transition-transform
-                                           ${sortOrder === 'asc' ? 'rotate-180' : ''}`} />
+            <Icon 
+              name="chevron-down" 
+              size={14} 
+              className={`transform transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} 
+            />
           </button>
           
           <button 
@@ -236,7 +226,7 @@ const WishHistory = () => {
             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
                     transition-colors"
           >
-            <Download size={18} />
+            <Icon name="download" size={18} />
           </button>
         </div>
 

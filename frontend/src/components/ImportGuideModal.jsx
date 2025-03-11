@@ -1,6 +1,6 @@
 // Path: frontend/src/components/ImportGuideModal.jsx
 import React, { useState } from 'react';
-import { X, ExternalLink, Copy, Info, Terminal } from 'lucide-react';
+import Icon from './Icon';
 
 const ImportGuideModal = ({ onClose }) => {
   const [copySuccess, setCopySuccess] = useState('');
@@ -29,7 +29,7 @@ const ImportGuideModal = ({ onClose }) => {
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-white/10 transition-colors"
           >
-            <X size={20} />
+            <Icon name="x" size={36} />
           </button>
         </div>
 
@@ -77,7 +77,7 @@ const ImportGuideModal = ({ onClose }) => {
                         className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 
                                  border border-white/10 transition-colors group"
                       >
-                        <Copy size={14} className="text-white/40 group-hover:text-white/60" />
+                        <Icon name="copy" size={30} className="text-white/40 group-hover:text-white/60" />
                       </button>
                     </div>
                     <div className="pt-8">
@@ -116,7 +116,7 @@ const ImportGuideModal = ({ onClose }) => {
 
           {/* Important Note */}
           <div className="flex items-center gap-3 p-3 mt-4 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-            <Info size={20} className="text-indigo-400 shrink-0" />
+            <Icon name="info" size={30} className="text-indigo-400 shrink-0" />
             <div>
               <h3 className="font-medium mb-1">Important Note</h3>
               <p className="text-sm text-white/70">
@@ -134,7 +134,7 @@ const ImportGuideModal = ({ onClose }) => {
               className="flex items-center gap-2 text-sm text-indigo-400 
                        hover:text-indigo-300 transition-colors"
             >
-              <ExternalLink size={16} />
+              <Icon name="external-link" size={16} />
               <span>View on Github</span>
             </a>
             <button

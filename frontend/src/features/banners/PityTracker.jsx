@@ -1,6 +1,6 @@
 // src/features/banners/PityTracker.jsx
 import React from 'react';
-import { Target, Crown, Star, AlertTriangle } from 'lucide-react';
+import Icon from '../../components/Icon';
 import { useApp } from '../../context/AppContext';
 import PityReminderButton from '../../components/reminders/PityReminderButton';
 
@@ -61,9 +61,7 @@ const PityTracker = () => {
         {/* Header with 50/50 Status */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-white/5">
-              <Crown size={18} className="text-amber-400/90" />
-            </div>
+              <Icon name="crown" size={48} className="text-amber-400/90" />
             <div>
               <h3 className="font-genshin text-sm">Pity Counter</h3>
               <div className="text-xs text-white/60">Character Event Banner</div>
@@ -108,7 +106,7 @@ const PityTracker = () => {
                         ${pityStats.current >= 85 
                           ? 'bg-amber-500/10 border-amber-500/20' 
                           : 'bg-purple-500/10 border-purple-500/20'}`}>
-            <AlertTriangle size={20} className={pityStats.current >= 85 
+            <Icon name="alert-triangle" size={32} className={pityStats.current >= 85 
               ? 'text-amber-400/90' 
               : 'text-purple-400/90'} />
             <div>

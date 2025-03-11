@@ -1,7 +1,7 @@
 // Path: frontend/src/pages/Analytics.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { LineChart, BarChart2, PieChart, Info, HelpCircle, Loader, BrainCircuit, BarChart } from 'lucide-react';
+import Icon from '../components/Icon';
 import { useNotification } from '../context/NotificationContext';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
@@ -21,7 +21,7 @@ import {
 
 const BannerInfoCard = ({ title, children }) => (
   <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-start gap-2">
-    <Info className="text-indigo-400 mt-0.5 shrink-0" size={16} />
+    <Icon name="info" className="text-indigo-400 mt-0.5 shrink-0" size={16} />
     <div>
       <h3 className="text-sm font-medium text-indigo-400 mb-1">{title}</h3>
       <div className="text-xs text-white/70">{children}</div>
@@ -164,7 +164,7 @@ const Analytics = () => {
             onClick={() => setShowInfoCard(!showInfoCard)}
             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <HelpCircle size={20} className="text-white/60" />
+            <Icon name="help-circle" size={20} className="text-white/60" />
           </button>
         </header>
 
@@ -190,15 +190,15 @@ const Analytics = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-3 mb-2">
                 <TabsTrigger value="predictions" className="flex items-center gap-2">
-                  <LineChart size={16} />
+                  <Icon name="line-chart" size={16} />
                   <span>Pull Predictions</span>
                 </TabsTrigger>
                 <TabsTrigger value="distribution" className="flex items-center gap-2">
-                  <BarChart size={16} />
+                  <Icon name="bar-chart" size={16} />
                   <span>Pull Distribution</span>
                 </TabsTrigger>
                 <TabsTrigger value="rates" className="flex items-center gap-2">
-                  <PieChart size={16} />
+                  <Icon name="pie-chart" size={16} />
                   <span>Rate Analysis</span>
                 </TabsTrigger>
               </TabsList>
@@ -307,12 +307,12 @@ const Analytics = () => {
                         >
                           {isTraining ? (
                             <>
-                              <Loader className="animate-spin" size={16} />
+                              <Icon name="loader" className="animate-spin" size={16} />
                               <span>Training...</span>
                             </>
                           ) : (
                             <>
-                              <BrainCircuit size={16} />
+                              <Icon name="brain-circuit" size={16} />
                               <span>Train Model</span>
                             </>
                           )}
@@ -328,7 +328,7 @@ const Analytics = () => {
                         >
                           {loading ? (
                             <>
-                              <Loader className="animate-spin" size={16} />
+                              <Icon name="loader" className="animate-spin" size={16} />
                               <span>Calculating...</span>
                             </>
                           ) : (

@@ -1,7 +1,6 @@
 // src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
-import { Info } from 'lucide-react';
-import { Star, Circle, Award, GemIcon } from 'lucide-react';
+import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { waitForPyWebView } from '../utils/pywebview-bridge';
 import BannerCarousel from '../features/banners/BannerCarousel';
@@ -13,16 +12,15 @@ import ImportGuideModal from '../components/ImportGuideModal';
 import RemindersButton from '../components/reminders/RemindersButton';
 import { calculateRateComparison } from '../services/analyticsService';
 
-const StatCard = ({ icon: Icon, label, value, gradient, delay }) => (
-  <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl
+const StatCard = ({ icon, label, value, gradient, delay }) => (
+  <div className={`group flex items-center gap-4 px-4 py-4 rounded-xl
                   bg-gradient-to-br ${gradient} backdrop-blur-sm
                   border border-white/10 transition-all duration-300
                   hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5
                   hover:-translate-y-0.5`}
        style={{ animationDelay: `${delay}ms` }}>
-    <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 
-                  transition-colors duration-300">
-      <Icon size={16} className="text-white" />
+    <div className="flex items-center justify-center">
+      <Icon name={icon} size={48} className="text-white" />
     </div>
     <div>
       <div className="text-xs text-white/60">{label}</div>
@@ -101,7 +99,7 @@ const Home = () => {
                    bg-white/5 hover:bg-white/10 border border-white/10 
                    text-sm transition-colors"
         >
-          <Info size={16} />
+          <Icon name="info" size={24} />
           <span>How to Import Wishes</span>
         </button>
       </div>
@@ -110,7 +108,7 @@ const Home = () => {
         <UrlImporter />
       </div>
 
-      <div className=" transition-transform duration-300 rounded-xl">
+      <div className="transition-transform duration-300 rounded-xl">
         <div className="flex gap-6">
           <BannerCarousel />
           <EventCarousel />
@@ -120,28 +118,28 @@ const Home = () => {
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-4 grid grid-cols-1 gap-3">
           <StatCard
-            icon={GemIcon}
+            icon="gem"
             label="Primogems"
             value={stats.primogems_spent.toLocaleString()}
             gradient="from-purple-500/20 to-pink-500/20"
             delay={100}
           />
           <StatCard
-            icon={Star}
+            icon="star"
             label="5★ Characters/Items"
             value={stats.five_stars}
             gradient="from-amber-500/20 to-orange-500/20"
             delay={200}
           />
           <StatCard
-            icon={Circle}
+            icon="circle"
             label="4★ Characters/Items"
             value={stats.four_stars}
             gradient="from-indigo-500/20 to-blue-500/20"
             delay={300}
           />
           <StatCard
-            icon={Award}
+            icon="award"
             label="Total Wishes"
             value={stats.total_wishes.toLocaleString()}
             gradient="from-emerald-500/20 to-green-500/20"

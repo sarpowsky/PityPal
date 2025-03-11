@@ -1,6 +1,6 @@
 // Path: frontend/src/components/reminders/RemindersButton.jsx
 import React, { useState, useEffect } from 'react';
-import { BellRing, Bell, Plus, X } from 'lucide-react';
+import Icon from '../Icon';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   getDueReminders, 
@@ -62,7 +62,7 @@ const RemindersButton = () => {
         className="relative p-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30
                  border border-indigo-500/30 text-indigo-400 transition-colors"
       >
-        <BellRing size={20} />
+        <Icon name="bell-ring" size={30} />
         
         {/* Notification badge */}
         {dueCount > 0 && (
@@ -93,14 +93,14 @@ const RemindersButton = () => {
                     className="p-1.5 rounded-lg hover:bg-white/10 transition-colors
                              flex items-center gap-1 text-xs"
                   >
-                    <Plus size={14} />
+                    <Icon name="plus" size={14} />
                     <span>New</span>
                   </button>
                   <button
                     onClick={() => setShowReminders(false)}
                     className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                   >
-                    <X size={14} />
+                    <Icon name="x" size={14} />
                   </button>
                 </div>
               </div>
