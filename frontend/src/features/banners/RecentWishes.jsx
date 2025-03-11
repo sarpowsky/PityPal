@@ -2,6 +2,7 @@
 import React from 'react';
 import Icon from '../../components/Icon';
 import { useApp } from '../../context/AppContext';
+import { Calendar } from 'lucide-react';
 
 const WishItem = ({ wish }) => {
   const getRarityColors = (rarity) => {
@@ -27,7 +28,7 @@ const WishItem = ({ wish }) => {
         <div className="flex-1 min-w-0">
           <h4 className="font-genshin text-sm truncate">{wish.name}</h4>
           <div className="flex items-center gap-2 text-xs text-white/60">
-            <Icon name="calendar" size={12} />
+            <Calendar size={12} />
             <span>{formattedDate}</span>
             <span>•</span>
             <span>{formattedTime}</span>

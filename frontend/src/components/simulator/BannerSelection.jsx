@@ -116,19 +116,6 @@ const BannerSelection = ({
           </div>
         </div>
       </div>
-
-      {/* Banner Type Indicator */}
-      <div className="absolute top-3 left-3 px-3 py-1 rounded-lg bg-black/60 backdrop-blur-sm
-                   border border-white/10 text-xs flex items-center gap-1">
-        <Info size={12} className="text-white/60" />
-        <span>
-          {currentBanner.type === 'character' 
-            ? 'Character Event Wish' 
-            : currentBanner.type === 'weapon' 
-              ? 'Weapon Event Wish' 
-              : 'Standard Wish'}
-        </span>
-      </div>
     </div>
   );
 };

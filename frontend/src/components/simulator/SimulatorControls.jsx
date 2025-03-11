@@ -1,6 +1,6 @@
 // Path: frontend/src/components/simulator/SimulatorControls.jsx
 import React from 'react';
-import { GemIcon, Star, RotateCw, Cpu, Loader2, Info } from 'lucide-react';
+import Icon from '../../components/Icon';
 
 const SimulatorControls = ({ 
   onWish, 
@@ -21,7 +21,7 @@ const SimulatorControls = ({
           <div className="grid grid-cols-3 gap-3">
             <div className="flex justify-between items-center p-3 rounded-lg bg-black/20 border border-white/10">
               <div className="flex items-center gap-2">
-                <Star className="text-amber-400" size={16} />
+                <Icon name="star" className="text-amber-400" size={24} />
                 <span className="text-sm">5★ Pity</span>
               </div>
               <div className="text-lg font-genshin">{pity5 || 0}</div>
@@ -29,7 +29,7 @@ const SimulatorControls = ({
             
             <div className="flex justify-between items-center p-3 rounded-lg bg-black/20 border border-white/10">
               <div className="flex items-center gap-2">
-                <Star className="text-purple-400" size={16} />
+                <Icon name="circle" className="text-purple-400" size={24} />
                 <span className="text-sm">4★ Pity</span>
               </div>
               <div className="text-lg font-genshin">{pity4 || 0}</div>
@@ -37,7 +37,7 @@ const SimulatorControls = ({
             
             <div className="flex justify-between items-center p-3 rounded-lg bg-black/20 border border-white/10">
               <div className="flex items-center gap-2">
-                <Cpu size={16} />
+                <Icon name="status" size={24} />
                 <span className="text-sm">Status</span>
               </div>
               <div className={`px-2 py-0.5 rounded text-xs ${
@@ -53,7 +53,7 @@ const SimulatorControls = ({
           {/* Capturing Radiance Info */}
           <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
             <div className="p-1 rounded-full bg-yellow-500/20 mt-0.5">
-              <Info size={14} className="text-yellow-400" />
+              <Icon name="info" size={18} className="text-yellow-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-yellow-400">Capturing Radiance System</p>
@@ -75,9 +75,9 @@ const SimulatorControls = ({
                        hover:from-indigo-500/30 hover:to-purple-500/30 transition-colors"
               >
                 {isLoading ? (
-                  <Loader2 size={18} className="animate-spin text-purple-400" />
+                  <Icon name="loader" size={18} className="animate-spin text-purple-400" />
                 ) : (
-                  <GemIcon size={18} className="text-purple-400" />
+                  <Icon name="gem" size={27} className="text-purple-400" />
                 )}
                 <div className="flex flex-col items-center">
                   <span>Wish × 1</span>
@@ -94,9 +94,9 @@ const SimulatorControls = ({
                        hover:from-amber-500/30 hover:to-yellow-500/30 transition-colors"
               >
                 {isLoading ? (
-                  <Loader2 size={18} className="animate-spin text-amber-400" />
+                  <Icon name="loader" size={18} className="animate-spin text-amber-400" />
                 ) : (
-                  <GemIcon size={18} className="text-amber-400" />
+                  <Icon name="gem" size={27} className="text-amber-400" />
                 )}
                 <div className="flex flex-col items-center">
                   <span>Wish × 10</span>
@@ -118,7 +118,7 @@ const SimulatorControls = ({
                    hover:bg-red-500/20 text-red-400 transition-colors
                    disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <RotateCw size={16} />
+          <Icon name="rotate-cw" size={16} />
           <span>Reset Pity</span>
         </button>
       </div>

@@ -1,17 +1,17 @@
 // Path: src/pages/WishHistory.jsx
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { exportWishHistory } from '../context/appActions';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Calendar, Download } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 10;
 
 const bannerTypes = [
-  { id: 'all', label: 'All Wishes' },
-  { id: 'character', label: 'Character Event' },
-  { id: 'weapon', label: 'Weapon Banner' },
-  { id: 'permanent', label: 'Permanent Banner' }
+  { id: 'all', label: 'All Wishes', icon: 'award' },
+  { id: 'character', label: 'Character Event', icon: 'history-character' },
+  { id: 'weapon', label: 'Weapon Banner', icon: 'history-weapon' },
+  { id: 'permanent', label: 'Permanent Banner', icon: 'history-permanent' }
 ];
 
 const WishTypeFilter = ({ active, icon, label, count, onClick }) => (
@@ -23,7 +23,7 @@ const WishTypeFilter = ({ active, icon, label, count, onClick }) => (
                 : 'bg-white/5 hover:bg-white/10 border-white/10'}
               border backdrop-blur-sm`}
   >
-    <Icon name={icon} size={18} className={active ? 'text-purple-400' : 'text-white/60'} />
+    <Icon name={icon} size={30} className={active ? 'text-purple-400' : 'text-white/60'} />
     <span className={active ? 'text-white' : 'text-white/60'}>{label}</span>
     {count > 0 && (
       <span className="px-2 py-0.5 rounded-full bg-white/10 text-xs">
@@ -56,7 +56,7 @@ const WishItem = ({ wish }) => {
           <h3 className="text-sm font-medium mb-1">{wish.name}</h3>
           <div className="flex items-center gap-2 text-xs text-white/60">
             <div className="flex items-center gap-1">
-              <Icon name="calendar" size={12} />
+              <Calendar size={12} />
               <span>{formattedDate}</span>
             </div>
             <span>•</span>
@@ -84,7 +84,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => (
       className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
                disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Icon name="chevron-left" size={16} />
+      <ChevronLeft size={16} />
     </button>
     
     <div className="flex items-center gap-1">
@@ -125,7 +125,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => (
       className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
                disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <Icon name="chevron-right" size={16} />
+      <ChevronRight size={16} />
     </button>
   </div>
 );
@@ -134,7 +134,6 @@ const WishHistory = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortOrder, setSortOrder] = useState('desc');
-  const parentRef = useRef(null);
   const { state } = useApp();
   const { history } = state.wishes;
 
@@ -165,12 +164,19 @@ const WishHistory = () => {
     });
   }, [history, activeFilter, sortOrder]);
 
-  const rowVirtualizer = useVirtualizer({
-    count: filteredAndSortedWishes.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 84,
-    overscan: 5
-  });
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedWishes.length / ITEMS_PER_PAGE));
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter]);
+
+  // Get current page's data
+  const currentWishes = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedWishes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredAndSortedWishes, currentPage]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -188,11 +194,11 @@ const WishHistory = () => {
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
-          {bannerTypes.map(({ id, label }) => (
+          {bannerTypes.map(({ id, label, icon }) => (
             <WishTypeFilter
               key={id}
               active={activeFilter === id}
-              icon="star"
+              icon={icon}
               label={label}
               count={id === 'all' 
                 ? history.length 
@@ -207,65 +213,68 @@ const WishHistory = () => {
           ))}
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={() => setSortOrder(order => order === 'desc' ? 'asc' : 'desc')}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg 
-                     bg-white/5 hover:bg-white/10 text-sm transition-colors"
-          >
-            <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
-            <Icon 
-              name="chevron-down" 
-              size={14} 
-              className={`transform transition-transform ${sortOrder === 'asc' ? 'rotate-180' : ''}`} 
-            />
-          </button>
-          
-          <button 
-            onClick={handleExport}
-            className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
-                    transition-colors"
-          >
-            <Icon name="download" size={18} />
-          </button>
-        </div>
-
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-4 text-white/60 text-sm">
             <span>Showing {filteredAndSortedWishes.length} wishes</span>
           </div>
-        </div>
 
-        <div 
-          ref={parentRef}
-          className="h-[600px] max-h-[calc(100vh-300px)] overflow-auto"
-        >
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
-            {rowVirtualizer.getVirtualItems().map(virtualRow => {
-              const wish = filteredAndSortedWishes[virtualRow.index];
-              return (
-                <div
-                  key={wish.id}
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
-                  <WishItem wish={wish} />
-                </div>
-              );
-            })}
+          {/* Pagination and Sorting Controls */}
+          <div className="flex items-center gap-4">
+            {totalPages > 1 && (
+              <Pagination 
+                currentPage={currentPage} 
+                totalPages={totalPages} 
+                onPageChange={handlePageChange} 
+              />
+            )}
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSortOrder(order => order === 'desc' ? 'asc' : 'desc')}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg 
+                         bg-white/5 hover:bg-white/10 text-sm transition-colors"
+              >
+                <span>{sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}</span>
+                {sortOrder === 'desc' ? (
+                  <ChevronDown size={14} className="transition-transform" />
+                ) : (
+                  <ChevronUp size={14} className="transition-transform" />
+                )}
+              </button>
+              
+              <button 
+                onClick={handleExport}
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 
+                        transition-colors"
+              >
+                <Download size={18} />
+              </button>
+            </div>
           </div>
         </div>
+
+        <div className="space-y-3">
+          {currentWishes.length > 0 ? (
+            currentWishes.map(wish => (
+              <WishItem key={wish.id} wish={wish} />
+            ))
+          ) : (
+            <div className="p-8 text-center text-white/60 border border-white/10 rounded-lg bg-black/20">
+              No wishes matching your filter criteria
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Pagination for Mobile */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-4">
+            <Pagination 
+              currentPage={currentPage} 
+              totalPages={totalPages} 
+              onPageChange={handlePageChange} 
+            />
+          </div>
+        )}
       </div>
     </div>
   );

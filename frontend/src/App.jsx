@@ -12,6 +12,7 @@ import WishHistory from './pages/WishHistory';
 import Settings from './pages/Settings';
 import Analytics from './pages/Analytics';
 import WishSimulator from './pages/WishSimulator';
+import UpdateNotification from './components/UpdateNotification';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -65,30 +66,31 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <NotificationProvider>
-          <AudioProvider>
-            <Background>
-              <div className="flex flex-col min-h-screen">
-                <motion.main 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex-1 pt-6 px-4 md:px-6 pb-32"
-                >
-                  <div className="max-w-7xl mx-auto">
-                    <AnimatedRoutes />
-                  </div>
-                </motion.main>
-                <Navbar />
-              </div>
-              <PaimonCompanion />
-            </Background>
-          </AudioProvider>
-        </NotificationProvider>
-      </AppProvider>
-    </BrowserRouter>
-  );
+      <BrowserRouter>
+        <AppProvider>
+          <NotificationProvider>
+            <AudioProvider>
+              <Background>
+                <div className="flex flex-col min-h-screen">
+                  <motion.main 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex-1 pt-6 px-4 md:px-6 pb-32"
+                  >
+                    <div className="max-w-7xl mx-auto">
+                      <AnimatedRoutes />
+                    </div>
+                  </motion.main>
+                  <Navbar />
+                </div>
+                <PaimonCompanion />
+                <UpdateNotification />
+              </Background>
+            </AudioProvider>
+          </NotificationProvider>
+        </AppProvider>
+      </BrowserRouter>
+    );
 };
 
 export default App;

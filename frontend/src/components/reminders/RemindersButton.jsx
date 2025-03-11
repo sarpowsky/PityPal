@@ -9,6 +9,7 @@ import {
 } from '../../services/reminderService';
 import RemindersList from './RemindersList';
 import ReminderDialog from './ReminderDialog';
+import { Plus } from 'lucide-react';
 
 const RemindersButton = () => {
   const [showReminders, setShowReminders] = useState(false);
@@ -93,14 +94,14 @@ const RemindersButton = () => {
                     className="p-1.5 rounded-lg hover:bg-white/10 transition-colors
                              flex items-center gap-1 text-xs"
                   >
-                    <Icon name="plus" size={14} />
+                    <Plus size={14} />
                     <span>New</span>
                   </button>
                   <button
                     onClick={() => setShowReminders(false)}
                     className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
                   >
-                    <Icon name="x" size={14} />
+                    <Icon name="x" size={20} />
                   </button>
                 </div>
               </div>

@@ -1,6 +1,5 @@
 // Path: frontend/src/pages/WishSimulator.jsx
 import React, { useState, useEffect } from 'react';
-import { Info, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getCurrentBanners } from '../data/banners';
 import { 
@@ -14,10 +13,11 @@ import SimulatorControls from '../components/simulator/SimulatorControls';
 import SimulatorHistory from '../components/simulator/SimulatorHistory';
 import WishAnimation from '../components/simulator/WishAnimation';
 import { useAudio } from '../features/audio/AudioSystem';
+import Icon from '../components/Icon';
 
 const InfoCard = ({ title, children }) => (
   <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-start gap-2">
-    <Info className="text-indigo-400 mt-0.5 shrink-0" size={16} />
+    <Icon name="info" className="text-indigo-400 mt-0.5 shrink-0" size={16} />
     <div>
       <h3 className="text-sm font-medium text-indigo-400 mb-1">{title}</h3>
       <div className="text-xs text-white/70">{children}</div>
@@ -274,7 +274,7 @@ const WishSimulator = () => {
           onClick={() => setShowInfoCard(!showInfoCard)}
           className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
         >
-          <HelpCircle size={20} className="text-white/60" />
+          <Icon name="bell-ring" size={36} className="text-white/60" />
         </button>
       </header>
 

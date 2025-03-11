@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import { useNotification } from '../context/NotificationContext';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { LineChart, BarChart2, PieChart, HelpCircle, Brain, Loader } from 'lucide-react';
 
 // Import analytics components
 import DistributionChart from '../components/analytics/DistributionChart';
@@ -164,7 +165,7 @@ const Analytics = () => {
             onClick={() => setShowInfoCard(!showInfoCard)}
             className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
           >
-            <Icon name="help-circle" size={20} className="text-white/60" />
+            <Icon name='bell-ring' size={36}/>
           </button>
         </header>
 
@@ -190,15 +191,15 @@ const Analytics = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid grid-cols-3 mb-2">
                 <TabsTrigger value="predictions" className="flex items-center gap-2">
-                  <Icon name="line-chart" size={16} />
+                  <LineChart size={16} />
                   <span>Pull Predictions</span>
                 </TabsTrigger>
                 <TabsTrigger value="distribution" className="flex items-center gap-2">
-                  <Icon name="bar-chart" size={16} />
+                  <BarChart2 size={16} />
                   <span>Pull Distribution</span>
                 </TabsTrigger>
                 <TabsTrigger value="rates" className="flex items-center gap-2">
-                  <Icon name="pie-chart" size={16} />
+                  <PieChart size={16} />
                   <span>Rate Analysis</span>
                 </TabsTrigger>
               </TabsList>
@@ -307,12 +308,12 @@ const Analytics = () => {
                         >
                           {isTraining ? (
                             <>
-                              <Icon name="loader" className="animate-spin" size={16} />
+                              <Loader className="animate-spin" size={16} />
                               <span>Training...</span>
                             </>
                           ) : (
                             <>
-                              <Icon name="brain-circuit" size={16} />
+                              <Brain size={16} />
                               <span>Train Model</span>
                             </>
                           )}
@@ -328,7 +329,7 @@ const Analytics = () => {
                         >
                           {loading ? (
                             <>
-                              <Icon name="loader" className="animate-spin" size={16} />
+                              <Loader className="animate-spin" size={16} />
                               <span>Calculating...</span>
                             </>
                           ) : (

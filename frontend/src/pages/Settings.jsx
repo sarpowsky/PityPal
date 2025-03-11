@@ -1,6 +1,6 @@
 // Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { ActionTypes } from '../context/appReducer';
 import { loadWishHistory } from '../context/appActions';
 import { requestNotificationPermission } from '../services/desktopNotificationService';
+import { waitForPyWebView } from '../utils/pywebview-bridge';
 
 const SettingsSection = ({ title, children }) => (
   <div className="space-y-4">
@@ -53,6 +54,9 @@ const Settings = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [autoUpdate, setAutoUpdate] = useState(true);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateStatus, setUpdateStatus] = useState(null);
   const { dispatch } = useApp();
   const { playAudio } = useAudio();
   const { 
@@ -63,6 +67,24 @@ const Settings = () => {
     handleImport,
     handleReset
   } = useDataManagement();
+
+  // Load settings when component mounts
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        await waitForPyWebView();
+        // Load auto update setting
+        const result = await window.pywebview.api.get_auto_update_setting();
+        if (result.success) {
+          setAutoUpdate(result.auto_check);
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    
+    loadSettings();
+  }, []);
 
   const onVolumeChange = (e) => {
     const newVolume = parseInt(e.target.value);
@@ -146,6 +168,45 @@ const Settings = () => {
     }
   };
 
+  const handleToggleAutoUpdate = async () => {
+    try {
+      // Update UI immediately for responsive feel
+      setAutoUpdate(!autoUpdate);
+      
+      // Then update the backend
+      await waitForPyWebView();
+      const result = await window.pywebview.api.set_auto_update_setting(!autoUpdate);
+      
+      // If the backend update failed, revert the UI
+      if (!result.success) {
+        setAutoUpdate(autoUpdate);
+        console.error('Failed to update auto-update setting:', result.error);
+      }
+    } catch (error) {
+      // Revert on exception
+      setAutoUpdate(autoUpdate);
+      console.error('Failed to toggle auto update setting:', error);
+    }
+  };
+  
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateStatus(null);
+    
+    try {
+      await waitForPyWebView();
+      const result = await window.pywebview.api.check_for_updates(true);  // Force check
+      setUpdateStatus(result);
+    } catch (error) {
+      setUpdateStatus({
+        success: false,
+        error: error.message || 'Failed to check for updates'
+      });
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
       <header>
@@ -175,6 +236,85 @@ const Settings = () => {
             </span>
           </div>
         </SettingItem>
+      </SettingsSection>
+
+      <SettingsSection title="Updates">
+        <SettingItem 
+          icon={autoUpdate ? Bell : BellOff}
+          label="Automatic Updates"
+          description="Check for updates when the application starts"
+        >
+          <div className="flex items-center">
+            <button
+              onClick={handleToggleAutoUpdate}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                autoUpdate ? 'bg-indigo-600' : 'bg-gray-700'
+              } transition-colors duration-300 focus:outline-none`}
+            >
+              <span
+                className={`${
+                  autoUpdate ? 'translate-x-6' : 'translate-x-1'
+                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300`}
+              />
+            </button>
+          </div>
+        </SettingItem>
+
+        <SettingItem 
+          icon={RotateCw} 
+          label="Check for Updates"
+          description="Check if a new version is available"
+        >
+          <button 
+            onClick={handleCheckForUpdates}
+            disabled={isCheckingUpdate}
+            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+                    border border-white/10 text-sm transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isCheckingUpdate ? (
+              <>
+                <Loader2 className="animate-spin" size={16} />
+                <span>Checking...</span>
+              </>
+            ) : (
+              <span>Check Now</span>
+            )}
+          </button>
+        </SettingItem>
+
+        {/* Show update status */}
+        {updateStatus && (
+          <div className={`p-3 mt-2 rounded-lg ${
+            !updateStatus.success 
+              ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+              : updateStatus.update_available
+                ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+          } border`}>
+            {!updateStatus.success ? (
+              <p>{updateStatus.error || 'Failed to check for updates'}</p>
+            ) : updateStatus.update_available ? (
+              <div>
+                <p className="font-medium">New version available: {updateStatus.latest_version}</p>
+                <p className="mt-1">Current version: {updateStatus.current_version}</p>
+                {updateStatus.download_url && (
+                  <a 
+                    href={updateStatus.download_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-2 px-3 py-1 bg-white/10 rounded-lg
+                            hover:bg-white/20 transition-colors text-sm"
+                  >
+                    Download Update
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p>{updateStatus.message || 'Application is up to date'}</p>
+            )}
+          </div>
+        )}
       </SettingsSection>
 
       <SettingsSection title="Data Management">
@@ -207,17 +347,6 @@ const Settings = () => {
                     disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isExporting ? 'Exporting...' : 'Export'}
-          </button>
-        </SettingItem>
-
-        <SettingItem 
-          icon={RotateCw} 
-          label="Check for Updates"
-          description="Check if a new version is available"
-        >
-          <button className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
-                         border border-white/10 text-sm transition-colors">
-            Check Now
           </button>
         </SettingItem>
 

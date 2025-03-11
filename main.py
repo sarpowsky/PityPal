@@ -115,20 +115,52 @@ class API:
             logger.error(f"Failed to reset data: {e}")
             return {"success": False, "error": str(e)}
 
-    def check_for_updates(self):
-        """Check if an update is available"""
+    def get_auto_update_setting(self):
+        """Get the automatic update check setting."""
         try:
-            return self.update_service.check_for_updates()
+            return self.update_service.get_auto_check()
+        except Exception as e:
+            logger.error(f"Failed to get auto update setting: {e}")
+            return {"success": False, "error": str(e)}
+
+    def set_auto_update_setting(self, enabled):
+        """Enable or disable automatic update checks."""
+        try:
+            return self.update_service.set_auto_check(enabled)
+        except Exception as e:
+            logger.error(f"Failed to set auto update setting: {e}")
+            return {"success": False, "error": str(e)}
+
+    def check_for_updates(self, force=False):
+        """Check if an update is available."""
+        try:
+            return self.update_service.check_for_updates(force)
         except Exception as e:
             logger.error(f"Failed to check for updates: {e}")
             return {"success": False, "error": str(e)}
-
 def main():
     try:
         # Create base model if it doesn't exist
         create_base_model()
         
         api = API()
+        
+        # Check for updates in the background
+        def check_updates_background():
+            try:
+                update_result = api.update_service.check_for_updates()
+                if update_result.get('success') and update_result.get('update_available'):
+                    # Log update availability
+                    logger.info(f"Update available: {update_result.get('latest_version')}")
+                    # Could add notification here if desired
+            except Exception as e:
+                logger.error(f"Background update check failed: {e}")
+        
+        # Start update check in a thread to avoid delaying app startup
+        import threading
+        update_thread = threading.Thread(target=check_updates_background)
+        update_thread.daemon = True
+        update_thread.start()
         
         # Development URL for hot reloading 
         DEV_URL = 'http://localhost:5173'

@@ -1,6 +1,7 @@
 // Path: frontend/src/components/simulator/SimulatorHistory.jsx
 import React from 'react';
-import { Star, Trash2, Sparkles } from 'lucide-react';
+import Icon from '../../components/Icon';
+import { Trash2, Sparkles } from 'lucide-react';
 
 const rarityColors = {
   3: 'text-blue-400',
@@ -122,8 +123,8 @@ const SimulatorHistory = ({ history, onClear }) => {
           </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-white/60">
-            <div className="relative w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-              <Star className="w-8 h-8 text-white/20" />
+            <div className="relative w-16 h-16 flex items-center justify-center mb-4">
+              <Icon name='info' size={36}/>
             </div>
             <div className="text-lg font-genshin mb-1">No Wishes Yet</div>
             <p className="text-sm">Use the controls to start wishing!</p>
