@@ -3,6 +3,10 @@ import pytest
 from unittest.mock import patch, MagicMock
 from main import API
 
+# Defines unit tests for the API endpoints using pytest fixtures
+# Mocks service dependencies to isolate API logic for testing
+# Ensures API methods handle errors and return expected response formats
+
 class TestAPI:
     @pytest.fixture
     def api(self):

@@ -409,6 +409,11 @@ function formatBanner(banner) {
 /**
 * Initialize a new simulation state
 */
+
+// Simulates wish system with accurate game mechanics (pity, guarantee, rates)
+// Models the "Capturing Radiance" system (10% chance to get featured character when losing 50/50)
+// Creates stateful simulation that persists across multiple wish sessions
+
 function createNewSimulationState(bannerType) {
   return {
     pity5: 0,

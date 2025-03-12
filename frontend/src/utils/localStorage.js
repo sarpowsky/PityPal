@@ -1,5 +1,5 @@
 // src/utils/localStorage.js
-const STORAGE_KEY = 'genshin_wish_tracker_state';
+const STORAGE_KEY = 'pitypal_state';
 
 export const loadState = () => {
   try {

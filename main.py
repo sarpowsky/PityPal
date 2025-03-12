@@ -1,16 +1,17 @@
 # Path: main.py
 
-from backend.services.pity_predictor.predictor_service import PredictorService
-from backend.services.pity_predictor.model_trainer_service import ModelTrainerService
 import webview
 import json
 import os
+import sys
 import logging
 from pathlib import Path
 from backend.services.wish_service import WishService
 from backend.services.pity_calculator import PityCalculator
 from backend.services.data_service import DataService
 from backend.services.update_service import UpdateService
+from backend.services.pity_predictor.model_trainer_service import ModelTrainerService
+from backend.services.pity_predictor.predictor_service import PredictorService
 # Import the base model creator
 from backend.services.pity_predictor.create_base_model import create_base_model
 
@@ -138,10 +139,20 @@ class API:
         except Exception as e:
             logger.error(f"Failed to check for updates: {e}")
             return {"success": False, "error": str(e)}
+
 def main():
     try:
         # Create base model if it doesn't exist
         create_base_model()
+        
+        # Set up app ID for Windows
+        if os.name == 'nt':
+            try:
+                import ctypes
+                myappid = 'sarpowsky.pitypal.1.0.0'
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            except Exception as e:
+                logger.error(f"Failed to set app ID: {e}")
         
         api = API()
         
@@ -162,15 +173,23 @@ def main():
         update_thread.daemon = True
         update_thread.start()
         
+        # Get the application directory (works in both dev and packaged versions)
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        if getattr(sys, 'frozen', False):
+            # Running as packaged app
+            base_dir = sys._MEIPASS
+        
         # Development URL for hot reloading 
         DEV_URL = 'http://localhost:5173'
         # Production URL pointing to built files
-        PROD_URL = 'web/index.html'  # For deployment, use this
+        PROD_URL = os.path.join(base_dir, 'web', 'index.html')
         
         # Choose the appropriate URL based on environment
-        url_to_use = DEV_URL
-        if not os.environ.get('DEVELOPMENT') and os.path.exists('web/index.html'):
-            url_to_use = PROD_URL
+        url_to_use = PROD_URL  # Default to local file
+        
+        # Only use development URL if explicitly set and in development mode
+        if os.environ.get('DEVELOPMENT') == 'true' and os.path.exists(DEV_URL):
+            url_to_use = DEV_URL
 
         window = webview.create_window(
             'PityPal by sarpowsky',
@@ -180,7 +199,9 @@ def main():
             height=800,
             resizable=True,
         )
-        webview.start(debug=True)
+        
+        # Start webview without debug mode for production
+        webview.start(debug=False)
     except Exception as e:
         logger.error(f"Application startup failed: {e}")
         raise

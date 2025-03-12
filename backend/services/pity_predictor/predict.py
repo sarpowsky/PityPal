@@ -4,6 +4,10 @@ import pickle
 import argparse
 import matplotlib.pyplot as plt
 
+# Predicts probability of 5★ items for each of the next n pulls
+# Accounts for banner-specific pity mechanics (soft pity, hard pity)
+# Hard-codes 100% probability at hard pity to match game mechanics exactly
+
 def load_model(file_path='fine_tuned_model.pkl'):
     """Load the fine-tuned model, encoder, and feature names."""
     with open(file_path, 'rb') as f:

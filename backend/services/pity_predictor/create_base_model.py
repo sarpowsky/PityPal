@@ -19,7 +19,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_base_model():
+
     """Create a basic pretrained model based on pity mechanics"""
+    # This function creates a baseline ML model for pity predictions when no user data exists
+    # The model is trained on synthetic data that mimics the actual rates in the game
+    # For character banners, soft pity starts at 74 pulls with hard pity at 90
+    # For weapon banners, soft pity starts at 63 pulls with hard pity at 80
+    
     output_path = os.path.join(os.path.dirname(__file__), "pretrained_model.pkl")
     
     if os.path.exists(output_path):

@@ -4,6 +4,10 @@ import { initialState, appReducer } from './appReducer';
 import { loadState, saveState } from '../utils/localStorage';
 import { loadWishHistory } from './appActions';
 
+// Provides application state to all components through React Context
+// Initializes by loading stored settings and wish history
+// Maintains persistence of settings across sessions  
+
 const AppContext = createContext(null);
 
 export const AppProvider = ({ children }) => {

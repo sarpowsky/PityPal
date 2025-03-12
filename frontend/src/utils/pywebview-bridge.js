@@ -1,4 +1,9 @@
 // Path: src/utils/pywebview-bridge.js
+
+// Provides utilities for safely communicating with Python backend through pywebview
+// Ensures API is available before making calls to prevent race conditions
+// Used throughout the frontend to maintain stable Python-JavaScript interaction
+
 export const isPyWebViewReady = () => {
     return window.pywebview !== undefined;
 };

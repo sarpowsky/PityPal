@@ -5,9 +5,13 @@ import sys
 import shutil
 from pathlib import Path
 
+# Defines PyInstaller configuration for creating the Windows executable
+# Hidden imports ensure scikit-learn components are properly included
+# The --exclude-module=tkinter reduces the executable size
+
 # Define application information
-APP_NAME = "GenshinWishTracker"
-APP_VERSION = "1.0.0"
+APP_NAME = "PityPal"
+APP_VERSION = "1.0"
 
 # Define paths
 MAIN_PY = "main.py" 
@@ -25,6 +29,7 @@ args = [
     '--name=%s' % APP_NAME,
     '--onedir',
     '--windowed',
+    '--noconsole',
     '--icon=%s' % ICON_PATH,
     '--add-data=%s;%s' % (FRONTEND_DIR, FRONTEND_DIR),
     '--add-data=%s;%s' % (MODEL_DIR, MODEL_DIR),

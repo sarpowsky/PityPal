@@ -10,6 +10,11 @@ import platform
 logger = logging.getLogger(__name__)
 
 class UpdateService:
+
+    # Provides GitHub-based update checking and notification functionality
+    # Manages auto-update preferences and version comparison logic
+    # Uses semantic versioning to determine if newer releases are available
+
     def __init__(self, current_version="1.0.0"):
         """Initialize the update service with current version and settings."""
         self.current_version = current_version

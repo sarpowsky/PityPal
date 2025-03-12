@@ -1,4 +1,9 @@
 // src/context/appReducer.js
+
+// Defines the state management pattern for the entire application
+// State is organized by domain (wishes, settings, etc.) for maintainability
+// ActionTypes define all possible state transitions in a centralized location
+
 export const ActionTypes = {
   SET_LOADING: 'SET_LOADING',
   SET_ERROR: 'SET_ERROR',

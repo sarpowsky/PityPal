@@ -13,11 +13,11 @@ logger = logging.getLogger(__name__)
 class DataService:
     def __init__(self):
         if platform.system() == "Windows":
-            self.app_data_path = Path.home() / "AppData/Local/GenshinWishTracker"
+            self.app_data_path = Path.home() / "AppData/Local/PityPal"
         elif platform.system() == "Darwin":  # macOS
-            self.app_data_path = Path.home() / "Library/Application Support/GenshinWishTracker"
+            self.app_data_path = Path.home() / "Library/Application Support/PityPal"
         else:  # Linux and others
-            self.app_data_path = Path.home() / ".genshinwishtracker"
+            self.app_data_path = Path.home() / ".pitypal"
             
         self.db_path = self.app_data_path / "wishes.db"
         self.backups_path = self.app_data_path / "backups"
@@ -59,7 +59,7 @@ class DataService:
             return []
 
     def export_data(self, format: str = "json") -> Dict:
-        """Export all data to JSON or Excel format"""
+        # Export all data to JSON format
         try:
             wishes = self.get_wishes()
             if not wishes:
@@ -82,7 +82,11 @@ class DataService:
             return {"success": False, "error": str(e)}
 
     def import_data(self, file_content: str) -> Dict:
-        """Import wishes from JSON data"""
+        
+        # Imports wish data from JSON format into the SQLite database
+        # Creates a backup before import in case of corruption
+        # Performs validation on import data to ensure required fields are present
+
         try:
             self._create_backup()
             wishes = json.loads(file_content)

@@ -147,7 +147,12 @@ class ModelTrainerService:
             return None
 
     def train_model_with_user_data(self, wishes):
+        
         """Train a model using user's wish history data."""
+        # This method takes the user's wish history and fine-tunes the prediction model
+        # It requires at least 100 wishes to have enough data for meaningful training
+        # The model is saved to fine_tuned_model.pkl for future predictions
+
         try:
             # Check if there's enough data
             if not wishes or len(wishes) < 100:

@@ -10,6 +10,10 @@ import {
 } from '../../services/reminderService';
 import { useNotification } from '../../context/NotificationContext';
 
+// Creates and manages reminder notifications for banner endings, events, and custom timepoints
+// Supports selecting active banners and events with customizable notification timing
+// Persists reminder data to localStorage for cross-session availability
+
 const ReminderTypeSelector = ({ selected, onChange }) => {
   const types = [
     { id: 'banner', label: 'Banner' },

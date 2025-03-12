@@ -3,6 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAudio } from '../../features/audio/AudioSystem';
 
+// Renders animations for wish pulls based on rarity and banner type
+// Handles special animations for 5★ pulls and "Capturing Radiance" mechanic
+// Sequences multi-pull animations with proper timing and sound effects
+
 const starColors = {
   3: '#4D6B96', // Blue
   4: '#A56CC1', // Purple

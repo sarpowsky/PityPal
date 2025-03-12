@@ -3,6 +3,10 @@ import { getCurrentBanners } from '../data/banners';
 import { getCurrentEvents } from '../data/events';
 import { getRemainingTime } from '../data/banners';
 
+// Manages notification reminders for time-sensitive game events
+// Handles different reminder types (banner end, event end, resin cap, etc.)
+// Provides utility functions for formatting and displaying time remaining
+
 // Constants for reminder types
 export const REMINDER_TYPES = {
   BANNER_ENDING: 'banner-ending',

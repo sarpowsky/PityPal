@@ -108,7 +108,11 @@ def preprocess_user_wishes(wishes, encoder):
     return processed_df
 
 def fine_tune_model(model, processed_df, feature_names, weight_user_data=5):
-    """Fine-tune the pre-trained model with user data."""
+
+    # Takes pre-trained model and updates it with user-specific pull data
+    # Applies higher weights to 5★ pulls due to their rarity in the dataset
+    # Weights user data higher than synthetic data to personalize predictions
+
     # Make a deep copy of the model to avoid modifying the original
     fine_tuned_model = copy.deepcopy(model)
     

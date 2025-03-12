@@ -28,11 +28,11 @@ class WishService:
         }
         self.history = []
         if platform.system() == "Windows":
-            self.db_path = Path.home() / "AppData/Local/GenshinWishTracker/wishes.db"
+            self.db_path = Path.home() / "AppData/Local/PityPal/wishes.db"
         elif platform.system() == "Darwin":  # macOS
-            self.db_path = Path.home() / "Library/Application Support/GenshinWishTracker/wishes.db"
+            self.db_path = Path.home() / "Library/Application Support/PityPal/wishes.db"
         else:  # Linux and others
-            self.db_path = Path.home() / ".genshinwishtracker/wishes.db"
+            self.db_path = Path.home() / ".pitypal/wishes.db"
             
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.init_database()
@@ -107,6 +107,11 @@ class WishService:
             raise ValueError("Invalid URL format")
 
     def import_from_url(self, url: str, progress_callback: Optional[Callable] = None) -> Dict:
+
+        # Parses and imports wish history directly from the game's API endpoint
+        # Uses rate limiting to avoid connection issues
+        # Reports progress through callback function to update the UI
+
         try:
             if progress_callback:
                 progress_callback(5)

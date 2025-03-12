@@ -1,8 +1,7 @@
-// src/components/Navbar.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-const Navbar = () => {
+const Navbar = ({ homeButtonRef }) => {
   const location = useLocation();
   
   const links = [
@@ -21,13 +20,17 @@ const Navbar = () => {
                     transition-all duration-300 ease-in-out
                     shadow-lg hover:shadow-purple-500/20">
           <div className="flex items-center gap-1">
-            {links.map(({ to, icon, label }) => {
+            {links.map(({ to, icon, label }, index) => {
               const isActive = location.pathname === to;
+              // Get ref for home button
+              const ref = to === '/' ? homeButtonRef : null;
+              
               return (
                 <Link
                   key={to}
                   to={to}
                   className="relative group"
+                  ref={ref}
                 >
                   <div className={`p-4 rounded-full transition-all duration-300 ease-out
                                relative overflow-hidden
