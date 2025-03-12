@@ -33,6 +33,7 @@ args = [
     '--icon=%s' % ICON_PATH,
     '--add-data=%s;%s' % (FRONTEND_DIR, FRONTEND_DIR),
     '--add-data=%s;%s' % (MODEL_DIR, MODEL_DIR),
+    '--add-data="web;web"'
     '--hidden-import=sklearn.ensemble',
     '--hidden-import=sklearn.tree',
     '--hidden-import=sklearn.preprocessing',
