@@ -1,6 +1,6 @@
 // Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
@@ -368,9 +368,38 @@ const Settings = () => {
         </SettingItem>
       </SettingsSection>
 
-      <div className="text-center text-sm text-white/40 py-4">
-        Version 1.0.0
-      </div>
+      <SettingsSection title="About PityPal">
+        <SettingItem 
+          icon={Info} 
+          label="About This App"
+          description="PityPal - Your companion and Mona basically, for Genshin Impact"
+        >
+          <div className="space-y-2 max-w-xs text-sm text-white/60">
+            <p>Version 1.0</p>
+            <p>Developed by sarpowsky</p>
+            <div className="flex items-center gap-2 mt-2">
+              <a 
+                href="https://github.com/sarpowsky" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <Github size={16} />
+                <span>GitHub</span>
+              </a>
+              <a 
+                href="mailto:sarpcankaraman@gmail.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                <Mail size={16} />
+                <span>Contact</span>
+              </a>
+            </div>
+          </div>
+        </SettingItem>
+      </SettingsSection>
 
       <ConfirmDialog
         isOpen={showResetDialog}

@@ -1,0 +1,6 @@
+{
+    "owner": "sarpowsky",
+    "repo": "PityPal",
+    "latest_release_url": "https://api.github.com/repos/{owner}/{repo}/releases/latest",
+    "download_url_pattern": "https://github.com/{owner}/{repo}/releases/download/v{version}/PityPal_Setup.exe"
+  }

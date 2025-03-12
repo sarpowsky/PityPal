@@ -15,7 +15,16 @@ class UpdateService:
         self.current_version = current_version
         self.settings_file = self._get_settings_path()
         self.settings = self._load_settings()
-        self.update_url = "https://api.github.com/repos/yourusername/GenshinWishTracker/releases/latest"
+        config_path = Path(__file__).parent / "../.." / "update_config.json"
+        if config_path.exists():
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                owner = config.get("owner", "yourusername")
+                repo = config.get("repo", "GenshinWishTracker")
+                self.update_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
+        else:
+            # Fallback to default
+            self.update_url = "https://api.github.com/repos/yourusername/GenshinWishTracker/releases/latest"
         self.auto_check = self.settings.get('auto_check_updates', True)
         
     def _get_settings_path(self):

@@ -173,7 +173,7 @@ def main():
             url_to_use = PROD_URL
 
         window = webview.create_window(
-            'Genshin Impact Pity Tracker',
+            'PityPal by sarpowsky',
             url=url_to_use,
             js_api=api,
             width=1200,
