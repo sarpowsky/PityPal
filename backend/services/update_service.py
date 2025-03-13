@@ -24,22 +24,22 @@ class UpdateService:
         if config_path.exists():
             with open(config_path, 'r') as f:
                 config = json.load(f)
-                owner = config.get("owner", "yourusername")
-                repo = config.get("repo", "GenshinWishTracker")
+                owner = config.get("owner", "sarpowsky")
+                repo = config.get("repo", "PityPal")
                 self.update_url = f"https://api.github.com/repos/{owner}/{repo}/releases/latest"
         else:
             # Fallback to default
-            self.update_url = "https://api.github.com/repos/yourusername/GenshinWishTracker/releases/latest"
+            self.update_url = "https://api.github.com/repos/sarpowsky/PityPal/releases/latest"
         self.auto_check = self.settings.get('auto_check_updates', True)
         
     def _get_settings_path(self):
         """Get the path to the settings file based on the platform."""
         if platform.system() == "Windows":
-            app_data_path = Path.home() / "AppData/Local/GenshinWishTracker"
+            app_data_path = Path.home() / "AppData/Local/PityPal"
         elif platform.system() == "Darwin":  # macOS
-            app_data_path = Path.home() / "Library/Application Support/GenshinWishTracker"
+            app_data_path = Path.home() / "Library/Application Support/PityPal"
         else:  # Linux and others
-            app_data_path = Path.home() / ".genshinwishtracker"
+            app_data_path = Path.home() / ".pitypal"
             
         app_data_path.mkdir(parents=True, exist_ok=True)
         return app_data_path / "settings.json"

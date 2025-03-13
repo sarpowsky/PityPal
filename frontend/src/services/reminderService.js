@@ -19,7 +19,7 @@ export const REMINDER_TYPES = {
 // Helper function for persisting reminders to localStorage
 const saveReminders = (reminders) => {
   try {
-    localStorage.setItem('genshin_reminders', JSON.stringify(reminders));
+    localStorage.setItem('pitypal_reminders', JSON.stringify(reminders));
   } catch (error) {
     console.error('Failed to save reminders:', error);
   }
