@@ -13,6 +13,7 @@ import WishSimulator from './pages/WishSimulator';
 import Settings from './pages/Settings';
 import UpdateNotification from './components/UpdateNotification';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
+import FeaturesIntegration from './features/FeaturesIntegration';
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -72,6 +73,8 @@ const App = () => {
                   <Navbar homeButtonRef={setHomeButtonRef} />
                   <PaimonCompanion />
                   <UpdateNotification />
+                  {/* Add FeaturesIntegration component */}
+                  <FeaturesIntegration />
                 </div>
               )}
             </Background>

@@ -2,16 +2,16 @@
 
 
 a = Analysis(
-    ['main.py'],
-    pathex=['D:python311.dll'],
+    ['C:\\Users\\Sarp Can\\Desktop\\ideas\\genshin-pity-tracker\\main.py'],
+    pathex=[],
     binaries=[],
-    datas=[('web', 'web'), ('backend\\services\\pity_predictor', 'backend\\services\\pity_predictor'), ('icon.ico', '.')],
+    datas=[('C:\\Users\\Sarp Can\\Desktop\\ideas\\genshin-pity-tracker\\web', 'web'), ('C:\\Users\\Sarp Can\\Desktop\\ideas\\genshin-pity-tracker\\backend\\services\\pity_predictor', 'backend\\services\\pity_predictor')],
     hiddenimports=['sklearn.ensemble', 'sklearn.tree', 'sklearn.preprocessing', 'pandas', 'matplotlib', 'numpy'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],
-    noarchive=True,
+    noarchive=False,
     optimize=0,
 )
 pyz = PYZ(a.pure)
@@ -19,10 +19,10 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [('v', None, 'OPTION')],
+    [],
     exclude_binaries=True,
     name='PityPal',
-    debug=True,
+    debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
@@ -32,7 +32,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['icon.ico'],
+    icon=['C:\\Users\\Sarp Can\\Desktop\\ideas\\genshin-pity-tracker\\icon.ico'],
 )
 coll = COLLECT(
     exe,

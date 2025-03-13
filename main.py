@@ -156,52 +156,67 @@ def main():
         
         api = API()
         
-        # Check for updates in the background
+        # Simple background update check
         def check_updates_background():
             try:
-                update_result = api.update_service.check_for_updates()
-                if update_result.get('success') and update_result.get('update_available'):
-                    # Log update availability
-                    logger.info(f"Update available: {update_result.get('latest_version')}")
-                    # Could add notification here if desired
+                api.update_service.check_for_updates()
             except Exception as e:
                 logger.error(f"Background update check failed: {e}")
         
-        # Start update check in a thread to avoid delaying app startup
+        # Start update check
         import threading
-        update_thread = threading.Thread(target=check_updates_background)
-        update_thread.daemon = True
-        update_thread.start()
+        threading.Thread(target=check_updates_background, daemon=True).start()
         
-        # Get the application directory (works in both dev and packaged versions)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        # Get the application directory
         if getattr(sys, 'frozen', False):
-            # Running as packaged app
             base_dir = sys._MEIPASS
+        else:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Development URL for hot reloading 
+        logger.info(f"Base directory: {base_dir}")
+        
+        # Find web assets
+        web_dir = os.path.join(base_dir, 'web')
+        web_index = os.path.join(web_dir, 'index.html')
+        
+        logger.info(f"Web directory: {web_dir}")
+        logger.info(f"Web index: {web_index}")
+        
+        # Check if web directory exists and has files
+        if os.path.exists(web_dir):
+            files = os.listdir(web_dir)
+            logger.info(f"Web directory contents: {files}")
+            if 'index.html' not in files:
+                logger.error("index.html not found in web directory!")
+        else:
+            logger.error(f"Web directory not found: {web_dir}")
+        
+        # Development URL for hot reloading
         DEV_URL = 'http://localhost:5173'
-        # Production URL pointing to built files
-        PROD_URL = os.path.join(base_dir, 'web', 'index.html')
         
-        # Choose the appropriate URL based on environment
-        url_to_use = PROD_URL  # Default to local file
+        # Production URL
+        PROD_URL = web_index
         
-        # Only use development URL if explicitly set and in development mode
-        if os.environ.get('DEVELOPMENT') == 'true' and os.path.exists(DEV_URL):
+        # Choose the appropriate URL
+        if os.environ.get('DEVELOPMENT') == 'true':
             url_to_use = DEV_URL
-
+            logger.info(f"Using development URL: {url_to_use}")
+        else:
+            url_to_use = PROD_URL
+            logger.info(f"Using production path: {url_to_use}")
+        
+        # Create window using the proper file path
         window = webview.create_window(
             'PityPal by sarpowsky',
             url=url_to_use,
             js_api=api,
             width=1200,
             height=800,
-            resizable=True,
+            resizable=True
         )
         
-        # Start webview without debug mode for production
-        webview.start(debug=False)
+        # Start webview with http_server (but no user_data_path parameter)
+        webview.start(debug=False, http_server=True)
     except Exception as e:
         logger.error(f"Application startup failed: {e}")
         raise

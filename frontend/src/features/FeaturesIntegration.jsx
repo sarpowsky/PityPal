@@ -14,6 +14,9 @@ const FeaturesIntegration = ({ isDevMode = false }) => {
 
   // Check if PyWebView is ready and the API is available
   useEffect(() => {
+    // Flag to track if initialization has already happened
+    const hasInitialized = localStorage.getItem('app_initialized');
+    
     const checkPyWebView = async () => {
       try {
         // Wait for PyWebView API to be available
@@ -70,14 +73,6 @@ const FeaturesIntegration = ({ isDevMode = false }) => {
       // Update UI with loaded data
       console.log("Initial data load successful");
       
-      // Show welcome notification
-      setTimeout(() => {
-        showNotification(
-          'success',
-          'Welcome to Genshin Wish Tracker',
-          'App is ready! Use the navbar to navigate between features.'
-        );
-      }, 1500);
     } catch (error) {
       console.error("App initialization error:", error);
       
