@@ -28,7 +28,7 @@ const saveReminders = (reminders) => {
 // Helper function for loading reminders from localStorage
 export const loadReminders = () => {
   try {
-    const stored = localStorage.getItem('genshin_reminders');
+    const stored = localStorage.getItem('pitypal_reminders');
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Failed to load reminders:', error);
