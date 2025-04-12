@@ -1,9 +1,10 @@
-// Path: frontend/src/pages/Settings.jsx
+// Path: frontend/src/pages/Settings.jsx (Updated)
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail, RefreshCw } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
+import { useFirebase } from '../context/FirebaseContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { ActionTypes } from '../context/appReducer';
 import { loadWishHistory } from '../context/appActions';
@@ -67,6 +68,14 @@ const Settings = () => {
     handleImport,
     handleReset
   } = useDataManagement();
+  
+  // Firebase content updates
+  const { 
+    checkForUpdates: checkForContentUpdates, 
+    refreshContent, 
+    contentUpdateAvailable,
+    isLoading: isFirebaseLoading 
+  } = useFirebase();
 
   // Load settings when component mounts
   useEffect(() => {
@@ -206,6 +215,28 @@ const Settings = () => {
       setIsCheckingUpdate(false);
     }
   };
+  
+  // Handle content updates
+  const handleCheckForContentUpdates = async () => {
+    try {
+      const hasUpdates = await checkForContentUpdates();
+      return hasUpdates;
+    } catch (error) {
+      console.error('Failed to check for content updates:', error);
+      return false;
+    }
+  };
+  
+  const handleRefreshContent = async () => {
+    try {
+      await refreshContent();
+      alert('Content updated successfully! The app will now reload.');
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to refresh content:', error);
+      alert('Failed to update content. Please try again later.');
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fadeIn">
@@ -242,7 +273,7 @@ const Settings = () => {
         <SettingItem 
           icon={autoUpdate ? Bell : BellOff}
           label="Automatic Updates"
-          description="Check for updates when the application starts"
+          description="Check for app updates when the application starts"
         >
           <div className="flex items-center">
             <button
@@ -262,8 +293,8 @@ const Settings = () => {
 
         <SettingItem 
           icon={RotateCw} 
-          label="Check for Updates"
-          description="Check if a new version is available"
+          label="Check for App Updates"
+          description="Check if a new version of PityPal is available"
         >
           <button 
             onClick={handleCheckForUpdates}
@@ -282,6 +313,49 @@ const Settings = () => {
             )}
           </button>
         </SettingItem>
+        
+        {/* Content Updates Section */}
+        <SettingItem 
+          icon={RefreshCw} 
+          label="Check for Game Content Updates"
+          description="Check for new banners, events, and other game content"
+        >
+          <button 
+            onClick={handleCheckForContentUpdates}
+            disabled={isFirebaseLoading}
+            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+                    border border-white/10 text-sm transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isFirebaseLoading ? (
+              <>
+                <Loader2 className="animate-spin" size={16} />
+                <span>Checking...</span>
+              </>
+            ) : (
+              <span>Check Now</span>
+            )}
+          </button>
+        </SettingItem>
+        
+        {contentUpdateAvailable && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
+            <div className="text-sm">New game content available!</div>
+            <button 
+              onClick={handleRefreshContent}
+              disabled={isFirebaseLoading}
+              className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30
+                      border border-indigo-500/30 text-sm transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isFirebaseLoading ? (
+                <Loader2 className="animate-spin" size={14} />
+              ) : (
+                <span>Update Now</span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Show update status */}
         {updateStatus && (

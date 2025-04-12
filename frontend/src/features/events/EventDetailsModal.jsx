@@ -1,7 +1,8 @@
-// Path: src/features/events/EventDetailsModal.jsx
+// Path: src/features/events/EventDetailsModal.jsx (Updated)
 import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Clock, Star, AlertCircle, Trophy } from 'lucide-react';
+import SafeImage from '../../components/SafeImage';
 import BannerCountdown from '../banners/BannerCountdown';
 
 const EventDetailsModal = ({ event, onClose }) => {
@@ -27,10 +28,11 @@ const EventDetailsModal = ({ event, onClose }) => {
         {/* Header Section */}
         <div className="relative aspect-[16/9] rounded-t-xl overflow-hidden border border-white/10">
           <div className="w-full h-full bg-black">
-            <img 
+            <SafeImage 
               src={event.image}
               alt={event.name}
               className="w-full h-full object-contain"
+              fallbackSrc="/images/events/placeholder.png"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent" />
@@ -52,7 +54,7 @@ const EventDetailsModal = ({ event, onClose }) => {
                              ${event.type === 'main' 
                                ? 'bg-amber-500/20 text-amber-400' 
                                : 'bg-purple-500/20 text-purple-400'}`}>
-                  {event.type.toUpperCase()} EVENT
+                  {event.type?.toUpperCase() || 'EVENT'}
                 </div>
                 <BannerCountdown endDate={event.endDate} />
               </div>
@@ -79,11 +81,18 @@ const EventDetailsModal = ({ event, onClose }) => {
                   {formatDate(event.startDate)} - {formatDate(event.endDate)}
                 </div>
               </div>
+              
+              {event.version && (
+                <div className="p-3 rounded-lg bg-indigo-500/10">
+                  <div className="text-xs text-white/60 mb-1">Version</div>
+                  <div className="text-indigo-400">{event.version}</div>
+                </div>
+              )}
             </div>
 
             {/* Right Column */}
             <div className="space-y-3">
-              {event.rewards && (
+              {event.rewards && event.rewards.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-amber-400">
                     <Trophy size={16} />

@@ -1,8 +1,10 @@
-// src/pages/Home.jsx
+// src/pages/Home.jsx (Updated)
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Icon from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { waitForPyWebView } from '../utils/pywebview-bridge';
+import { useFirebase } from '../context/FirebaseContext';
 import BannerCarousel from '../features/banners/BannerCarousel';
 import EventCarousel from '../features/events/EventCarousel';
 import PityTracker from '../features/banners/PityTracker';
@@ -11,6 +13,7 @@ import UrlImporter from '../components/UrlImporter';
 import ImportGuideModal from '../components/ImportGuideModal';
 import RemindersButton from '../components/reminders/RemindersButton';
 import { calculateRateComparison } from '../services/analyticsService';
+import { AlertTriangle, Sparkles } from 'lucide-react';
 
 const StatCard = ({ icon, label, value, gradient, delay }) => (
   <div className={`group flex items-center gap-4 px-4 py-4 rounded-xl
@@ -32,9 +35,39 @@ const StatCard = ({ icon, label, value, gradient, delay }) => (
   </div>
 );
 
+const LeaksButton = () => (
+  <Link to="/leaks" className="flex items-center gap-2 px-4 py-2 rounded-xl 
+                            bg-gradient-to-r from-pink-500/30 to-purple-500/30 
+                            hover:from-pink-500/40 hover:to-purple-500/40
+                            backdrop-blur-sm border border-pink-500/30
+                            transition-all duration-300 hover:scale-[1.02]
+                            shadow-md hover:shadow-lg hover:shadow-purple-500/10
+                            group">
+    <Sparkles size={20} className="text-pink-400 group-hover:text-pink-300 transition-colors" />
+    <span className="font-medium">Upcoming Content</span>
+  </Link>
+);
+
+const ContentUpdateNotice = ({ onUpdate }) => (
+  <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-500/20 border border-indigo-500/30">
+    <div className="flex items-center gap-2">
+      <AlertTriangle size={18} className="text-indigo-400" />
+      <span className="text-sm">New game content available</span>
+    </div>
+    <button 
+      onClick={onUpdate}
+      className="px-3 py-1 rounded-lg bg-indigo-500/30 hover:bg-indigo-500/40
+                text-xs text-white font-medium transition-colors"
+    >
+      Update Now
+    </button>
+  </div>
+);
+
 const Home = () => {
   const [showGuide, setShowGuide] = useState(false);
   const { state } = useApp();
+  const { contentUpdateAvailable, refreshContent, isLoading: firebaseLoading } = useFirebase();
   const [stats, setStats] = useState({
     total_wishes: 0,
     five_stars: 0,
@@ -85,6 +118,12 @@ const Home = () => {
     fetchStats();
   }, [state.wishes.history]);
 
+  const handleContentUpdate = async () => {
+    await refreshContent();
+    // Force a page reload to show updated content
+    window.location.reload();
+  };
+
   return (
     <>
       {/* Fixed Reminders Button */}
@@ -101,6 +140,11 @@ const Home = () => {
             PityPal
           </h1>
           
+          {/* Leaks button positioned absolutely to the left */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2">
+            <LeaksButton />
+          </div>
+          
           {/* Guide button positioned absolutely to the right */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
             <button
@@ -114,6 +158,13 @@ const Home = () => {
             </button>
           </div>
         </div>
+
+        {/* Content update notice */}
+        {contentUpdateAvailable && (
+          <div className="max-w-2xl mx-auto mb-4">
+            <ContentUpdateNotice onUpdate={handleContentUpdate} />
+          </div>
+        )}
 
         <div className="max-w-2xl mx-auto mb-4 transform hover:scale-[1.01] transition-transform duration-300">
           <UrlImporter />

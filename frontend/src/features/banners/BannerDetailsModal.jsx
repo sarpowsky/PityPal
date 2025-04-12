@@ -1,9 +1,9 @@
-// Path: src/features/banners/BannerDetailsModal.jsx
-import React, { useState } from 'react';
+// Path: src/features/banners/BannerDetailsModal.jsx (Updated)
+import React from 'react';
 import { motion } from 'framer-motion';
-import { X, Star, Clock, Info, Bell } from 'lucide-react';
+import { X, Star, Clock, Info } from 'lucide-react';
+import SafeImage from '../../components/SafeImage';
 import BannerCountdown from './BannerCountdown';
-import BannerReminderDialog from '../../components/reminders/BannerReminderDialog';
 
 const BannerDetailsModal = ({ banner, onClose }) => {
   if (!banner) return null;
@@ -22,10 +22,11 @@ const BannerDetailsModal = ({ banner, onClose }) => {
                      bg-gradient-to-br from-indigo-900/90 to-purple-900/90
                      border border-white/10">
           <div className="w-full h-full bg-black">
-            <img 
+            <SafeImage 
               src={banner.image}
               alt={banner.name}
               className="w-full h-full object-contain"
+              fallbackSrc="/images/banners/placeholder.png"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent" />
@@ -101,6 +102,17 @@ const BannerDetailsModal = ({ banner, onClose }) => {
                   <p>4★ Guaranteed: 10 wishes</p>
                 </div>
               </div>
+              
+              {banner.version && (
+                <div className="p-3 rounded-lg bg-indigo-500/10 text-sm">
+                  <div className="text-indigo-400 font-medium mb-1">Version {banner.version}</div>
+                  {banner.startDate && banner.endDate && (
+                    <div className="text-xs text-white/70">
+                      {new Date(banner.startDate).toLocaleDateString()} - {new Date(banner.endDate).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

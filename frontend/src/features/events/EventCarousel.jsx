@@ -1,19 +1,45 @@
-// Path: src/features/events/EventCarousel.jsx
+// Path: src/features/events/EventCarousel.jsx (Updated)
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getCurrentEvents } from '../../data/events';
+import { useFirebase } from '../../context/FirebaseContext';
+import SafeImage from '../../components/SafeImage';
 import BannerCountdown from '../banners/BannerCountdown';
 import EventDetailsModal from './EventDetailsModal';
 
 const EventCarousel = () => {
+  const { getEvents, isLoading } = useFirebase();
   const [currentEvents, setCurrentEvents] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const activeEvents = getCurrentEvents();
-    setCurrentEvents(activeEvents);
-  }, []);
+    const loadEvents = async () => {
+      try {
+        setLoading(true);
+        // Get events from Firebase instead of local data
+        const eventsData = await getEvents();
+        
+        // Filter to show only current events
+        const now = new Date();
+        const activeEvents = eventsData.filter(event => {
+          const start = event.startDate ? new Date(event.startDate) : null;
+          const end = event.endDate ? new Date(event.endDate) : null;
+          return (!start || now >= start) && (!end || now <= end);
+        });
+
+        setCurrentEvents(activeEvents);
+      } catch (err) {
+        setError(err.message);
+        console.error('Error loading events:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, [getEvents]);
 
   const nextEvent = (e) => {
     e.stopPropagation();
@@ -25,7 +51,27 @@ const EventCarousel = () => {
     setCurrentIndex((prev) => (prev - 1 + currentEvents.length) % currentEvents.length);
   };
 
-  if (!currentEvents.length) return null;
+  if (loading || isLoading) {
+    return (
+      <div className="h-[240px] w-[480px] rounded-xl bg-black/20 backdrop-blur-sm flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-t-indigo-500 border-white/20 rounded-full animate-spin mb-2"></div>
+          <div className="text-sm text-white/70">Loading events...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !currentEvents.length) {
+    return (
+      <div className="h-[240px] w-[480px] rounded-xl bg-black/20 backdrop-blur-sm border border-indigo-500/20 flex items-center justify-center text-white/70">
+        <div className="text-center p-4">
+          <div className="mb-2 text-indigo-400">No active events found</div>
+          <div className="text-sm">Check back later for updates</div>
+        </div>
+      </div>
+    );
+  }
 
   const currentEvent = currentEvents[currentIndex];
 
@@ -36,10 +82,11 @@ const EventCarousel = () => {
         className="bg-black/20 backdrop-blur-sm rounded-xl overflow-hidden group w-[480px] h-[240px] cursor-pointer"
       >
         <div className="relative h-full">
-          <img
+          <SafeImage
             src={currentEvent.image}
             alt={currentEvent.name}
             className="w-full h-full object-cover"
+            fallbackSrc="/images/events/placeholder.png"
           />
           
           {currentEvents.length > 1 && (

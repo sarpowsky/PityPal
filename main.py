@@ -5,6 +5,7 @@ import json
 import os
 import sys
 import logging
+import threading
 from pathlib import Path
 from backend.services.wish_service import WishService
 from backend.services.pity_calculator import PityCalculator
@@ -12,6 +13,7 @@ from backend.services.data_service import DataService
 from backend.services.update_service import UpdateService
 from backend.services.pity_predictor.model_trainer_service import ModelTrainerService
 from backend.services.pity_predictor.predictor_service import PredictorService
+from backend.services.firebase_service import firebase_service, initialize_firebase
 # Import the base model creator
 from backend.services.pity_predictor.create_base_model import create_base_model
 
@@ -139,11 +141,28 @@ class API:
         except Exception as e:
             logger.error(f"Failed to check for updates: {e}")
             return {"success": False, "error": str(e)}
+            
+    # Firebase related methods
+    def check_firebase_connection(self):
+        """Check if Firebase is properly initialized."""
+        try:
+            is_initialized = firebase_service.ensure_initialized()
+            return {
+                "success": True,
+                "initialized": is_initialized
+            }
+        except Exception as e:
+            logger.error(f"Firebase connection check error: {e}")
+            return {"success": False, "error": str(e)}
 
 def main():
     try:
         # Create base model if it doesn't exist
         create_base_model()
+        
+        # Initialize Firebase
+        firebase_initialized = initialize_firebase()
+        logger.info(f"Firebase initialization {'succeeded' if firebase_initialized else 'failed'}")
         
         # Set up app ID for Windows
         if os.name == 'nt':
@@ -164,7 +183,6 @@ def main():
                 logger.error(f"Background update check failed: {e}")
         
         # Start update check
-        import threading
         threading.Thread(target=check_updates_background, daemon=True).start()
         
         # Get the application directory
@@ -196,6 +214,8 @@ def main():
         
         # Production URL
         PROD_URL = web_index
+
+        os.environ['DEVELOPMENT'] = 'true' # will remove
         
         # Choose the appropriate URL
         if os.environ.get('DEVELOPMENT') == 'true':
@@ -216,7 +236,7 @@ def main():
         )
         
         # Start webview with http_server (but no user_data_path parameter)
-        webview.start(debug=False, http_server=True)
+        webview.start(debug=True, http_server=True)
     except Exception as e:
         logger.error(f"Application startup failed: {e}")
         raise

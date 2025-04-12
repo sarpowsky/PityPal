@@ -1,11 +1,13 @@
-// Path: src/features/banners/BannerCarousel.jsx
+// Path: src/features/banners/BannerCarousel.jsx (Updated)
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { getCurrentBanners } from '../../data/banners';
+import { useFirebase } from '../../context/FirebaseContext';
+import SafeImage from '../../components/SafeImage';
 import BannerCountdown from './BannerCountdown';
 import BannerDetailsModal from './BannerDetailsModal';
 
 const BannerCarousel = () => {
+  const { getBanners, isLoading } = useFirebase();
   const [banners, setBanners] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedBanner, setSelectedBanner] = useState(null);
@@ -13,23 +15,36 @@ const BannerCarousel = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const loadBanners = () => {
+    const loadBanners = async () => {
       try {
         setLoading(true);
-        const currentBanners = getCurrentBanners();
+        // Get banners from Firebase instead of local data
+        const bannersData = await getBanners();
+        
+        // Filter to show only current banners
+        const now = new Date();
+        const currentBanners = bannersData.filter(banner => {
+          if (banner.isPermanent) return true;
+          const start = banner.startDate ? new Date(banner.startDate) : null;
+          const end = banner.endDate ? new Date(banner.endDate) : null;
+          return (!start || now >= start) && (!end || now <= end);
+        });
+
         if (currentBanners.length === 0) {
           throw new Error('No active banners found');
         }
+        
         setBanners(currentBanners);
       } catch (err) {
         setError(err.message);
+        console.error('Error loading banners:', err);
       } finally {
         setLoading(false);
       }
     };
 
     loadBanners();
-  }, []);
+  }, [getBanners]);
 
   const nextBanner = (e) => {
     e.stopPropagation();
@@ -41,18 +56,24 @@ const BannerCarousel = () => {
     setCurrentIndex((prev) => (prev - 1 + banners.length) % banners.length);
   };
 
-  if (loading) {
+  if (loading || isLoading) {
     return (
-      <div className="h-[240px] rounded-xl bg-black/20 backdrop-blur-sm flex items-center justify-center text-white/40">
-        Loading banners...
+      <div className="h-[240px] w-[600px] rounded-xl bg-black/20 backdrop-blur-sm flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-t-indigo-500 border-white/20 rounded-full animate-spin mb-2"></div>
+          <div className="text-sm text-white/70">Loading banners...</div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="h-[240px] rounded-xl bg-black/20 backdrop-blur-sm border border-red-500/20 flex items-center justify-center text-red-400">
-        {error}
+      <div className="h-[240px] w-[600px] rounded-xl bg-black/20 backdrop-blur-sm border border-indigo-500/20 flex items-center justify-center text-white/70">
+        <div className="text-center p-4">
+          <div className="mb-2 text-indigo-400">No active banners found</div>
+          <div className="text-sm">Check back later for updates</div>
+        </div>
       </div>
     );
   }
@@ -68,10 +89,11 @@ const BannerCarousel = () => {
         className="bg-black/20 backdrop-blur-sm rounded-xl overflow-hidden group w-[600px] h-[240px] cursor-pointer"
       >
         <div className="relative h-full">
-          <img
+          <SafeImage
             src={currentBanner.image}
             alt={currentBanner.name}
             className="w-full h-full object-cover"
+            fallbackSrc="/images/banners/placeholder.png"
           />
           
           {banners.length > 1 && (

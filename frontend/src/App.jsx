@@ -1,9 +1,10 @@
-// App.jsx
+// App.jsx (Updated with FirebaseProvider)
 import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { AudioProvider } from './features/audio/AudioSystem';
+import { FirebaseProvider } from './context/FirebaseContext';
 import Background from './components/Background';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -11,6 +12,7 @@ import WishHistory from './pages/WishHistory';
 import Analytics from './pages/Analytics';
 import WishSimulator from './pages/WishSimulator';
 import Settings from './pages/Settings';
+import Leaks from './pages/Leaks'; // New Leaks page
 import UpdateNotification from './components/UpdateNotification';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
 import FeaturesIntegration from './features/FeaturesIntegration';
@@ -52,33 +54,35 @@ const App = () => {
     <HashRouter>
       <AppProvider>
         <NotificationProvider>
-          <AudioProvider>
-            <Background>
-              {loading ? (
-                <LoadingScreen />
-              ) : (
-                <div className="flex flex-col min-h-screen">
-                  <main className="flex-1 pt-6 px-4 md:px-6 pb-32">
-                    <div className="max-w-7xl mx-auto">
-                      <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/history" element={<WishHistory />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/simulator" element={<WishSimulator />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<Home />} />
-                      </Routes>
-                    </div>
-                  </main>
-                  <Navbar homeButtonRef={setHomeButtonRef} />
-                  <PaimonCompanion />
-                  <UpdateNotification />
-                  {/* Add FeaturesIntegration component */}
-                  <FeaturesIntegration />
-                </div>
-              )}
-            </Background>
-          </AudioProvider>
+          <FirebaseProvider>
+            <AudioProvider>
+              <Background>
+                {loading ? (
+                  <LoadingScreen />
+                ) : (
+                  <div className="flex flex-col min-h-screen">
+                    <main className="flex-1 pt-6 px-4 md:px-6 pb-32">
+                      <div className="max-w-7xl mx-auto">
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/history" element={<WishHistory />} />
+                          <Route path="/analytics" element={<Analytics />} />
+                          <Route path="/simulator" element={<WishSimulator />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/leaks" element={<Leaks />} />
+                          <Route path="*" element={<Home />} />
+                        </Routes>
+                      </div>
+                    </main>
+                    <Navbar homeButtonRef={setHomeButtonRef} />
+                    <PaimonCompanion />
+                    <UpdateNotification />
+                    <FeaturesIntegration />
+                  </div>
+                )}
+              </Background>
+            </AudioProvider>
+          </FirebaseProvider>
         </NotificationProvider>
       </AppProvider>
     </HashRouter>
