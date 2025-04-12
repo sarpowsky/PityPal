@@ -1,6 +1,6 @@
 // Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail, RefreshCw } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail, RefreshCw, Coffee, Linkedin, Heart } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
@@ -59,7 +59,7 @@ const Settings = () => {
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null);
-  const [activeSection, setActiveSection] = useState('app'); // 'app', 'content', 'data'
+  const [activeSection, setActiveSection] = useState('app'); // 'app', 'content', 'data', 'about'
   const { dispatch } = useApp();
   const { playAudio } = useAudio();
   const { 
@@ -281,6 +281,16 @@ const Settings = () => {
         >
           Data Management
         </button>
+        <button
+          onClick={() => setActiveSection('about')}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+            activeSection === 'about' 
+              ? 'bg-white/10 text-white' 
+              : 'text-white/60 hover:bg-white/5'
+          }`}
+        >
+          About
+        </button>
       </div>
 
       {/* App Settings Section */}
@@ -386,39 +396,6 @@ const Settings = () => {
               </div>
             )}
           </SettingsSection>
-
-          <SettingsSection title="About PityPal">
-            <SettingItem 
-              icon={Info} 
-              label="About This App"
-              description="PityPal - Your companion and Mona basically, for Genshin Impact"
-            >
-              <div className="space-y-2 max-w-xs text-sm text-white/60">
-                <p>Version 1.0</p>
-                <p>Developed by sarpowsky</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <a 
-                    href="https://github.com/sarpowsky" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    <Github size={16} />
-                    <span>GitHub</span>
-                  </a>
-                  <a 
-                    href="mailto:sarpcankaraman@gmail.com" 
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    <Mail size={16} />
-                    <span>Contact</span>
-                  </a>
-                </div>
-              </div>
-            </SettingItem>
-          </SettingsSection>
         </>
       )}
 
@@ -479,6 +456,108 @@ const Settings = () => {
             </button>
           </SettingItem>
         </SettingsSection>
+      )}
+      
+      {/* About Section */}
+      {activeSection === 'about' && (
+        <div className="space-y-6">
+          <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-5 text-center max-w-3xl mx-auto">
+            <div className="flex flex-col items-center mb-4">
+              <img src="icons/icon_about.png" alt="PityPal Logo" className="w-20 h-20 mb-3" />
+              <h2 className="text-xl font-genshin bg-gradient-to-r from-indigo-300 
+                          via-purple-300 to-pink-300 text-transparent bg-clip-text mb-1">
+                PityPal
+              </h2>
+              <p className="text-white/70 text-sm">Your companion and Mona basically, for Genshin Impact</p>
+              <div className="text-white/60 text-xs mt-1">Version 1.1</div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div className="p-3 rounded-lg bg-black/20 border border-white/10 text-left">
+                <h3 className="text-base font-medium mb-2 flex items-center gap-2">
+                  <Info size={16} className="text-indigo-400" />
+                  <span>About This App</span>
+                </h3>
+                <p className="text-xs text-white/70 mb-3">
+                  PityPal is a desktop application designed to track and analyze your Genshin Impact wish history. 
+                  It provides detailed analytics, pity tracking, and uses machine learning to predict your chances 
+                  of getting 5★ characters and weapons.
+                </p>
+                <p className="text-xs text-white/70">
+                  This is a fan-made application and is not affiliated with HoYoverse or Genshin Impact. 
+                  All game assets and references are property of HoYoverse.
+                </p>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-black/20 border border-white/10 text-left">
+                <h3 className="text-base font-medium mb-2 flex items-center gap-2">
+                  <Heart size={16} className="text-pink-400" />
+                  <span>Support Development</span>
+                </h3>
+                <p className="text-xs text-white/70 mb-3">
+                  If you enjoy using PityPal and would like to support its continued development, 
+                  you can consider buying me a coffee or connecting on professional networks.
+                </p>
+                
+                <div className="flex flex-col gap-2">
+                  <a 
+                    href="https://www.buymeacoffee.com/sarpowsky"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-500/20 
+                           hover:bg-yellow-500/30 border border-yellow-500/30 
+                           text-yellow-400 transition-colors text-xs"
+                  >
+                    <Coffee size={14} />
+                    <span>Buy Me a Coffee</span>
+                  </a>
+                  
+                  <a 
+                    href="https://www.linkedin.com/in/sarpcankaraman"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/20 
+                           hover:bg-blue-500/30 border border-blue-500/30 
+                           text-blue-400 transition-colors text-xs"
+                  >
+                    <Linkedin size={14} />
+                    <span>Connect on LinkedIn</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <a 
+                href="https://github.com/sarpowsky" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 
+                       hover:bg-white/10 border border-white/10 
+                       text-white/80 transition-colors text-xs"
+              >
+                <Github size={14} />
+                <span>GitHub</span>
+              </a>
+              
+              <a 
+                href="mailto:sarpcankaraman@gmail.com" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 
+                       hover:bg-white/10 border border-white/10 
+                       text-white/80 transition-colors text-xs"
+              >
+                <Mail size={14} />
+                <span>Contact Developer</span>
+              </a>
+            </div>
+            
+            <div className="text-xs text-white/40 mt-4">
+              Made with ❤️ by sarpowsky
+            </div>
+          </div>
+        </div>
       )}
 
       <ConfirmDialog

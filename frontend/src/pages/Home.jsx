@@ -126,9 +126,10 @@ const Home = () => {
 
   return (
     <>
-      {/* Fixed Reminders Button */}
-      <div className="fixed top-6 left-6 z-50">
+      {/* Top Buttons Container */}
+      <div className="absolute top-10 left-6 z-50 flex items-center gap-3">
         <RemindersButton />
+        <LeaksButton />
       </div>
       
       {/* Main content */}
@@ -139,11 +140,6 @@ const Home = () => {
           <h1 className="text-5xl font-genshin animate-gradient-text">
             PityPal
           </h1>
-          
-          {/* Leaks button positioned absolutely to the left */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2">
-            <LeaksButton />
-          </div>
           
           {/* Guide button positioned absolutely to the right */}
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
