@@ -354,8 +354,15 @@ function simulateTenPull(simulationState, banner) {
 
 /**
 * Format a banner object for simulation
+* - Updated to better handle Firebase banner data structure
+* - Added additional validation and fallbacks
 */
 function formatBanner(banner) {
+  if (!banner) {
+    console.error('No banner provided to formatBanner');
+    return null;
+  }
+
   // For character banner
   if (banner.character) {
     return {
@@ -377,7 +384,7 @@ function formatBanner(banner) {
     };
   }
   // For weapon banner
-  else if (banner.weapons) {
+  else if (banner.weapons && Array.isArray(banner.weapons)) {
     return {
       id: banner.id,
       name: banner.name,
@@ -388,6 +395,27 @@ function formatBanner(banner) {
         rarity: 5,
         weaponType: 'Unknown' // Would need a weapon database for this
       })),
+      featured4Stars: (banner.fourStars || []).map(name => ({
+        name,
+        type: 'Weapon',
+        rarity: 4,
+        weaponType: 'Unknown'
+      }))
+    };
+  }
+  // Special case for weapon banner with non-array weapons field
+  else if (banner.weapons && typeof banner.weapons === 'string') {
+    // Convert to array for consistency
+    return {
+      id: banner.id,
+      name: banner.name,
+      bannerType: 'weapon',
+      featured5Star: [{
+        name: banner.weapons,
+        type: 'Weapon',
+        rarity: 5,
+        weaponType: 'Unknown'
+      }],
       featured4Stars: (banner.fourStars || []).map(name => ({
         name,
         type: 'Weapon',

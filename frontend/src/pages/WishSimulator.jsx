@@ -1,7 +1,7 @@
 // Path: frontend/src/pages/WishSimulator.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { getCurrentBanners } from '../data/banners';
+import { useFirebase } from '../context/FirebaseContext';
 import { 
   simulateWish, 
   simulateTenPull, 
@@ -59,17 +59,39 @@ const WishSimulator = () => {
   const [showAnimation, setShowAnimation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { playAudio } = useAudio();
+  // Use Firebase hook to get banner data
+  const { getBanners, isLoading: firebaseLoading } = useFirebase();
 
   // Load banners on component mount
   useEffect(() => {
-    const availableBanners = getCurrentBanners();
-    setBanners(availableBanners);
+    const loadBanners = async () => {
+      try {
+        // Get banners from Firebase with fallback to cached data
+        const availableBanners = await getBanners();
+        
+        // Filter to only show active banners
+        const now = new Date();
+        const activeBanners = availableBanners.filter(banner => {
+          if (banner.isPermanent) return true;
+          const start = banner.startDate ? new Date(banner.startDate) : null;
+          const end = banner.endDate ? new Date(banner.endDate) : null;
+          return (!start || now >= start) && (!end || now <= end);
+        });
+        
+        setBanners(activeBanners);
+        
+        // Select first banner by default
+        if (activeBanners.length > 0) {
+          setSelectedBanner(activeBanners[0]);
+        }
+      } catch (error) {
+        console.error('Error loading banners for simulator:', error);
+        // If error occurs, default banners will be used as fallback (handled by getBanners)
+      }
+    };
     
-    // Select first banner by default
-    if (availableBanners.length > 0) {
-      setSelectedBanner(availableBanners[0]);
-    }
-  }, []);
+    loadBanners();
+  }, [getBanners]);
 
   // Format banner when selected and set current simulation state
   useEffect(() => {
@@ -257,6 +279,16 @@ const WishSimulator = () => {
       capturingRadiance: 0
     });
   };
+
+  // Loading state while getting banner data
+  if (firebaseLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-16 h-16 border-4 border-t-indigo-500 border-white/20 rounded-full animate-spin"></div>
+        <p className="mt-4 text-white/70">Loading banners...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-32 max-w-5xl mx-auto">
