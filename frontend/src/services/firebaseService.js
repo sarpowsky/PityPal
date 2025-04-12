@@ -18,21 +18,47 @@ const STORAGE_KEYS = {
   BANNERS: 'pitypal_banners_cache',
   EVENTS: 'pitypal_events_cache',
   LEAKS: 'pitypal_leaks_cache',
-  LAST_UPDATED: 'pitypal_content_updated'
+  LAST_UPDATED: 'pitypal_content_updated',
+  SETTINGS: 'pitypal_firebase_settings'
 };
 
-// Cached content expiration time (24 hours in milliseconds)
-const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
+// Default cache settings
+const DEFAULT_SETTINGS = {
+  autoUpdate: true,        // Automatically check for content updates
+  offlineMode: false,      // When true, always use cache first
+  cacheExpiration: 24,     // Cache expiration in hours
+  lastUpdateCheck: null    // Timestamp of last update check
+};
 
-// Default Firebase configuration
-// This will be replaced with your actual Firebase config during deployment
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+// Cached content expiration time (default 24 hours in milliseconds)
+const getDefaultCacheExpiration = () => {
+  const settings = getFirebaseSettings();
+  return settings.cacheExpiration * 60 * 60 * 1000;
+};
+
+// Read firebase settings from local storage
+const getFirebaseSettings = () => {
+  try {
+    const settings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    return settings ? { ...DEFAULT_SETTINGS, ...JSON.parse(settings) } : DEFAULT_SETTINGS;
+  } catch (error) {
+    console.error('Error loading Firebase settings:', error);
+    return DEFAULT_SETTINGS;
+  }
+};
+
+// Save firebase settings to local storage
+const saveFirebaseSettings = (settings) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify({
+      ...getFirebaseSettings(),
+      ...settings
+    }));
+    return true;
+  } catch (error) {
+    console.error('Error saving Firebase settings:', error);
+    return false;
+  }
 };
 
 class FirebaseService {
@@ -42,6 +68,7 @@ class FirebaseService {
     this.storage = null;
     this.initialized = false;
     this.initPromise = null;
+    this.settings = getFirebaseSettings();
   }
 
   /**
@@ -54,8 +81,24 @@ class FirebaseService {
       return this.initPromise;
     }
 
+    // If in offline mode, don't attempt to initialize
+    if (this.settings.offlineMode) {
+      console.log('Firebase in offline mode - using cached data only');
+      return Promise.resolve(false);
+    }
+
     this.initPromise = new Promise(async (resolve) => {
       try {
+        // Default Firebase configuration
+        const firebaseConfig = {
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
+          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
+          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
+          appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+        };
+        
         // Initialize Firebase
         this.app = initializeApp(firebaseConfig);
         
@@ -69,8 +112,14 @@ class FirebaseService {
         // Initialize Storage
         this.storage = getStorage(this.app);
         
-        // Fetch and activate Remote Config
-        await fetchAndActivate(this.remoteConfig);
+        // Fetch and activate Remote Config if auto-update is enabled
+        if (this.settings.autoUpdate) {
+          await fetchAndActivate(this.remoteConfig);
+          
+          // Update last check timestamp
+          this.settings.lastUpdateCheck = Date.now();
+          saveFirebaseSettings(this.settings);
+        }
         
         this.initialized = true;
         console.log('Firebase initialized successfully');
@@ -90,6 +139,11 @@ class FirebaseService {
    * @returns {Promise<boolean>}
    */
   async ensureInitialized() {
+    // Don't try to initialize in offline mode
+    if (this.settings.offlineMode) {
+      return false;
+    }
+    
     if (!this.initialized) {
       return await this.initialize();
     }
@@ -102,21 +156,39 @@ class FirebaseService {
    */
   async getBanners() {
     try {
+      // In offline mode, always use cached data
+      if (this.settings.offlineMode) {
+        console.log('Firebase: Using cached banners (offline mode)');
+        return this.getLocalBanners();
+      }
+      
       // Try to get from Firebase first
       if (await this.ensureInitialized()) {
+        console.log('Firebase: Getting banners from Remote Config');
         const bannersConfig = getValue(this.remoteConfig, 'banners');
-        if (bannersConfig.asString()) {
-          const bannersData = JSON.parse(bannersConfig.asString());
-          
-          // Cache the data for offline use
-          localStorage.setItem(STORAGE_KEYS.BANNERS, JSON.stringify(bannersData));
-          localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, Date.now().toString());
-          
-          return bannersData;
+        if (bannersConfig && bannersConfig.asString()) {
+          const bannersJson = bannersConfig.asString();
+          try {
+            const bannersData = JSON.parse(bannersJson);
+            
+            // Cache the data for offline use
+            localStorage.setItem(STORAGE_KEYS.BANNERS, JSON.stringify(bannersData));
+            localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, Date.now().toString());
+            console.log('Firebase: Received and cached banners data');
+            
+            return bannersData;
+          } catch (parseError) {
+            console.error('Error parsing banners JSON:', parseError);
+          }
+        } else {
+          console.log('Firebase: No banners data in Remote Config');
         }
+      } else {
+        console.log('Firebase: Not initialized, using local data');
       }
       
       // Fallback to local storage if Firebase fails or returns empty
+      console.log('Firebase: Falling back to local banners data');
       return this.getLocalBanners();
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -130,6 +202,11 @@ class FirebaseService {
    */
   async getEvents() {
     try {
+      // In offline mode, always use cached data
+      if (this.settings.offlineMode) {
+        return this.getLocalEvents();
+      }
+      
       // Try to get from Firebase first
       if (await this.ensureInitialized()) {
         const eventsConfig = getValue(this.remoteConfig, 'events');
@@ -158,6 +235,11 @@ class FirebaseService {
    */
   async getLeaks() {
     try {
+      // In offline mode, always use cached data
+      if (this.settings.offlineMode) {
+        return this.getLocalLeaks();
+      }
+      
       // Try to get from Firebase first
       if (await this.ensureInitialized()) {
         const leaksConfig = getValue(this.remoteConfig, 'leaks');
@@ -186,6 +268,11 @@ class FirebaseService {
    */
   async getImageUrl(path) {
     try {
+      if (this.settings.offlineMode) {
+        // In offline mode, return null or a placeholder
+        return null;
+      }
+      
       if (await this.ensureInitialized()) {
         const imageRef = ref(this.storage, path);
         const url = await getDownloadURL(imageRef);
@@ -199,45 +286,24 @@ class FirebaseService {
   }
 
   /**
-   * Get all available images from a storage folder
-   * @param {string} folderPath - Path to the folder in storage
-   * @returns {Promise<Array>} - Array of image metadata
-   */
-  async getImagesFromFolder(folderPath) {
-    try {
-      if (await this.ensureInitialized()) {
-        const folderRef = ref(this.storage, folderPath);
-        const result = await listAll(folderRef);
-        
-        const images = [];
-        for (const item of result.items) {
-          const url = await getDownloadURL(item);
-          images.push({
-            name: item.name,
-            path: item.fullPath,
-            url
-          });
-        }
-        
-        return images;
-      }
-      return [];
-    } catch (error) {
-      console.error(`Error listing images in ${folderPath}:`, error);
-      return [];
-    }
-  }
-
-  /**
    * Check if new content is available
    * @returns {Promise<boolean>} - True if new content is available
    */
   async checkForContentUpdates() {
     try {
+      // In offline mode, don't check for updates
+      if (this.settings.offlineMode) {
+        return false;
+      }
+      
       // First ensure Firebase is initialized
       if (await this.ensureInitialized()) {
         // Fetch latest Remote Config
         await fetchAndActivate(this.remoteConfig);
+        
+        // Update last check timestamp
+        this.settings.lastUpdateCheck = Date.now();
+        saveFirebaseSettings(this.settings);
         
         // Get the last update timestamp from Remote Config
         const remoteTimestamp = getValue(this.remoteConfig, 'content_updated_at');
@@ -267,6 +333,11 @@ class FirebaseService {
    */
   async refreshContent() {
     try {
+      // Can't refresh in offline mode
+      if (this.settings.offlineMode) {
+        return false;
+      }
+      
       if (await this.ensureInitialized()) {
         // Fetch and activate with cache busting
         await fetchAndActivate(this.remoteConfig);
@@ -293,6 +364,10 @@ class FirebaseService {
           localStorage.setItem(STORAGE_KEYS.LAST_UPDATED, Date.now().toString());
         }
         
+        // Update last check timestamp
+        this.settings.lastUpdateCheck = Date.now();
+        saveFirebaseSettings(this.settings);
+        
         return true;
       }
       return false;
@@ -300,6 +375,62 @@ class FirebaseService {
       console.error('Error refreshing content:', error);
       return false;
     }
+  }
+
+  /**
+   * Set Firebase settings - persists to localStorage
+   * @param {Object} newSettings - Settings to update
+   * @returns {boolean} - Success status
+   */
+  setSettings(newSettings) {
+    try {
+      // Update instance settings
+      this.settings = {
+        ...this.settings,
+        ...newSettings
+      };
+      
+      // Save to localStorage
+      return saveFirebaseSettings(this.settings);
+    } catch (error) {
+      console.error('Error updating Firebase settings:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get current Firebase settings
+   * @returns {Object} - Current settings
+   */
+  getSettings() {
+    return this.settings;
+  }
+
+  /**
+   * Toggle offline mode
+   * @param {boolean} enabled - Whether to enable offline mode
+   * @returns {boolean} - Success status
+   */
+  setOfflineMode(enabled) {
+    return this.setSettings({ offlineMode: !!enabled });
+  }
+
+  /**
+   * Toggle auto update
+   * @param {boolean} enabled - Whether to enable auto updates
+   * @returns {boolean} - Success status
+   */
+  setAutoUpdate(enabled) {
+    return this.setSettings({ autoUpdate: !!enabled });
+  }
+
+  /**
+   * Set cache expiration time
+   * @param {number} hours - Expiration time in hours
+   * @returns {boolean} - Success status
+   */
+  setCacheExpiration(hours) {
+    return this.setSettings({ cacheExpiration: hours });
   }
 
   // Fallback methods to get data from local storage
@@ -313,15 +444,23 @@ class FirebaseService {
       // Get from local storage
       const bannersJson = localStorage.getItem(STORAGE_KEYS.BANNERS);
       if (bannersJson) {
+        console.log('Firebase: Using cached banners from localStorage');
         return JSON.parse(bannersJson);
       }
       
+      console.log('Firebase: No cached banners, using static fallback data');
       // If nothing in local storage, return data from static import
-      return require('../data/banners').banners;
+      // Import the banners from the global scope
+      return window.defaultBanners || [];
     } catch (error) {
       console.error('Error getting local banners:', error);
-      // Final fallback to hardcoded static import
-      return require('../data/banners').banners;
+      // Final fallback to empty array with a placeholder
+      return [{
+        id: "fallback",
+        name: "Fallback Banner",
+        isPermanent: true,
+        image: "/banners/placeholder.png"
+      }];
     }
   }
 
@@ -334,15 +473,22 @@ class FirebaseService {
       // Get from local storage
       const eventsJson = localStorage.getItem(STORAGE_KEYS.EVENTS);
       if (eventsJson) {
+        console.log('Firebase: Using cached events from localStorage');
         return JSON.parse(eventsJson);
       }
       
-      // If nothing in local storage, return data from static import
-      return require('../data/events').events;
+      console.log('Firebase: No cached events, using static fallback data');
+      // If nothing in local storage, return data from window global
+      return window.defaultEvents || [];
     } catch (error) {
       console.error('Error getting local events:', error);
-      // Final fallback to hardcoded static import
-      return require('../data/events').events;
+      // Final fallback to placeholder
+      return [{
+        id: "fallback",
+        name: "Fallback Event",
+        description: "No events available offline",
+        image: "/events/placeholder.png"
+      }];
     }
   }
 
@@ -355,9 +501,11 @@ class FirebaseService {
       // Get from local storage
       const leaksJson = localStorage.getItem(STORAGE_KEYS.LEAKS);
       if (leaksJson) {
+        console.log('Firebase: Using cached leaks from localStorage');
         return JSON.parse(leaksJson);
       }
       
+      console.log('Firebase: No cached leaks, using empty structure');
       // If no leaks in local storage, return empty structure
       return {
         version: "Unknown",
@@ -387,7 +535,7 @@ class FirebaseService {
     const timestamp = parseInt(lastUpdated);
     const now = Date.now();
     
-    return (now - timestamp) > CACHE_EXPIRATION;
+    return (now - timestamp) > getDefaultCacheExpiration();
   }
 }
 

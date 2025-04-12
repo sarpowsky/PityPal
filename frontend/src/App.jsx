@@ -1,4 +1,4 @@
-// App.jsx (Updated with FirebaseProvider)
+// App.jsx (Updated with FirebaseProvider and DefaultData)
 import React, { useState, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
@@ -16,6 +16,12 @@ import Leaks from './pages/Leaks'; // New Leaks page
 import UpdateNotification from './components/UpdateNotification';
 import PaimonCompanion from './features/paimon/PaimonCompanion';
 import FeaturesIntegration from './features/FeaturesIntegration';
+
+// Import default data registration
+import { registerDefaultData } from './data/defaultData';
+
+// Register default data for offline fallback
+registerDefaultData();
 
 const LoadingScreen = () => (
   <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">

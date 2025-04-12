@@ -1,4 +1,4 @@
-// Path: frontend/src/pages/Settings.jsx (Updated)
+// Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
 import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail, RefreshCw } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
@@ -6,6 +6,7 @@ import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
 import { useFirebase } from '../context/FirebaseContext';
 import ConfirmDialog from '../components/ConfirmDialog';
+import FirebaseSettings from '../components/settings/FirebaseSettings';
 import { ActionTypes } from '../context/appReducer';
 import { loadWishHistory } from '../context/appActions';
 import { requestNotificationPermission } from '../services/desktopNotificationService';
@@ -58,6 +59,7 @@ const Settings = () => {
   const [autoUpdate, setAutoUpdate] = useState(true);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null);
+  const [activeSection, setActiveSection] = useState('app'); // 'app', 'content', 'data'
   const { dispatch } = useApp();
   const { playAudio } = useAudio();
   const { 
@@ -247,233 +249,237 @@ const Settings = () => {
         </h1>
       </header>
 
-      <SettingsSection title="Sound">
-        <SettingItem 
-          icon={Volume2} 
-          label="Volume"
-          description="Adjust the volume of sound effects"
+      {/* Settings Navigation */}
+      <div className="flex items-center gap-2 bg-black/20 backdrop-blur-sm rounded-lg border border-white/10 p-1">
+        <button
+          onClick={() => setActiveSection('app')}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+            activeSection === 'app' 
+              ? 'bg-white/10 text-white' 
+              : 'text-white/60 hover:bg-white/5'
+          }`}
         >
-          <div className="flex items-center gap-4">
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={volume}
-              onChange={onVolumeChange}
-              className="w-32"
-            />
-            <span className="text-sm text-white/60 min-w-[2.5rem]">
-              {volume}%
-            </span>
-          </div>
-        </SettingItem>
-      </SettingsSection>
+          App Settings
+        </button>
+        <button
+          onClick={() => setActiveSection('content')}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+            activeSection === 'content' 
+              ? 'bg-white/10 text-white' 
+              : 'text-white/60 hover:bg-white/5'
+          }`}
+        >
+          Game Content
+        </button>
+        <button
+          onClick={() => setActiveSection('data')}
+          className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+            activeSection === 'data' 
+              ? 'bg-white/10 text-white' 
+              : 'text-white/60 hover:bg-white/5'
+          }`}
+        >
+          Data Management
+        </button>
+      </div>
 
-      <SettingsSection title="Updates">
-        <SettingItem 
-          icon={autoUpdate ? Bell : BellOff}
-          label="Automatic Updates"
-          description="Check for app updates when the application starts"
-        >
-          <div className="flex items-center">
-            <button
-              onClick={handleToggleAutoUpdate}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full ${
-                autoUpdate ? 'bg-indigo-600' : 'bg-gray-700'
-              } transition-colors duration-300 focus:outline-none`}
+      {/* App Settings Section */}
+      {activeSection === 'app' && (
+        <>
+          <SettingsSection title="Sound">
+            <SettingItem 
+              icon={Volume2} 
+              label="Volume"
+              description="Adjust the volume of sound effects"
             >
-              <span
-                className={`${
-                  autoUpdate ? 'translate-x-6' : 'translate-x-1'
-                } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300`}
-              />
-            </button>
-          </div>
-        </SettingItem>
+              <div className="flex items-center gap-4">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={volume}
+                  onChange={onVolumeChange}
+                  className="w-32"
+                />
+                <span className="text-sm text-white/60 min-w-[2.5rem]">
+                  {volume}%
+                </span>
+              </div>
+            </SettingItem>
+          </SettingsSection>
 
-        <SettingItem 
-          icon={RotateCw} 
-          label="Check for App Updates"
-          description="Check if a new version of PityPal is available"
-        >
-          <button 
-            onClick={handleCheckForUpdates}
-            disabled={isCheckingUpdate}
-            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
-                    border border-white/10 text-sm transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isCheckingUpdate ? (
-              <>
-                <Loader2 className="animate-spin" size={16} />
-                <span>Checking...</span>
-              </>
-            ) : (
-              <span>Check Now</span>
-            )}
-          </button>
-        </SettingItem>
-        
-        {/* Content Updates Section */}
-        <SettingItem 
-          icon={RefreshCw} 
-          label="Check for Game Content Updates"
-          description="Check for new banners, events, and other game content"
-        >
-          <button 
-            onClick={handleCheckForContentUpdates}
-            disabled={isFirebaseLoading}
-            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
-                    border border-white/10 text-sm transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isFirebaseLoading ? (
-              <>
-                <Loader2 className="animate-spin" size={16} />
-                <span>Checking...</span>
-              </>
-            ) : (
-              <span>Check Now</span>
-            )}
-          </button>
-        </SettingItem>
-        
-        {contentUpdateAvailable && (
-          <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/30">
-            <div className="text-sm">New game content available!</div>
-            <button 
-              onClick={handleRefreshContent}
-              disabled={isFirebaseLoading}
-              className="px-3 py-1.5 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30
-                      border border-indigo-500/30 text-sm transition-colors
-                      disabled:opacity-50 disabled:cursor-not-allowed"
+          <SettingsSection title="Updates">
+            <SettingItem 
+              icon={autoUpdate ? Bell : BellOff}
+              label="Automatic Updates"
+              description="Check for app updates when the application starts"
             >
-              {isFirebaseLoading ? (
-                <Loader2 className="animate-spin" size={14} />
-              ) : (
-                <span>Update Now</span>
-              )}
-            </button>
-          </div>
-        )}
+              <div className="flex items-center">
+                <button
+                  onClick={handleToggleAutoUpdate}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full ${
+                    autoUpdate ? 'bg-indigo-600' : 'bg-gray-700'
+                  } transition-colors duration-300 focus:outline-none`}
+                >
+                  <span
+                    className={`${
+                      autoUpdate ? 'translate-x-6' : 'translate-x-1'
+                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300`}
+                  />
+                </button>
+              </div>
+            </SettingItem>
 
-        {/* Show update status */}
-        {updateStatus && (
-          <div className={`p-3 mt-2 rounded-lg ${
-            !updateStatus.success 
-              ? 'bg-red-500/10 border-red-500/20 text-red-400' 
-              : updateStatus.update_available
-                ? 'bg-green-500/10 border-green-500/20 text-green-400'
-                : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-          } border`}>
-            {!updateStatus.success ? (
-              <p>{updateStatus.error || 'Failed to check for updates'}</p>
-            ) : updateStatus.update_available ? (
-              <div>
-                <p className="font-medium">New version available: {updateStatus.latest_version}</p>
-                <p className="mt-1">Current version: {updateStatus.current_version}</p>
-                {updateStatus.download_url && (
-                  <a 
-                    href={updateStatus.download_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block mt-2 px-3 py-1 bg-white/10 rounded-lg
-                            hover:bg-white/20 transition-colors text-sm"
-                  >
-                    Download Update
-                  </a>
+            <SettingItem 
+              icon={RotateCw} 
+              label="Check for App Updates"
+              description="Check if a new version of PityPal is available"
+            >
+              <button 
+                onClick={handleCheckForUpdates}
+                disabled={isCheckingUpdate}
+                className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+                        border border-white/10 text-sm transition-colors
+                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isCheckingUpdate ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    <span>Checking...</span>
+                  </>
+                ) : (
+                  <span>Check Now</span>
+                )}
+              </button>
+            </SettingItem>
+
+            {/* Show update status */}
+            {updateStatus && (
+              <div className={`p-3 mt-2 rounded-lg ${
+                !updateStatus.success 
+                  ? 'bg-red-500/10 border-red-500/20 text-red-400' 
+                  : updateStatus.update_available
+                    ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                    : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+              } border`}>
+                {!updateStatus.success ? (
+                  <p>{updateStatus.error || 'Failed to check for updates'}</p>
+                ) : updateStatus.update_available ? (
+                  <div>
+                    <p className="font-medium">New version available: {updateStatus.latest_version}</p>
+                    <p className="mt-1">Current version: {updateStatus.current_version}</p>
+                    {updateStatus.download_url && (
+                      <a 
+                        href={updateStatus.download_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block mt-2 px-3 py-1 bg-white/10 rounded-lg
+                                hover:bg-white/20 transition-colors text-sm"
+                      >
+                        Download Update
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <p>{updateStatus.message || 'Application is up to date'}</p>
                 )}
               </div>
-            ) : (
-              <p>{updateStatus.message || 'Application is up to date'}</p>
             )}
-          </div>
-        )}
-      </SettingsSection>
+          </SettingsSection>
 
-      <SettingsSection title="Data Management">
-        <SettingItem 
-          icon={Upload} 
-          label="Import Data"
-          description="Import wishes from a JSON file"
-        >
-          <button 
-            onClick={onImport}
-            disabled={isImporting || isLoading}
-            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
-                    border border-white/10 text-sm transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isImporting || isLoading ? 'Importing...' : 'Import'}
-          </button>
-        </SettingItem>
-        
-        <SettingItem 
-          icon={Download} 
-          label="Export Data"
-          description="Export your wish history to JSON"
-        >
-          <button 
-            onClick={onExport}
-            disabled={isExporting}
-            className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
-                    border border-white/10 text-sm transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isExporting ? 'Exporting...' : 'Export'}
-          </button>
-        </SettingItem>
+          <SettingsSection title="About PityPal">
+            <SettingItem 
+              icon={Info} 
+              label="About This App"
+              description="PityPal - Your companion and Mona basically, for Genshin Impact"
+            >
+              <div className="space-y-2 max-w-xs text-sm text-white/60">
+                <p>Version 1.0</p>
+                <p>Developed by sarpowsky</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <a 
+                    href="https://github.com/sarpowsky" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    <Github size={16} />
+                    <span>GitHub</span>
+                  </a>
+                  <a 
+                    href="mailto:sarpcankaraman@gmail.com" 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    <Mail size={16} />
+                    <span>Contact</span>
+                  </a>
+                </div>
+              </div>
+            </SettingItem>
+          </SettingsSection>
+        </>
+      )}
 
-        <SettingItem 
-          icon={Trash2}
-          label="Reset All Data"
-          description="Delete all wish history and settings"
-        >
-          <button
-            onClick={() => setShowResetDialog(true)}
-            disabled={isResetting}
-            className="px-4 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20
-                    border border-red-500/20 text-red-400 text-sm 
-                    transition-colors disabled:opacity-50 
-                    disabled:cursor-not-allowed"
-          >
-            {isResetting ? 'Resetting...' : 'Reset'}
-          </button>
-        </SettingItem>
-      </SettingsSection>
+      {/* Game Content Section */}
+      {activeSection === 'content' && (
+        <FirebaseSettings />
+      )}
 
-      <SettingsSection title="About PityPal">
-        <SettingItem 
-          icon={Info} 
-          label="About This App"
-          description="PityPal - Your companion and Mona basically, for Genshin Impact"
-        >
-          <div className="space-y-2 max-w-xs text-sm text-white/60">
-            <p>Version 1.0</p>
-            <p>Developed by sarpowsky</p>
-            <div className="flex items-center gap-2 mt-2">
-              <a 
-                href="https://github.com/sarpowsky" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                <Github size={16} />
-                <span>GitHub</span>
-              </a>
-              <a 
-                href="mailto:sarpcankaraman@gmail.com" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                <Mail size={16} />
-                <span>Contact</span>
-              </a>
-            </div>
-          </div>
-        </SettingItem>
-      </SettingsSection>
+      {/* Data Management Section */}
+      {activeSection === 'data' && (
+        <SettingsSection title="Data Management">
+          <SettingItem 
+            icon={Upload} 
+            label="Import Data"
+            description="Import wishes from a JSON file"
+          >
+            <button 
+              onClick={onImport}
+              disabled={isImporting || isLoading}
+              className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+                      border border-white/10 text-sm transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isImporting || isLoading ? 'Importing...' : 'Import'}
+            </button>
+          </SettingItem>
+          
+          <SettingItem 
+            icon={Download} 
+            label="Export Data"
+            description="Export your wish history to JSON"
+          >
+            <button 
+              onClick={onExport}
+              disabled={isExporting}
+              className="px-4 py-1.5 rounded-lg bg-white/5 hover:bg-white/10
+                      border border-white/10 text-sm transition-colors
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isExporting ? 'Exporting...' : 'Export'}
+            </button>
+          </SettingItem>
+
+          <SettingItem 
+            icon={Trash2}
+            label="Reset All Data"
+            description="Delete all wish history and settings"
+          >
+            <button
+              onClick={() => setShowResetDialog(true)}
+              disabled={isResetting}
+              className="px-4 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20
+                      border border-red-500/20 text-red-400 text-sm 
+                      transition-colors disabled:opacity-50 
+                      disabled:cursor-not-allowed"
+            >
+              {isResetting ? 'Resetting...' : 'Reset'}
+            </button>
+          </SettingItem>
+        </SettingsSection>
+      )}
 
       <ConfirmDialog
         isOpen={showResetDialog}
