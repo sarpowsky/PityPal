@@ -1,5 +1,5 @@
 // Path: frontend/src/components/SafeImage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const SafeImage = ({ 
   src, 
@@ -10,6 +10,12 @@ const SafeImage = ({
 }) => {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
+
+  // Update imgSrc when src prop changes
+  useEffect(() => {
+    setImgSrc(src);
+    setHasError(false);
+  }, [src]);
 
   const handleError = () => {
     if (!hasError) {
