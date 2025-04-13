@@ -133,13 +133,45 @@ class API:
         except Exception as e:
             logger.error(f"Failed to set auto update setting: {e}")
             return {"success": False, "error": str(e)}
-
+        
     def check_for_updates(self, force=False):
         """Check if an update is available."""
         try:
-            return self.update_service.check_for_updates(force)
+            return self.update_service.check_for_updates(force=force)
         except Exception as e:
             logger.error(f"Failed to check for updates: {e}")
+            return {"success": False, "error": str(e)}
+
+    def get_update_status(self):
+        """Get the status of the last update check."""
+        try:
+            return self.update_service.get_update_status()
+        except Exception as e:
+            logger.error(f"Failed to get update status: {e}")
+            return {"success": False, "error": str(e)}
+            
+    def download_update(self, download_url=None):
+        """Download the update."""
+        try:
+            return self.update_service.download_update(download_url)
+        except Exception as e:
+            logger.error(f"Failed to download update: {e}")
+            return {"success": False, "error": str(e)}
+            
+    def get_download_progress(self):
+        """Get the current download progress."""
+        try:
+            return self.update_service.get_download_progress()
+        except Exception as e:
+            logger.error(f"Failed to get download progress: {e}")
+            return {"success": False, "error": str(e)}
+            
+    def install_update(self, file_path):
+        """Install the update."""
+        try:
+            return self.update_service.install_update(file_path)
+        except Exception as e:
+            logger.error(f"Failed to install update: {e}")
             return {"success": False, "error": str(e)}
             
     # Firebase related methods
@@ -175,15 +207,19 @@ def main():
         
         api = API()
         
-        # Simple background update check
-        def check_updates_background():
-            try:
-                api.update_service.check_for_updates()
-            except Exception as e:
-                logger.error(f"Background update check failed: {e}")
+        # Enhanced background update check
+        def update_check_callback(result):
+            # This will be called when the update check completes
+            if result.get("success") and result.get("update_available"):
+                logger.info(f"Update available: {result.get('latest_version')}")
+                # Don't add any UI notification here - let the frontend handle it
+            else:
+                logger.info("No updates available or check failed")
         
         # Start update check
-        threading.Thread(target=check_updates_background, daemon=True).start()
+        if api.update_service.auto_check:
+            logger.info("Starting background update check")
+            api.update_service.check_for_updates(callback=update_check_callback)
         
         # Get the application directory
         if getattr(sys, 'frozen', False):

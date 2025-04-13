@@ -75,3 +75,5 @@ htmlcov/
 .firebase/
 firebaserc
 firebase-debug.log
+backend/services/__pycache__/update_service.cpython-311.pyc
+backend/services/__pycache__/update_service.cpython-311.pyc

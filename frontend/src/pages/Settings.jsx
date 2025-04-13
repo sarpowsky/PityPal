@@ -1,6 +1,6 @@
 // Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell, Loader2, BellOff, Info, Github, Mail, RefreshCw, Coffee, Linkedin, Heart } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, BellOff, Loader2, Info, Github, Mail, RefreshCw, Coffee, Linkedin, Heart, Clock, AlertCircle } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
@@ -11,6 +11,8 @@ import { ActionTypes } from '../context/appReducer';
 import { loadWishHistory } from '../context/appActions';
 import { requestNotificationPermission } from '../services/desktopNotificationService';
 import { waitForPyWebView } from '../utils/pywebview-bridge';
+import { useNotification } from '../context/NotificationContext';
+import updateEventBus, { UPDATE_CHECK_REQUESTED } from '../utils/updateEventBus';
 
 const SettingsSection = ({ title, children }) => (
   <div className="space-y-4">
@@ -57,11 +59,14 @@ const Settings = () => {
   const [importProgress, setImportProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(true);
+  const [updateFrequency, setUpdateFrequency] = useState(24); // Default: daily
+  const [currentUpdateFrequency, setCurrentUpdateFrequency] = useState(24);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [updateStatus, setUpdateStatus] = useState(null);
   const [activeSection, setActiveSection] = useState('app'); // 'app', 'content', 'data', 'about'
   const { dispatch } = useApp();
   const { playAudio } = useAudio();
+  const { showNotification } = useNotification();
   const { 
     isExporting,
     isImporting,
@@ -88,6 +93,20 @@ const Settings = () => {
         const result = await window.pywebview.api.get_auto_update_setting();
         if (result.success) {
           setAutoUpdate(result.auto_check);
+        }
+        
+        // Load update frequency if API available
+        try {
+          const statusResult = await window.pywebview.api.get_update_status();
+          if (statusResult.success && statusResult.check_frequency) {
+            // Convert from seconds to hours if the API provides frequency in seconds
+            const frequencyHours = Math.floor((statusResult.check_frequency || 86400) / 3600);
+            setUpdateFrequency(frequencyHours);
+            setCurrentUpdateFrequency(frequencyHours);
+          }
+        } catch (error) {
+          // If the API doesn't have this method, just ignore the error
+          console.log('Update frequency API not available', error);
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
@@ -200,24 +219,75 @@ const Settings = () => {
     }
   };
   
+  const handleSaveUpdateFrequency = async () => {
+    try {
+      await waitForPyWebView();
+      // Check if the API method exists
+      if (window.pywebview.api.set_check_frequency) {
+        const result = await window.pywebview.api.set_check_frequency(updateFrequency);
+        if (result.success) {
+          setCurrentUpdateFrequency(updateFrequency);
+          showNotification('success', 'Settings Updated', 'Update frequency has been saved');
+        } else {
+          showNotification('error', 'Settings Error', result.error || 'Failed to save frequency');
+        }
+      } else {
+        console.warn('set_check_frequency API method not available');
+      }
+    } catch (error) {
+      console.error('Failed to save update frequency:', error);
+      showNotification('error', 'Settings Error', error.message);
+    }
+  };
+  
   const handleCheckForUpdates = async () => {
     setIsCheckingUpdate(true);
     setUpdateStatus(null);
     
     try {
+      // Emit event for UpdateNotification component
+      updateEventBus.emit(UPDATE_CHECK_REQUESTED, { timestamp: Date.now() });
+      
       await waitForPyWebView();
       const result = await window.pywebview.api.check_for_updates(true);  // Force check
-      setUpdateStatus(result);
+      
+      // If the check started successfully, wait for status
+      if (result.success) {
+        // Wait a bit for the background check to complete
+        setTimeout(async () => {
+          try {
+            const statusResult = await window.pywebview.api.get_update_status();
+            setUpdateStatus(statusResult);
+            
+            // Don't show notifications here - the UpdateNotification component will handle it
+            // Just update the local state for the Settings page UI
+            
+          } catch (error) {
+            console.error('Failed to get update status:', error);
+            setUpdateStatus({
+              success: false,
+              error: error.message
+            });
+          } finally {
+            setIsCheckingUpdate(false);
+          }
+        }, 2000);
+      } else {
+        setUpdateStatus({
+          success: false, 
+          error: result.error
+        });
+        setIsCheckingUpdate(false);
+      }
     } catch (error) {
+      console.error('Failed to check for updates:', error);
       setUpdateStatus({
         success: false,
-        error: error.message || 'Failed to check for updates'
+        error: error.message
       });
-    } finally {
       setIsCheckingUpdate(false);
     }
   };
-  
   // Handle content updates
   const handleCheckForContentUpdates = async () => {
     try {
@@ -336,6 +406,33 @@ const Settings = () => {
                       autoUpdate ? 'translate-x-6' : 'translate-x-1'
                     } inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300`}
                   />
+                </button>
+              </div>
+            </SettingItem>
+            
+            <SettingItem 
+              icon={Clock} 
+              label="Update Check Frequency"
+              description="How often to check for updates automatically"
+            >
+              <div className="flex items-center gap-2">
+                <select
+                  value={updateFrequency}
+                  onChange={(e) => setUpdateFrequency(Number(e.target.value))}
+                  disabled={!autoUpdate}
+                  className="bg-black/30 border border-white/10 rounded px-2 py-1 text-sm"
+                >
+                  <option value={12}>Every 12 hours</option>
+                  <option value={24}>Daily</option>
+                  <option value={168}>Weekly</option>
+                </select>
+                
+                <button
+                  onClick={handleSaveUpdateFrequency}
+                  disabled={!autoUpdate || updateFrequency === currentUpdateFrequency}
+                  className="px-2 py-1 rounded bg-white/10 text-xs disabled:opacity-50"
+                >
+                  Save
                 </button>
               </div>
             </SettingItem>
