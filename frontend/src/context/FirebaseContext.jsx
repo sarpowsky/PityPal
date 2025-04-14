@@ -3,6 +3,10 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import firebaseService from '../services/firebaseService';
 import { useNotification } from './NotificationContext';
 
+// Content update notification throttling constants
+const NOTIFICATION_THROTTLE_KEY = 'content_update_notification_last_shown';
+const NOTIFICATION_THROTTLE_HOURS = 6; // Only show content update notification every 6 hours
+
 // Create context
 const FirebaseContext = createContext(null);
 
@@ -14,6 +18,32 @@ export const FirebaseProvider = ({ children }) => {
   const [contentUpdateAvailable, setContentUpdateAvailable] = useState(false);
   const [firebaseSettings, setFirebaseSettings] = useState({});
   const { showNotification } = useNotification();
+
+  // Check if content update notification should be throttled
+  const shouldThrottleContentNotification = () => {
+    try {
+      const lastShown = localStorage.getItem(NOTIFICATION_THROTTLE_KEY);
+      if (!lastShown) return false;
+      
+      const lastTime = parseInt(lastShown, 10);
+      const now = Date.now();
+      const hoursSinceLastNotification = (now - lastTime) / (1000 * 60 * 60);
+      
+      return hoursSinceLastNotification < NOTIFICATION_THROTTLE_HOURS;
+    } catch (err) {
+      console.error('Error checking notification throttle:', err);
+      return false;
+    }
+  };
+
+  // Update the last notification timestamp
+  const updateNotificationTimestamp = () => {
+    try {
+      localStorage.setItem(NOTIFICATION_THROTTLE_KEY, Date.now().toString());
+    } catch (err) {
+      console.error('Error updating notification timestamp:', err);
+    }
+  };
 
   // Initialize Firebase on component mount
   useEffect(() => {
@@ -48,12 +78,14 @@ export const FirebaseProvider = ({ children }) => {
             const hasUpdates = await firebaseService.checkForContentUpdates();
             setContentUpdateAvailable(hasUpdates);
             
-            if (hasUpdates) {
+            // Only show notification if not throttled
+            if (hasUpdates && !shouldThrottleContentNotification()) {
               showNotification(
                 'info',
                 'Content Update Available',
                 'New banners and events are available. Refresh to see the latest content.'
               );
+              updateNotificationTimestamp();
             }
           }
         }
@@ -130,6 +162,7 @@ export const FirebaseProvider = ({ children }) => {
       const hasUpdates = await firebaseService.checkForContentUpdates();
       setContentUpdateAvailable(hasUpdates);
       
+      // Always show notification for manual checks (don't throttle)
       if (hasUpdates) {
         showNotification(
           'info',
@@ -147,6 +180,17 @@ export const FirebaseProvider = ({ children }) => {
       return hasUpdates;
     } catch (err) {
       console.error('Update check error:', err);
+      return false;
+    }
+  };
+
+  // Clear update notification throttle (for testing/debug)
+  const clearUpdateNotificationThrottle = () => {
+    try {
+      localStorage.removeItem(NOTIFICATION_THROTTLE_KEY);
+      return true;
+    } catch (err) {
+      console.error('Error clearing notification throttle:', err);
       return false;
     }
   };
@@ -265,6 +309,7 @@ export const FirebaseProvider = ({ children }) => {
     toggleOfflineMode,
     toggleAutoUpdate,
     setCacheExpiration,
+    clearUpdateNotificationThrottle,
     
     // Expose wrapped Firebase service methods
     getBanners,

@@ -1,7 +1,7 @@
 // Path: frontend/src/components/settings/FirebaseSettings.jsx
 import React, { useState } from 'react';
 import { useFirebase } from '../../context/FirebaseContext';
-import { Database, Wifi, WifiOff, RefreshCw, Clock } from 'lucide-react';
+import { Database, Wifi, WifiOff, RefreshCw, Clock, BellOff } from 'lucide-react';
 
 const FirebaseSettings = () => {
   const { 
@@ -11,12 +11,14 @@ const FirebaseSettings = () => {
     toggleAutoUpdate,
     setCacheExpiration,
     refreshContent,
-    checkForUpdates
+    checkForUpdates,
+    clearUpdateNotificationThrottle
   } = useFirebase();
   
   const [cacheHours, setCacheHours] = useState(
     firebaseSettings.cacheExpiration || 24
   );
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleOfflineModeToggle = async () => {
     await toggleOfflineMode(!firebaseSettings.offlineMode);
@@ -40,6 +42,10 @@ const FirebaseSettings = () => {
 
   const handleCheckUpdates = async () => {
     await checkForUpdates();
+  };
+
+  const handleClearNotificationThrottle = async () => {
+    await clearUpdateNotificationThrottle();
   };
 
   const lastUpdateText = () => {
@@ -214,6 +220,46 @@ const FirebaseSettings = () => {
           </button>
         </div>
       </div>
+
+      {/* Advanced Settings (Hidden by default) */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="px-3 py-1.5 rounded-lg bg-black/20 hover:bg-black/30
+                   border border-white/10 text-xs transition-colors"
+        >
+          {showAdvanced ? 'Hide Advanced' : 'Advanced Settings'}
+        </button>
+      </div>
+
+      {showAdvanced && (
+        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-lg bg-red-500/20">
+              <BellOff size={20} className="text-red-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium">Notification Controls</h3>
+              <p className="text-sm text-white/60 mt-0.5">
+                Advanced settings for notifications
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-2">
+            <button
+              onClick={handleClearNotificationThrottle}
+              className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30
+                       border border-red-500/30 text-red-400 text-sm transition-colors"
+            >
+              Reset Notification Throttling
+            </button>
+            <p className="text-xs text-white/60 mt-1">
+              This will clear the notification cooldown period. Use only if you want to immediately receive content update notifications.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Info text */}
       {firebaseSettings.offlineMode && (
