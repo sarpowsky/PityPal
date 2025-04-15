@@ -5,6 +5,7 @@ import {
   getActiveBannersForReminders, 
   getActiveEventsForReminders 
 } from '../../services/reminderService';
+import { useFirebase } from '../../context/FirebaseContext';
 
 const ItemCard = ({ 
   item, 
@@ -77,20 +78,67 @@ const BannerEventSelector = ({
   const [activeEvents, setActiveEvents] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const { getBanners, getEvents, isLoading: firebaseLoading } = useFirebase();
   
   useEffect(() => {
-    setLoading(true);
+    const loadItems = async () => {
+      setLoading(true);
+      
+      try {
+        // Load active banners and events using Firebase via the updated reminderService
+        if (showBanners) {
+          try {
+            // First try to use Firebase directly via context
+            const banners = await getBanners();
+            
+            // Filter for non-permanent, active banners
+            const now = new Date();
+            const activeBannersList = banners.filter(banner => {
+              if (banner.isPermanent) return false;
+              const endDate = banner.endDate ? new Date(banner.endDate) : null;
+              return endDate && endDate > now;
+            });
+            
+            setActiveBanners(activeBannersList);
+          } catch (error) {
+            console.error('Error getting banners from Firebase, falling back:', error);
+            // Fall back to reminder service if direct Firebase fails
+            const banners = await getActiveBannersForReminders();
+            setActiveBanners(banners);
+          }
+        }
+        
+        if (showEvents) {
+          try {
+            // First try to use Firebase directly via context
+            const events = await getEvents();
+            
+            // Filter for active events
+            const now = new Date();
+            const activeEventsList = events.filter(event => {
+              const endDate = event.endDate ? new Date(event.endDate) : null;
+              return endDate && endDate > now;
+            });
+            
+            setActiveEvents(activeEventsList);
+          } catch (error) {
+            console.error('Error getting events from Firebase, falling back:', error);
+            // Fall back to reminder service if direct Firebase fails
+            const events = await getActiveEventsForReminders();
+            setActiveEvents(events);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load items for selection:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Load active items
-    const banners = showBanners ? getActiveBannersForReminders() : [];
-    const events = showEvents ? getActiveEventsForReminders() : [];
-    
-    setActiveBanners(banners);
-    setActiveEvents(events);
-    setLoading(false);
-  }, [showBanners, showEvents]);
+    loadItems();
+  }, [showBanners, showEvents, getBanners, getEvents]);
   
-  if (loading) {
+  if (loading || firebaseLoading) {
     return (
       <div className="flex items-center justify-center p-4 h-32">
         <div className="animate-spin h-6 w-6 border-2 border-indigo-500 rounded-full border-t-transparent"></div>

@@ -1,6 +1,5 @@
 // Path: frontend/src/services/reminderService.js
-import { getCurrentBanners } from '../data/banners';
-import { getCurrentEvents } from '../data/events';
+import { useFirebase } from '../context/FirebaseContext';
 import { getRemainingTime } from '../data/banners';
 
 // Manages notification reminders for time-sensitive game events
@@ -224,14 +223,75 @@ export const formatReminderDate = (dateString) => {
   return 'Past due';
 };
 
-// Get all active banners for reminder selection
-export const getActiveBannersForReminders = () => {
-  return getCurrentBanners().filter(banner => !banner.isPermanent);
+// Get all active banners for reminder selection - NOW USING FIREBASE
+export const getActiveBannersForReminders = async () => {
+  try {
+    // Get firebase service instance
+    const firebaseService = window.firebaseService || {};
+    
+    // Try to get banners from Firebase if available
+    if (firebaseService.getBanners) {
+      const banners = await firebaseService.getBanners();
+      
+      // Filter out permanent banners
+      const now = new Date();
+      return banners.filter(banner => {
+        if (banner.isPermanent) return false;
+        const end = banner.endDate ? new Date(banner.endDate) : null;
+        return end && end > now;
+      });
+    }
+    
+    // Fallback to using imported data if Firebase isn't available
+    const { getCurrentBanners } = await import('../data/banners');
+    return getCurrentBanners().filter(banner => !banner.isPermanent);
+  } catch (error) {
+    console.error('Failed to get active banners for reminders:', error);
+    
+    // Ultimate fallback to imported data
+    try {
+      const { getCurrentBanners } = await import('../data/banners');
+      return getCurrentBanners().filter(banner => !banner.isPermanent);
+    } catch (e) {
+      console.error('Failed to load default banners:', e);
+      return [];
+    }
+  }
 };
 
-// Get all active events for reminder selection
-export const getActiveEventsForReminders = () => {
-  return getCurrentEvents();
+// Get all active events for reminder selection - NOW USING FIREBASE
+export const getActiveEventsForReminders = async () => {
+  try {
+    // Get firebase service instance
+    const firebaseService = window.firebaseService || {};
+    
+    // Try to get events from Firebase if available
+    if (firebaseService.getEvents) {
+      const events = await firebaseService.getEvents();
+      
+      // Filter for active events
+      const now = new Date();
+      return events.filter(event => {
+        const end = event.endDate ? new Date(event.endDate) : null;
+        return end && end > now;
+      });
+    }
+    
+    // Fallback to using imported data if Firebase isn't available
+    const { getCurrentEvents } = await import('../data/events');
+    return getCurrentEvents();
+  } catch (error) {
+    console.error('Failed to get active events for reminders:', error);
+    
+    // Ultimate fallback to imported data
+    try {
+      const { getCurrentEvents } = await import('../data/events');
+      return getCurrentEvents();
+    } catch (e) {
+      console.error('Failed to load default events:', e);
+      return [];
+    }
+  }
 };
 
 // Helper to get time remaining until banner/event end

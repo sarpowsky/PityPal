@@ -1,7 +1,7 @@
 // Path: frontend/src/components/reminders/ReminderDialog.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Bell, Clock, Calendar, Info } from 'lucide-react';
+import { X, Bell, Clock, Calendar, Info, Loader } from 'lucide-react';
 import BannerEventSelector from './BannerEventSelector';
 import { 
   createBannerEndingReminder, 
@@ -49,6 +49,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
   const [message, setMessage] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
   const { showNotification } = useNotification();
   
   // Set default date to tomorrow
@@ -64,13 +65,15 @@ const ReminderDialog = ({ onClose, onCreated }) => {
     setTime(defaultTime);
   }, []);
   
-  const handleCreateReminder = () => {
+  const handleCreateReminder = async () => {
     try {
+      setIsCreating(true);
       let reminder = null;
       
       if (reminderType === 'banner') {
         if (!selectedBanner) {
           showNotification('error', 'Missing Information', 'Please select a banner');
+          setIsCreating(false);
           return;
         }
         
@@ -82,12 +85,14 @@ const ReminderDialog = ({ onClose, onCreated }) => {
         } else {
           showNotification('error', 'Cannot Create Reminder', 
             'Unable to create reminder for this banner (may be permanent or already ended).');
+          setIsCreating(false);
           return;
         }
       } 
       else if (reminderType === 'event') {
         if (!selectedEvent) {
           showNotification('error', 'Missing Information', 'Please select an event');
+          setIsCreating(false);
           return;
         }
         
@@ -99,12 +104,14 @@ const ReminderDialog = ({ onClose, onCreated }) => {
         } else {
           showNotification('error', 'Cannot Create Reminder', 
             'Unable to create reminder for this event (may be already ended).');
+          setIsCreating(false);
           return;
         }
       }
       else if (reminderType === 'custom') {
         if (!title || !message || !date || !time) {
           showNotification('error', 'Missing Information', 'Please fill out all fields');
+          setIsCreating(false);
           return;
         }
         
@@ -114,6 +121,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
         // Ensure the date is in the future
         if (reminderDateTime <= new Date()) {
           showNotification('error', 'Invalid Date', 'Reminder date must be in the future');
+          setIsCreating(false);
           return;
         }
         
@@ -123,6 +131,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
           showNotification('success', 'Reminder Created', 'Your custom reminder has been set');
         } else {
           showNotification('error', 'Cannot Create Reminder', 'Failed to create reminder');
+          setIsCreating(false);
           return;
         }
       }
@@ -135,6 +144,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
     } catch (error) {
       console.error('Failed to create reminder:', error);
       showNotification('error', 'Error', 'Failed to create reminder');
+      setIsCreating(false);
     }
   };
   
@@ -156,6 +166,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            disabled={isCreating}
           >
             <X size={18} />
           </button>
@@ -306,6 +317,7 @@ const ReminderDialog = ({ onClose, onCreated }) => {
               onClick={onClose}
               className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10
                        border border-white/10 text-sm transition-colors"
+              disabled={isCreating}
             >
               Cancel
             </button>
@@ -315,9 +327,19 @@ const ReminderDialog = ({ onClose, onCreated }) => {
               className="px-4 py-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30
                        border border-indigo-500/30 text-sm text-indigo-400
                        transition-colors flex items-center gap-2"
+              disabled={isCreating}
             >
-              <Bell size={16} />
-              <span>Create Reminder</span>
+              {isCreating ? (
+                <>
+                  <Loader size={16} className="animate-spin" />
+                  <span>Creating...</span>
+                </>
+              ) : (
+                <>
+                  <Bell size={16} />
+                  <span>Create Reminder</span>
+                </>
+              )}
             </button>
           </div>
         </div>
