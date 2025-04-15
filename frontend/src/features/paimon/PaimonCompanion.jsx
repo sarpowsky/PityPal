@@ -6,7 +6,7 @@ import Draggable from 'react-draggable';
 import { RESPONSE_PATTERNS, DEFAULT_RESPONSE, HELP_RESPONSES } from './responses';
 import { useAudio } from '../audio/AudioSystem';
 import { useApp } from '../../context/AppContext';
-import { getCurrentBanners } from '../../data/banners';
+import { useFirebase } from '../../context/FirebaseContext';
 import { createSoftPityReminder } from '../../services/reminderService';
 import { useNotification } from '../../context/NotificationContext';
 import idleImg from './idle.png';
@@ -45,6 +45,54 @@ const PaimonCompanion = () => {
   const { showNotification } = useNotification();
   const suggestionTimeout = useRef(null);
   const dragNodeRef = useRef(null);
+  
+  // Firebase integration
+  const { 
+    getBanners, 
+    getEvents,
+    getLeaks,
+    contentUpdateAvailable,
+    firebaseSettings
+  } = useFirebase();
+  
+  const [activeBanners, setActiveBanners] = useState([]);
+  const [activeEvents, setActiveEvents] = useState([]);
+  const [leaksData, setLeaksData] = useState(null);
+
+  // Load banners, events and leaks data from Firebase with local fallbacks
+  useEffect(() => {
+    const loadFirebaseData = async () => {
+      try {
+        // Get banners from Firebase
+        const banners = await getBanners();
+        setActiveBanners(banners);
+        
+        // Get events from Firebase
+        const events = await getEvents();
+        setActiveEvents(events);
+        
+        // Get leaks data (for upcoming content)
+        const leaksData = await getLeaks();
+        setLeaksData(leaksData);
+      } catch (error) {
+        console.error('Error loading data for Paimon:', error);
+        
+        // Fallback to imported data if Firebase fails
+        try {
+          const { getCurrentBanners } = await import('../../data/banners');
+          const { getCurrentEvents } = await import('../../data/events');
+          
+          setActiveBanners(getCurrentBanners());
+          setActiveEvents(getCurrentEvents());
+          // No fallback for leaks data since it's optional
+        } catch (fallbackError) {
+          console.error('Failed to load fallback data:', fallbackError);
+        }
+      }
+    };
+    
+    loadFirebaseData();
+  }, [getBanners, getEvents, getLeaks]);
 
   // Track current page for context-aware responses
   const getCurrentPage = () => {
@@ -82,7 +130,38 @@ const PaimonCompanion = () => {
         setHasProactiveSuggestion(true);
         showProactiveSuggestion(`Hey! Your pity is at ${characterPity}. You're getting close to soft pity! Want me to remind you when you get a 5★?`);
       }
-      // Could add more proactive suggestions here for other conditions
+      // Check for contentUpdateAvailable
+      else if (contentUpdateAvailable) {
+        setHasProactiveSuggestion(true);
+        showProactiveSuggestion("Paimon notices there's new content available! Want to refresh to get the latest banners and events?");
+      }
+      // Check for offline mode
+      else if (firebaseSettings && firebaseSettings.offlineMode) {
+        setHasProactiveSuggestion(true);
+        showProactiveSuggestion("Paimon notices we're in offline mode! The app is using cached data. You can change this in Settings if you want!");
+      }
+      // Check if there are upcoming banner endings
+      else if (activeBanners && activeBanners.length > 0) {
+        const nonPermanentBanners = activeBanners.filter(banner => !banner.isPermanent);
+        
+        if (nonPermanentBanners.length > 0) {
+          const closestBanner = nonPermanentBanners.reduce((closest, banner) => {
+            const endDate = new Date(banner.endDate);
+            const now = new Date();
+            const daysLeft = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (daysLeft <= 3 && (!closest || daysLeft < closest.daysLeft)) {
+              return { banner, daysLeft };
+            }
+            return closest;
+          }, null);
+          
+          if (closestBanner) {
+            setHasProactiveSuggestion(true);
+            showProactiveSuggestion(`Hey! The "${closestBanner.banner.name}" banner is ending in just ${closestBanner.daysLeft} days! Want Paimon to remind you before it ends?`);
+          }
+        }
+      }
     }, 60000); // Check every minute
 
     return () => {
@@ -90,7 +169,7 @@ const PaimonCompanion = () => {
         clearTimeout(suggestionTimeout.current);
       }
     };
-  }, [state.wishes?.pity, isInputActive, hasProactiveSuggestion]);
+  }, [state.wishes?.pity, isInputActive, hasProactiveSuggestion, activeBanners, contentUpdateAvailable, firebaseSettings]);
 
   const showProactiveSuggestion = (text) => {
     setPaimonState(PaimonState.TALKING);
@@ -125,6 +204,9 @@ const PaimonCompanion = () => {
       } else if (lowercaseInput.includes('settings')) {
         setTimeout(() => navigate('/settings'), 1000);
         return "Opening settings!";
+      } else if (lowercaseInput.includes('leak') || lowercaseInput.includes('upcoming')) {
+        setTimeout(() => navigate('/leaks'), 1000);
+        return "Shh! Let's check out those juicy leaks!";
       }
     }
     
@@ -148,6 +230,22 @@ const PaimonCompanion = () => {
         }
       }
       
+      // Handle banner reminders if a banner name is mentioned
+      if (activeBanners && activeBanners.length > 0) {
+        for (const banner of activeBanners) {
+          if (banner.name && lowercaseInput.includes(banner.name.toLowerCase())) {
+            // Import dynamically to avoid circular dependencies
+            import('../../services/reminderService').then(({ createBannerEndingReminder }) => {
+              const reminder = createBannerEndingReminder(banner, 24);
+              if (reminder) {
+                showNotification('success', 'Reminder Set', `Paimon will remind you before ${banner.name} ends!`);
+              }
+            });
+            return `Okay! Paimon will remind you 24 hours before ${banner.name} ends!`;
+          }
+        }
+      }
+      
       return "What would you like Paimon to remind you about? Soft pity? Banner endings?";
     }
 
@@ -166,6 +264,12 @@ const PaimonCompanion = () => {
       },
       currentPage: currentPage
     };
+    
+    // Use all available banners for comprehensive responses
+    const allBanners = activeBanners && activeBanners.length > 0 ? activeBanners : null;
+    
+    // Content update status for update-related responses
+    const contentStatus = { contentUpdateAvailable };
 
     for (const category in RESPONSE_PATTERNS) {
       const { patterns, responses, formatResponse } = RESPONSE_PATTERNS[category];
@@ -173,7 +277,7 @@ const PaimonCompanion = () => {
         const baseResponse = responses[Math.floor(Math.random() * responses.length)];
         try {
           return formatResponse ? 
-            formatResponse(baseResponse, formatData, getCurrentBanners()[0]) : 
+            formatResponse(baseResponse, formatData, allBanners, contentStatus, activeEvents, leaksData) : 
             baseResponse;
         } catch (error) {
           console.error('Response formatting error:', error);
@@ -182,7 +286,7 @@ const PaimonCompanion = () => {
       }
     }
     return DEFAULT_RESPONSE;
-  }, [state.wishes, navigate, showNotification]);
+  }, [state.wishes, navigate, showNotification, activeBanners, contentUpdateAvailable, playAudio]);
 
   const typeMessage = useCallback((text) => {
     if (messageInterval) clearInterval(messageInterval);
@@ -272,13 +376,26 @@ const PaimonCompanion = () => {
         case 'settings':
           greeting = "Need help with settings? Ask me about importing or exporting data!";
           break;
+        case 'simulator':
+          greeting = "Ooh, the wish simulator! Want to try your luck without spending primogems?";
+          break;
+        case 'leaks':
+          greeting = "Checking out leaks? Remember, these might change before release!";
+          break;
         default:
           greeting = "Hello! How can Paimon help you today?";
       }
       
+      // Add Firebase-awareness to greetings
+      if (contentUpdateAvailable) {
+        greeting += " Oh, and Paimon notices there's new content available to download!";
+      } else if (firebaseSettings && firebaseSettings.offlineMode) {
+        greeting += " Paimon sees we're in offline mode, using cached data.";
+      }
+      
       typeMessage(greeting);
     }
-  }, [isInputActive, messageInterval, thinkingInterval, playAudio, typeMessage]);
+  }, [isInputActive, messageInterval, thinkingInterval, playAudio, typeMessage, contentUpdateAvailable, firebaseSettings]);
 
   const handleMouseEnter = useCallback(() => {
     setPaimonState(PaimonState.HOVER);
@@ -372,8 +489,6 @@ const PaimonCompanion = () => {
             </div>
           </div>
         )}
-
-{/* Control buttons removed to prevent UI bugs */}
 
         {/* Proactive suggestion indicator */}
         {hasProactiveSuggestion && !isInputActive && (

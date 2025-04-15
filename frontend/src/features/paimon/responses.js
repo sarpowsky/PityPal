@@ -15,6 +15,10 @@ export const RESPONSE_PATTERNS = {
         return response + " Or do you want help with character builds?";
       } else if (page === 'analytics') {
         return response + " Looking at your stats, hmm?";
+      } else if (page === 'simulator') {
+        return response + " Want to try your luck in the simulator?";
+      } else if (page === 'leaks') {
+        return response + " Checking out the juicy leaks, are we?";
       }
       return response;
     }
@@ -55,29 +59,62 @@ export const RESPONSE_PATTERNS = {
   },
 
   banners: {
-    patterns: ['banner', 'event', 'featured', 'rate up', 'wishing on', 'current'],
+    patterns: ['banner', 'wishing on', 'rate up', 'featured character', 'current banner'],
     responses: [
-      "Right now we have {banner_name}! {time_info} {character_info}",
-      "Ooh, Paimon loves this banner! {banner_name} is running, and {character_info} {time_info}",
-      "The current banner is {banner_name}! {character_info} {time_info} Should we do some wishes?",
-      "*excited noises* {banner_name} is here! {character_info} {time_info}"
+      "Right now we have: {banner_list}",
+      "Ooh, Paimon loves the current banners! {banner_list}",
+      "The current banners are: {banner_list}",
+      "*excited noises* Here's what's available now: {banner_list}"
     ],
-    formatResponse: (response, stats, banner) => {
-      if (!banner) return "Eh? Paimon doesn't see any banner selected! Pick one from the banner carousel first!";
+    formatResponse: (response, stats, banners) => {
+      if (!banners || !Array.isArray(banners) || banners.length === 0) {
+        return "Eh? Paimon doesn't see any banners right now! Check back later or refresh the app!";
+      }
       
-      const timeInfo = banner.isPermanent ? 
-        "This one never goes away!" :
-        banner.endDate ? `Only ${Math.ceil((new Date(banner.endDate) - new Date()) / (1000 * 60 * 60 * 24))} days left! Better hurry!` :
-        "Better wish while you can!";
-        
-      const characterInfo = banner.character ?
-        `featuring the amazing ${banner.character}!` :
-        "it's the standard banner with all kinds of surprises!";
-
-      return response
-        .replace('{banner_name}', banner.name)
-        .replace('{time_info}', timeInfo)
-        .replace('{character_info}', characterInfo);
+      // Filter out permanent banner when listing character banners
+      const characterBanners = banners.filter(b => b.character && !b.isPermanent);
+      const weaponBanners = banners.filter(b => b.weapons && !b.isPermanent);
+      const permanentBanners = banners.filter(b => b.isPermanent);
+      
+      let bannerList = "";
+      
+      // Add character banners
+      if (characterBanners.length > 0) {
+        bannerList += "📌 Character Banners:\n";
+        characterBanners.forEach(banner => {
+          const daysLeft = banner.endDate ? 
+            Math.ceil((new Date(banner.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 
+            "??";
+          
+          bannerList += `• ${banner.name} featuring ${banner.character} (${daysLeft} days left)\n`;
+        });
+      }
+      
+      // Add weapon banners
+      if (weaponBanners.length > 0) {
+        bannerList += "\n📌 Weapon Banner:\n";
+        weaponBanners.forEach(banner => {
+          const daysLeft = banner.endDate ? 
+            Math.ceil((new Date(banner.endDate) - new Date()) / (1000 * 60 * 60 * 24)) : 
+            "??";
+          
+          const weaponsList = Array.isArray(banner.weapons) ? 
+            banner.weapons.join(" and ") : 
+            (banner.weapons || "featured weapons");
+          
+          bannerList += `• ${banner.name} featuring ${weaponsList} (${daysLeft} days left)\n`;
+        });
+      }
+      
+      // Add permanent banners
+      if (permanentBanners.length > 0) {
+        bannerList += "\n📌 Permanent Banner:\n";
+        permanentBanners.forEach(banner => {
+          bannerList += `• ${banner.name} (always available)\n`;
+        });
+      }
+      
+      return response.replace('{banner_list}', bannerList);
     }
   },
 
@@ -155,7 +192,7 @@ export const RESPONSE_PATTERNS = {
   help: {
     patterns: ['help', 'guide', 'what can', 'how do', 'confused'],
     responses: [
-      "Paimon's here to help! You can ask about:\n• Your pity count (how close to 5★)\n• Banner details\n• Wish history\n• 50/50 status\nJust ask naturally!",
+      "Paimon's here to help! You can ask about:\n• Your pity count (how close to 5★)\n• Banner details\n• Wish history\n• 50/50 status\n• Reminders\n• Game updates\nJust ask naturally!",
       "Need guidance? Paimon knows everything about wishes! Try asking about your pity, current banners, or wish history! Paimon will explain everything!",
       "Paimon's your best companion! Ask about your wishes, pity, or banners - Paimon will help! You can even check how many primogems you've spent (though maybe that's scary...)"
     ]
@@ -174,7 +211,14 @@ export const RESPONSE_PATTERNS = {
     responses: [
       "What would you like Paimon to remind you about? Banner endings? Approaching soft pity?",
       "Paimon can set reminders for you! Just tell me what you need to remember!"
-    ]
+    ],
+    formatResponse: (response, _, banners) => {
+      // If we have active banners, suggest them
+      if (banners && banners.length > 0 && !banners[0].isPermanent) {
+        return response + ` Should I remind you about ${banners[0].name} ending?`;
+      }
+      return response;
+    }
   },
   
   characters: {
@@ -199,6 +243,247 @@ export const RESPONSE_PATTERNS = {
       "Want to import wishes? Paimon can show you how to get your wish history URL from the game!",
       "Importing wishes is easy! Just click the 'How to Import Wishes' button and follow the steps!"
     ]
+  },
+
+  // New response patterns for additional features
+
+  leaks: {
+    patterns: ['leak', 'future', 'upcoming', 'next version', 'next patch'],
+    responses: [
+      "Ooh, you want to know about future content? Check the Leaks page! But remember, it's all subject to change!",
+      "Paimon shouldn't really talk about leaks... but between you and me, the Leaks page has some exciting stuff!",
+      "Shh! Paimon's not supposed to tell you about future updates! But you can check the Leaks page yourself..."
+    ],
+    formatResponse: (response, stats) => {
+      if (stats.currentPage === 'leaks') {
+        return "Remember, everything here is from beta testing and might change! Don't get too attached to anything yet!";
+      }
+      return response;
+    }
+  },
+
+  simulator: {
+    patterns: ['simulator', 'simulate', 'practice', 'test wishes', 'fake wishes'],
+    responses: [
+      "Want to try wishing without spending real primogems? Use the Wish Simulator! It's super accurate!",
+      "The Wish Simulator lets you test your luck without risking your precious primogems!",
+      "Paimon loves the Wish Simulator! You can practice pulling until you're satisfied with your strategy!"
+    ],
+    formatResponse: (response, stats) => {
+      if (stats.currentPage === 'simulator') {
+        return "Remember, this simulator uses real game rates and mechanics! Even the soft pity system works the same!";
+      }
+      return response;
+    }
+  },
+
+  updates: {
+    patterns: ['update', 'new content', 'refresh', 'latest', 'new version'],
+    responses: [
+      "Wondering about updates? {update_status}",
+      "About app updates... {update_status}",
+      "Updates? {update_status}"
+    ],
+    formatResponse: (response, _, __, contentStatus) => {
+      let updateStatus = "Paimon's not sure if there are any updates right now. Check the Settings page!";
+      
+      if (contentStatus && contentStatus.contentUpdateAvailable) {
+        updateStatus = "Ooh! Paimon sees new content available! You should refresh to get the latest banners and events!";
+      }
+      
+      return response.replace('{update_status}', updateStatus);
+    }
+  },
+
+  settings: {
+    patterns: ['settings', 'configure', 'preferences', 'options', 'theme'],
+    responses: [
+      "Need to change app settings? Go to the Settings page! You can adjust things like auto-updates and data management.",
+      "The Settings page lets you configure the app just how you like it! Want Paimon to take you there?",
+      "In Settings, you can export your wish data, check for updates, and adjust Paimon's personality! Just kidding about that last one, ehehe~"
+    ]
+  },
+
+  capturingRadiance: {
+    patterns: ['capturing radiance', 'radiance', '10%', 'special chance'],
+    responses: [
+      "Oh! You're asking about Capturing Radiance? That's when you lose the 50/50 but still get the featured character! It's a 10% chance!",
+      "Capturing Radiance is Paimon's favorite thing! Even if you lose the 50/50, you still have a small chance (10%) to get the featured character!",
+      "Did you know? When you lose the 50/50, there's still a 10% chance called 'Capturing Radiance' where you get the featured character anyway! Amazing, right?"
+    ]
+  },
+
+  offline: {
+    patterns: ['offline', 'no connection', 'firebase', 'data'],
+    responses: [
+      "Looks like you're using PityPal in offline mode! Don't worry, Paimon's still here with the cached data!",
+      "No internet connection? No problem! Paimon's using the data that was saved last time you were online.",
+      "Paimon notices we're in offline mode! The app is using its saved data until you reconnect."
+    ]
+  },
+
+  analytics: {
+    patterns: ['analytics', 'predict', 'chance', 'model', 'machine learning'],
+    responses: [
+      "The Analytics page has some really smart predictions about your pulls! It uses machine learning!",
+      "Want to know your chances of getting a 5★? The Analytics page can predict that with fancy math!",
+      "Paimon thinks the Analytics page is super useful! It can tell you exactly how many pulls until your next 5★!"
+    ],
+    formatResponse: (response, stats) => {
+      if (stats.currentPage === 'analytics') {
+        return "This page uses statistics and machine learning to predict your future pulls! Make sure to train the model with your wish history for better predictions!";
+      }
+      return response;
+    }
+  },
+  
+  gameEvents: {
+    patterns: ['game event', 'festival', 'limited time', 'activity', 'quest'],
+    responses: [
+      "The current events are: {event_list}",
+      "These events are happening right now: {event_list}",
+      "Here are all the active events: {event_list}",
+      "Paimon's favorite events right now: {event_list}"
+    ],
+    formatResponse: (response, stats, _, __, events) => {
+      if (!events || !Array.isArray(events) || events.length === 0) {
+        return "Hmm, Paimon doesn't see any events active right now! Check back later or refresh the app!";
+      }
+      
+      // Filter to current events
+      const now = new Date();
+      const currentEvents = events.filter(event => {
+        const startDate = event.startDate ? new Date(event.startDate) : null;
+        const endDate = event.endDate ? new Date(event.endDate) : null;
+        return (!startDate || now >= startDate) && (!endDate || now <= endDate);
+      });
+      
+      if (currentEvents.length === 0) {
+        return "There aren't any events running right now. Check back soon!";
+      }
+      
+      let eventList = "";
+      
+      currentEvents.forEach(event => {
+        const daysLeft = event.endDate ? 
+          Math.ceil((new Date(event.endDate) - now) / (1000 * 60 * 60 * 24)) : 
+          "??";
+        
+        eventList += `• ${event.name} (${daysLeft} days left)\n`;
+        if (event.description) {
+          eventList += `  ${event.description.substring(0, 70)}${event.description.length > 70 ? "..." : ""}\n`;
+        }
+        if (event.rewards && event.rewards.length) {
+          eventList += `  Rewards: ${event.rewards.join(", ")}\n`;
+        }
+        eventList += "\n";
+      });
+      
+      return response.replace('{event_list}', eventList);
+    }
+  },
+  
+  upcomingBanners: {
+    patterns: ['upcoming banner', 'next banner', 'future banner', 'leaked banner', 'next patch'],
+    responses: [
+      "According to leaks, here's what might be coming: {upcoming_list}",
+      "Paimon's heard some rumors about future banners: {upcoming_list}",
+      "Don't tell anyone Paimon told you, but the next banners might be: {upcoming_list}",
+      "Shh! These are the leaked upcoming banners: {upcoming_list}"
+    ],
+    formatResponse: (response, stats, _, __, ___, leaks) => {
+      if (!leaks || !leaks.phases || leaks.phases.length === 0) {
+        return "Paimon doesn't have any information about upcoming banners yet! Check the Leaks page for the latest info!";
+      }
+      
+      let upcomingList = "";
+      
+      // Go through each phase from the leaks data
+      leaks.phases.forEach((phase, index) => {
+        if (phase.banners && phase.banners.length > 0) {
+          upcomingList += `📌 Phase ${phase.number || index + 1}`;
+          if (phase.dateRange) {
+            upcomingList += ` (${phase.dateRange})`;
+          }
+          upcomingList += ":\n";
+          
+          phase.banners.forEach(banner => {
+            let characters = "";
+            if (banner.characters && banner.characters.length > 0) {
+              characters = `featuring ${banner.characters.join(" and ")}`;
+            } else if (banner.name) {
+              characters = banner.name;
+            }
+            
+            upcomingList += `• ${characters}\n`;
+          });
+          
+          upcomingList += "\n";
+        }
+      });
+      
+      if (!upcomingList) {
+        return "Paimon doesn't have detailed information about upcoming banners yet! Check the Leaks page!";
+      }
+      
+      upcomingList += "⚠️ Remember, this is based on leaks and could change before release!";
+      
+      return response.replace('{upcoming_list}', upcomingList);
+    }
+  },
+
+  upcomingEvents: {
+    patterns: ['upcoming event', 'next event', 'future event', 'leaked event'],
+    responses: [
+      "These events should be coming in the next update: {upcoming_events}",
+      "Paimon's heard about these upcoming events: {upcoming_events}",
+      "According to leaks, we'll be getting these events: {upcoming_events}",
+      "The next update should bring these events: {upcoming_events}"
+    ],
+    formatResponse: (response, stats, _, __, ___, leaks) => {
+      if (!leaks || !leaks.phases || leaks.phases.length === 0) {
+        return "Paimon doesn't know about any upcoming events yet! Check the Leaks page for the latest info!";
+      }
+      
+      let upcomingEventsList = "";
+      let foundEvents = false;
+      
+      // Go through phases looking for events
+      leaks.phases.forEach((phase, index) => {
+        const events = [];
+        
+        // Different ways events might be structured in the leaks data
+        if (phase.events && Array.isArray(phase.events)) {
+          events.push(...phase.events);
+          foundEvents = true;
+        }
+        
+        if (events.length > 0) {
+          upcomingEventsList += `📌 Phase ${phase.number || index + 1}`;
+          if (phase.dateRange) {
+            upcomingEventsList += ` (${phase.dateRange})`;
+          }
+          upcomingEventsList += ":\n";
+          
+          events.forEach(event => {
+            upcomingEventsList += `• ${event.name || event.title || "Unnamed Event"}\n`;
+            if (event.description) {
+              upcomingEventsList += `  ${event.description.substring(0, 70)}${event.description.length > 70 ? "..." : ""}\n`;
+            }
+          });
+          
+          upcomingEventsList += "\n";
+        }
+      });
+      
+      if (!foundEvents) {
+        upcomingEventsList = "Paimon hasn't heard about specific upcoming events yet, but there should be new ones in the next version!";
+      } else {
+        upcomingEventsList += "⚠️ Remember, this is based on leaks and could change before release!";
+      }
+      
+      return response.replace('{upcoming_events}', upcomingEventsList);
+    }
   }
 };
 
@@ -211,11 +496,13 @@ export const HELP_RESPONSES = {
   
   analytics: "The Analytics page shows statistics about your wishes including:\n• Pull rate analysis\n• Pity distribution\n• Banner distribution\n• 5★ and 4★ item analysis\n\nYou can also predict your chances of getting a 5★ based on your current pity!",
   
-  simulator: "The Wish Simulator lets you practice wishing without spending real primogems! Features include:\n• Accurate banner mechanics and rates\n• Real soft pity and hard pity systems\n• 50/50 and guarantee mechanics\n• Wish animation for single and ten-pulls\n• History tracking of simulated wishes",
+  simulator: "The Wish Simulator lets you practice wishing without spending real primogems! Features include:\n• Accurate banner mechanics and rates\n• Real soft pity and hard pity systems\n• 50/50 and guarantee mechanics\n• Wish animation for single and ten-pulls\n• Capturing Radiance system (10% chance to get featured character when losing 50/50)",
   
-  settings: "In Settings, you can:\n• Import or export your wish data\n• Change app appearance\n• Check for updates\n• Reset your data (be careful with this!)",
+  settings: "In Settings, you can:\n• Import or export your wish data\n• Change app appearance\n• Check for updates\n• Manage your game content\n• Toggle offline mode\n• Reset your data (be careful with this!)",
+
+  leaks: "The Leaks page shows upcoming content from beta testing, including:\n• Future banners\n• New characters\n• Events coming in the next version\n\nRemember that leaked content might change before the official release!",
   
-  default: "This is the Genshin Impact Pity Tracker! You can:\n• Track your wish pity for all banner types\n• Import your wish history\n• Analyze your pull statistics\n• Get predictions for future wishes\n\nWhat would you like help with?"
+  default: "This is the Genshin Impact Pity Tracker! You can:\n• Track your wish pity for all banner types\n• Import your wish history\n• Analyze your pull statistics\n• Get predictions for future wishes\n• Set reminders for banners and events\n\nWhat would you like help with?"
 };
 
 export const DEFAULT_RESPONSE = "Eh? Paimon's not sure what you mean... Try asking about wishes, banners, or pity! Or say 'help' for some guidance!";
