@@ -6,14 +6,14 @@ import Icon from '../components/Icon';
 import SafeImage from '../components/SafeImage';
 import { AlertTriangle, Calendar, ArrowLeft, RefreshCw } from 'lucide-react';
 
-// Character Card Component
+// Character Card Component - Vertical design
 const CharacterCard = ({ character }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-xl bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden"
+      className="rounded-lg bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden"
     >
       <div className="relative aspect-[2/3] bg-gradient-to-b from-indigo-900/50 to-purple-900/50">
         <SafeImage
@@ -22,15 +22,15 @@ const CharacterCard = ({ character }) => {
           className="w-full h-full object-cover"
           fallbackSrc="/images/characters/placeholder.png"
         />
-        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-          <h3 className="text-lg font-genshin">{character.name}</h3>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+          <h3 className="text-sm font-medium">{character.name}</h3>
+          <div className="flex items-center gap-1 mt-1">
             <img 
               src={`/elements/${character.element?.toLowerCase() || 'anemo'}.svg`}
               alt={character.element || 'Element'}
-              className="w-4 h-4"
+              className="w-3 h-3"
             />
-            <span className="text-sm text-white/80">{character.rarity}★ {character.weapon}</span>
+            <span className="text-xs text-white/80">{character.rarity}★ {character.weapon}</span>
           </div>
         </div>
       </div>
@@ -38,39 +38,62 @@ const CharacterCard = ({ character }) => {
   );
 };
 
-// Banner Card Component
+// Banner Card Component - More compact design
 const BannerCard = ({ banner, index }) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
-      className="rounded-xl bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden"
+      className="rounded-lg bg-black/30 backdrop-blur-sm border border-white/10 overflow-hidden"
     >
-      <div className="relative aspect-[16/7]">
+      <div className="relative h-32">
         <SafeImage
           src={banner.image}
           alt={banner.name}
           className="w-full h-full object-cover"
           fallbackSrc="/images/banners/placeholder.png"
         />
-        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
-          <h3 className="text-lg font-genshin">{banner.name}</h3>
-          <div className="flex items-center gap-2 mt-1 text-sm text-white/80">
-            {banner.characters && (
-              <div className="flex items-center gap-1">
-                <Icon name="crown" size={16} />
-                <span>{banner.characters.join(', ')}</span>
-              </div>
-            )}
-          </div>
+        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+          <h3 className="text-sm font-medium">{banner.name}</h3>
+          {banner.characters && (
+            <div className="flex items-center gap-1 mt-1 text-xs text-white/80">
+              <Icon name="crown" size={12} />
+              <span className="truncate">{banner.characters.join(', ')}</span>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   );
 };
 
-// Phase Section Component
+// Map Update Card Component - With larger images
+const MapUpdateCard = ({ update, index }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+      className="p-3 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10 h-full"
+    >
+      <h4 className="text-sm font-medium mb-2">{update.title}</h4>
+      <p className="text-xs text-white/70 mb-3">{update.description}</p>
+      {update.image && (
+        <div className="rounded-lg overflow-hidden">
+          <SafeImage
+            src={update.image}
+            alt={update.title}
+            className="w-full h-96 object-contain"
+            fallbackSrc="/images/maps/placeholder.png"
+          />
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+// Phase Section Component - Restructured layout
 const PhaseSection = ({ phase, index }) => {
   return (
     <div className="mb-8 animate-fadeIn" style={{ animationDelay: `${index * 150}ms` }}>
@@ -84,10 +107,13 @@ const PhaseSection = ({ phase, index }) => {
         )}
       </div>
       
-      {/* Banners Section */}
+      {/* Banners section */}
       {phase.banners && phase.banners.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-medium mb-3">Banners</h3>
+        <div className="mb-4">
+          <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+            <Icon name="star" size={16} className="text-amber-400" />
+            <span>Banners</span>
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {phase.banners.map((banner, idx) => (
               <BannerCard key={idx} banner={banner} index={idx} />
@@ -96,48 +122,37 @@ const PhaseSection = ({ phase, index }) => {
         </div>
       )}
       
-      {/* Characters Section */}
-      {phase.characters && phase.characters.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-medium mb-3">New Characters</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {phase.characters.map((character, idx) => (
-              <CharacterCard key={idx} character={character} />
-            ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Characters section */}
+        {phase.characters && phase.characters.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Icon name="crown" size={16} className="text-purple-400" />
+              <span>New Characters</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {phase.characters.map((character, idx) => (
+                <CharacterCard key={idx} character={character} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-      
-      {/* Map Updates Section */}
-      {phase.mapUpdates && phase.mapUpdates.length > 0 && (
-        <div>
-          <h3 className="text-lg font-medium mb-3">Map Updates</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {phase.mapUpdates.map((update, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: idx * 0.1 }}
-                className="p-4 rounded-xl bg-black/30 backdrop-blur-sm border border-white/10"
-              >
-                <h4 className="font-medium mb-2">{update.title}</h4>
-                <p className="text-sm text-white/70">{update.description}</p>
-                {update.image && (
-                  <div className="mt-3 rounded-lg overflow-hidden">
-                    <SafeImage
-                      src={update.image}
-                      alt={update.title}
-                      className="w-full h-auto"
-                      fallbackSrc="/images/maps/placeholder.png"
-                    />
-                  </div>
-                )}
-              </motion.div>
-            ))}
+        )}
+        
+        {/* Map Updates section */}
+        {phase.mapUpdates && phase.mapUpdates.length > 0 && (
+          <div>
+            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+              <Icon name="map" size={16} className="text-emerald-400" />
+              <span>Map Updates</span>
+            </h3>
+            <div className="space-y-4">
+              {phase.mapUpdates.map((update, idx) => (
+                <MapUpdateCard key={idx} update={update} index={idx} />
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -208,7 +223,7 @@ const Leaks = () => {
   }
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-12 max-w-5xl mx-auto">
       {/* Header with back button */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -258,14 +273,108 @@ const Leaks = () => {
         </div>
       </div>
       
-      {/* Phases */}
-      {leaksData.phases.map((phase, index) => (
-        <PhaseSection key={index} phase={phase} index={index} />
-      ))}
+      {/* Main content in two columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left column - Phase 1 and Characters */}
+        <div className="space-y-6">
+          {/* Phase 1 */}
+          {leaksData.phases[0] && (
+            <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-xl font-genshin">Phase {leaksData.phases[0].number}</h2>
+                {leaksData.phases[0].dateRange && (
+                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-sm">
+                    <Calendar size={14} className="text-indigo-400" />
+                    <span>{leaksData.phases[0].dateRange}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Banners section */}
+              {leaksData.phases[0].banners && leaksData.phases[0].banners.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Icon name="star" size={16} className="text-amber-400" />
+                    <span>Banners</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {leaksData.phases[0].banners.map((banner, idx) => (
+                      <BannerCard key={idx} banner={banner} index={idx} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* All Characters (from all phases) */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+            <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+              <Icon name="crown" size={18} className="text-purple-400" />
+              <span>New Characters</span>
+            </h3>
+            <div className="grid grid-cols-3 gap-2">
+              {leaksData.phases.flatMap((phase, phaseIdx) => 
+                phase.characters ? phase.characters.map((character, idx) => (
+                  <CharacterCard key={`${phaseIdx}-${idx}`} character={character} />
+                )) : []
+              )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Right column - Phase 2 and Map Updates */}
+        <div className="space-y-6">
+          {/* Phase 2 */}
+          {leaksData.phases[1] && (
+            <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+              <div className="flex items-center gap-3 mb-4">
+                <h2 className="text-xl font-genshin">Phase {leaksData.phases[1].number}</h2>
+                {leaksData.phases[1].dateRange && (
+                  <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-sm">
+                    <Calendar size={14} className="text-indigo-400" />
+                    <span>{leaksData.phases[1].dateRange}</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Banners section */}
+              {leaksData.phases[1].banners && leaksData.phases[1].banners.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Icon name="star" size={16} className="text-amber-400" />
+                    <span>Banners</span>
+                  </h3>
+                  <div className="space-y-4">
+                    {leaksData.phases[1].banners.map((banner, idx) => (
+                      <BannerCard key={idx} banner={banner} index={idx} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* All Map Updates (from all phases) */}
+          <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
+            <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+              <Icon name="map" size={18} className="text-emerald-400" />
+              <span>Map Updates</span>
+            </h3>
+            <div className="space-y-4">
+              {leaksData.phases.flatMap((phase, phaseIdx) => 
+                phase.mapUpdates ? phase.mapUpdates.map((update, idx) => (
+                  <MapUpdateCard key={`${phaseIdx}-${idx}`} update={update} index={idx} />
+                )) : []
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
       
       {/* Disclaimer */}
-      <div className="mt-12 p-4 rounded-xl bg-black/30 backdrop-blur-sm border border-white/10">
-        <p className="text-sm text-white/60 text-center">
+      <div className="mt-8 p-3 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10">
+        <p className="text-xs text-white/60 text-center">
           All leaked content is subject to change before official release. Images and information are based on beta versions and may not represent the final product.
         </p>
       </div>
