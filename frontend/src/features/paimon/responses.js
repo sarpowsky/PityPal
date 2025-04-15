@@ -3,22 +3,23 @@ export const RESPONSE_PATTERNS = {
   greetings: {
     patterns: ['hello', 'hi', 'hey', 'greetings', 'good morning', 'good evening'],
     responses: [
-      "Ehehe~ Paimon's here! Need help checking your wishes?",
-      "Oh, hi there Traveler! Paimon was just thinking about mora... er, helping you with wishes!",
-      "Yay, someone to talk to! What should we check first? Wishes? Pity?",
-      "Hey! Paimon missed you! Want to see how close you are to your next 5★?"
+      "Ehehe~ Paimon's here! Need help with your pulls or pity tracking?",
+      "Oh, hi there Traveler! Paimon was just thinking about mora... er, helping you track your pity!",
+      "Yay, someone to talk to! Need info on your current banners or wish stats?",
+      "Hey! Paimon missed you! Want to check your pity or see your next 5★ prediction?"
     ],
     formatResponse: (response, formatData) => {
-      // Add context awareness based on current page
       const page = formatData.currentPage;
       if (page === 'characters') {
         return response + " Or do you want help with character builds?";
       } else if (page === 'analytics') {
-        return response + " Looking at your stats, hmm?";
+        return response + " Looking at your stats? Paimon can explain the ML predictions!";
       } else if (page === 'simulator') {
-        return response + " Want to try your luck in the simulator?";
+        return response + " Want to try wishing without spending your primogems?";
       } else if (page === 'leaks') {
-        return response + " Checking out the juicy leaks, are we?";
+        return response + " Checking out future content? Paimon knows all the rumors!";
+      } else if (page === 'history') {
+        return response + " Want to analyze your past wishes?";
       }
       return response;
     }
@@ -27,29 +28,31 @@ export const RESPONSE_PATTERNS = {
   pity: {
     patterns: ['pity', 'how many', 'wishes', 'pulls', '5 star', '4 star', 'next'],
     responses: [
-      "Hmm, let Paimon check... You've done {pity} wishes so far! {status}",
+      "Hmm, let Paimon check... You've done {pity} wishes since your last 5★! {status}",
       "Paimon's been counting carefully! That's {pity} wishes since your last 5★! {status}",
       "Oooh, exciting! You're at {pity} pity right now! {status}",
-      "*checking notes* {pity} wishes... {status} Should we do some more pulls?"
+      "*checking notes* {pity} wishes... {status}"
     ],
     formatResponse: (response, stats) => {
       const pity = stats.pity.character.current;
       let status = "";
       
       if (pity >= 85) {
-        status = "WOW! Your next pull is almost definitely going to be golden! Paimon can feel it!";
+        status = "WOW! Your next pull is almost definitely going to be golden! Your chance is over 70%!";
       } else if (pity >= 74) {
-        status = "Soft pity is active! Paimon thinks you should definitely wish right now!";
+        status = "Soft pity is active! Your 5★ chance is much higher than normal now!";
       } else if (pity >= 65) {
-        status = "Getting really close to soft pity! Just a few more wishes!";
+        status = "Getting close to soft pity at 74 pulls! Just a few more wishes!";
       } else if (pity >= 45) {
-        status = "We're making progress! Soft pity starts at 74, so keep going!";
+        status = "We're halfway to soft pity! Keep wishing - it starts at 74 pulls with boosted rates!";
       } else {
-        status = "Still building up that pity... but Paimon believes your luck might be better than the numbers!";
+        status = "Still building pity... Paimon can set a reminder when you get closer to soft pity!";
       }
       
       if (stats.pity.character.guaranteed) {
-        status += " And you're GUARANTEED to get the featured character on your next 5★! That's awesome!";
+        status += " And you're GUARANTEED to get the featured character on your next 5★!";
+      } else {
+        status += " You're currently on 50/50 for your next 5★.";
       }
       
       return response
@@ -71,14 +74,12 @@ export const RESPONSE_PATTERNS = {
         return "Eh? Paimon doesn't see any banners right now! Check back later or refresh the app!";
       }
       
-      // Filter out permanent banner when listing character banners
       const characterBanners = banners.filter(b => b.character && !b.isPermanent);
       const weaponBanners = banners.filter(b => b.weapons && !b.isPermanent);
       const permanentBanners = banners.filter(b => b.isPermanent);
       
       let bannerList = "";
       
-      // Add character banners
       if (characterBanners.length > 0) {
         bannerList += "📌 Character Banners:\n";
         characterBanners.forEach(banner => {
@@ -90,7 +91,6 @@ export const RESPONSE_PATTERNS = {
         });
       }
       
-      // Add weapon banners
       if (weaponBanners.length > 0) {
         bannerList += "\n📌 Weapon Banner:\n";
         weaponBanners.forEach(banner => {
@@ -106,13 +106,14 @@ export const RESPONSE_PATTERNS = {
         });
       }
       
-      // Add permanent banners
       if (permanentBanners.length > 0) {
         bannerList += "\n📌 Permanent Banner:\n";
         permanentBanners.forEach(banner => {
           bannerList += `• ${banner.name} (always available)\n`;
         });
       }
+      
+      bannerList += "\nPaimon can set reminders before these banners end! Just ask!";
       
       return response.replace('{banner_list}', bannerList);
     }
@@ -121,18 +122,21 @@ export const RESPONSE_PATTERNS = {
   stats: {
     patterns: ['stats', 'statistics', 'total', 'spent', 'numbers', 'how much'],
     responses: [
-      "Let's see... You've spent {primogems} primogems! That's like... *tries to count* a lot of Sticky Honey Roast! Got {five_stars} 5★ characters from it!",
-      "Wow! {total} wishes! Paimon's impressed! That's {five_stars} 5★ and {four_stars} 4★ characters and weapons!",
-      "*checking the records* {total} wishes so far! {primogems} primogems! No wonder Paimon's been so busy counting!",
-      "Paimon's calculations show {total} wishes! You got {five_stars} 5★ friends to play with! That's worth every primogem!"
+      "Let's see... You've spent {primogems} primogems on {total} wishes! That's {five_stars} 5★ characters from it!",
+      "Wow! {total} wishes! That's {five_stars} 5★ and {four_stars} 4★ items!",
+      "*checking the records* You've made {total} wishes so far! That's {primogems} primogems!",
+      "Paimon's calculations show {total} wishes! You got {five_stars} 5★ friends at an average pity of {avg_pity}!"
     ],
     formatResponse: (response, stats) => {
       const data = stats.wishes.stats;
+      const avgPity = data.avg_pity || "unknown";
+      
       return response
         .replace('{primogems}', (data.total_wishes * 160).toLocaleString())
         .replace('{total}', data.total_wishes.toLocaleString())
-        .replace('{five_stars}', data.total_five_stars)
-        .replace('{four_stars}', data.total_four_stars);
+        .replace('{five_stars}', data.five_stars)
+        .replace('{four_stars}', data.four_stars)
+        .replace('{avg_pity}', avgPity);
     }
   },
 
@@ -149,9 +153,15 @@ export const RESPONSE_PATTERNS = {
       const status = isGuaranteed ? 
         "you're GUARANTEED to get the featured character" : 
         "it's a 50/50 chance for the featured character";
-      const details = isGuaranteed ? 
-        "Paimon's so excited to see who you'll get!" : 
-        "Paimon will be cheering for your luck! Maybe we should get some lucky items first?";
+      
+      let details = isGuaranteed ? 
+        "Paimon's excited to see who you'll get!" : 
+        "But remember, if you lose the 50/50, you still have a 10% chance for Capturing Radiance!";
+
+      // Add ML prediction if on analytics page
+      if (stats.currentPage === 'analytics') {
+        details += " Check the Analytics page for ML predictions on your pull chances!";
+      }
 
       return response
         .replace('{status}', status)
@@ -159,186 +169,112 @@ export const RESPONSE_PATTERNS = {
     }
   },
 
-  luck: {
-    patterns: ['lucky', 'hope', 'wish me', 'bless', 'please'],
+  analytics: {
+    patterns: ['analytics', 'predict', 'chance', 'model', 'machine learning', 'ml', 'prediction'],
     responses: [
-      "Paimon's sending all the luck your way! Maybe we should go to the sacred sakura tree first?",
-      "Paimon knows you'll get something amazing! Just don't forget to share some mora in return, ehehe~",
-      "*throws confetti* Lucky charm activated! Now your next wish will definitely be special!",
-      "Good luck! Paimon thinks Lady Fortune is definitely on your side today!"
-    ]
-  },
-
-  celebration: {
-    patterns: ['got', 'pulled', 'won', 'finally'],
-    responses: [
-      "Yaaaaay! Paimon's so happy for you! See? Paimon's the best lucky charm!",
-      "Wow! Amazing! Paimon knew you could do it! Should we celebrate with a feast?",
-      "That's incredible! Paimon's happy dance time! *spins around*",
-      "See? Paimon's calculations were right! Your luck was just waiting for the right moment!"
-    ]
-  },
-
-  disappointment: {
-    patterns: ['lost', 'failed', 'didn\'t get', 'sad', 'bad luck', 'qiqi'],
-    responses: [
-      "Aww, don't be sad! Remember, a guaranteed featured 5★ is waiting for you now!",
-      "Paimon thinks your next wishes will be much luckier! The gacha gods are just saving your luck!",
-      "Hey, hey! Even Qiqi is a 5★! Plus, now you're guaranteed the featured character next time!",
-      "Don't worry! Paimon's seen worse luck... wait, that's not helping, is it? Your next wishes will be better for sure!"
-    ]
-  },
-
-  help: {
-    patterns: ['help', 'guide', 'what can', 'how do', 'confused'],
-    responses: [
-      "Paimon's here to help! You can ask about:\n• Your pity count (how close to 5★)\n• Banner details\n• Wish history\n• 50/50 status\n• Reminders\n• Game updates\nJust ask naturally!",
-      "Need guidance? Paimon knows everything about wishes! Try asking about your pity, current banners, or wish history! Paimon will explain everything!",
-      "Paimon's your best companion! Ask about your wishes, pity, or banners - Paimon will help! You can even check how many primogems you've spent (though maybe that's scary...)"
-    ]
-  },
-  
-  navigation: {
-    patterns: ['where am i', 'show me', 'go to', 'take me to', 'navigate'],
-    responses: [
-      "Where would you like to go? Home page? Character page? Wish history? Analytics? Settings? Just tell Paimon!",
-      "Paimon can help you get around! Just say where you want to go!"
-    ]
-  },
-  
-  reminders: {
-    patterns: ['remind', 'notification', 'alert', 'don\'t forget'],
-    responses: [
-      "What would you like Paimon to remind you about? Banner endings? Approaching soft pity?",
-      "Paimon can set reminders for you! Just tell me what you need to remember!"
-    ],
-    formatResponse: (response, _, banners) => {
-      // If we have active banners, suggest them
-      if (banners && banners.length > 0 && !banners[0].isPermanent) {
-        return response + ` Should I remind you about ${banners[0].name} ending?`;
-      }
-      return response;
-    }
-  },
-  
-  characters: {
-    patterns: ['character', 'build', 'artifact', 'weapon', 'team'],
-    responses: [
-      "Looking for character info? You can check builds and team comps in the Characters section!",
-      "Need help with character builds? The Characters page has all the details!"
+      "The Analytics page uses machine learning to predict your 5★ chances! It shows exactly when you'll hit 50% and 90% probability!",
+      "Paimon loves the Analytics page! It shows your pull distribution and can predict exactly how many wishes until your next 5★!",
+      "Want accurate predictions? The ML model in Analytics calculates your exact 5★ chances based on your wish history!",
+      "Analytics has super smart predictions using real math! It shows pity distribution, rate comparisons, and ML predictions for your next 5★!"
     ],
     formatResponse: (response, stats) => {
-      // If already on characters page, give more specific guidance
-      if (stats.currentPage === 'characters') {
-        return "Just click on any character card to see their details, builds, and recommended teams!";
-      }
-      return response;
-    }
-  },
-  
-  import: {
-    patterns: ['import', 'get wishes', 'url', 'fetch', 'load data'],
-    responses: [
-      "To import your wishes, you need to copy the URL from your in-game wish history! Need help with that?",
-      "Want to import wishes? Paimon can show you how to get your wish history URL from the game!",
-      "Importing wishes is easy! Just click the 'How to Import Wishes' button and follow the steps!"
-    ]
-  },
-
-  // New response patterns for additional features
-
-  leaks: {
-    patterns: ['leak', 'future', 'upcoming', 'next version', 'next patch'],
-    responses: [
-      "Ooh, you want to know about future content? Check the Leaks page! But remember, it's all subject to change!",
-      "Paimon shouldn't really talk about leaks... but between you and me, the Leaks page has some exciting stuff!",
-      "Shh! Paimon's not supposed to tell you about future updates! But you can check the Leaks page yourself..."
-    ],
-    formatResponse: (response, stats) => {
-      if (stats.currentPage === 'leaks') {
-        return "Remember, everything here is from beta testing and might change! Don't get too attached to anything yet!";
+      if (stats.currentPage === 'analytics') {
+        return "Make sure to train the ML model with your wish history for more accurate predictions! You can see your exact 5★ probability for each future pull!";
       }
       return response;
     }
   },
 
   simulator: {
-    patterns: ['simulator', 'simulate', 'practice', 'test wishes', 'fake wishes'],
+    patterns: ['simulator', 'simulate', 'practice', 'test wishes', 'fake wishes', 'try wishes'],
     responses: [
-      "Want to try wishing without spending real primogems? Use the Wish Simulator! It's super accurate!",
-      "The Wish Simulator lets you test your luck without risking your precious primogems!",
-      "Paimon loves the Wish Simulator! You can practice pulling until you're satisfied with your strategy!"
+      "The Wish Simulator lets you test your luck without spending primogems! It has ALL the real game mechanics!",
+      "Want to try the simulator? It has real soft pity, hard pity, guaranteed pity, AND the Capturing Radiance system!",
+      "Paimon loves the Wish Simulator! It shows exactly what would happen if you wished on the real banners!",
+      "The simulator is super accurate! It uses the same rates as the real game - even the secret soft pity increase at pull 74!"
     ],
     formatResponse: (response, stats) => {
       if (stats.currentPage === 'simulator') {
-        return "Remember, this simulator uses real game rates and mechanics! Even the soft pity system works the same!";
+        return "This simulator tracks separate pity for each banner type, just like the real game! It even simulates the 10% Capturing Radiance chance when you lose 50/50!";
       }
       return response;
     }
   },
 
-  updates: {
-    patterns: ['update', 'new content', 'refresh', 'latest', 'new version'],
+  import: {
+    patterns: ['import', 'get wishes', 'url', 'fetch', 'load data', 'get data'],
     responses: [
-      "Wondering about updates? {update_status}",
-      "About app updates... {update_status}",
-      "Updates? {update_status}"
-    ],
-    formatResponse: (response, _, __, contentStatus) => {
-      let updateStatus = "Paimon's not sure if there are any updates right now. Check the Settings page!";
-      
-      if (contentStatus && contentStatus.contentUpdateAvailable) {
-        updateStatus = "Ooh! Paimon sees new content available! You should refresh to get the latest banners and events!";
-      }
-      
-      return response.replace('{update_status}', updateStatus);
-    }
+      "To import your wishes, click 'How to Import Wishes' on the homepage and follow the steps to get your wish history URL from the game!",
+      "Want to import wishes? Go to the Home page and click the guide button! It'll show you exactly how to get your URL with PowerShell!",
+      "Importing wishes is easy! The guide on the homepage walks you through getting your game URL with PowerShell and pasting it in the app!",
+      "Need to import wishes? Click the import guide button on the homepage! It explains how to grab your URL while the game is running!"
+    ]
   },
 
-  settings: {
-    patterns: ['settings', 'configure', 'preferences', 'options', 'theme'],
+  reminders: {
+    patterns: ['remind', 'notification', 'alert', 'don\'t forget', 'remember'],
     responses: [
-      "Need to change app settings? Go to the Settings page! You can adjust things like auto-updates and data management.",
-      "The Settings page lets you configure the app just how you like it! Want Paimon to take you there?",
-      "In Settings, you can export your wish data, check for updates, and adjust Paimon's personality! Just kidding about that last one, ehehe~"
-    ]
+      "PityPal can remind you about banner endings, event endings, approaching soft pity, and custom things too! What would you like a reminder for?",
+      "Paimon can set reminders for banners ending, events ending, or when you get close to soft pity! Just say what you want to be reminded about!",
+      "Want reminders? Paimon can notify you before banners end, events end, or when you're approaching soft pity!",
+      "Reminder options include: banner endings (with customizable hours), event endings, soft pity alerts, and custom timed reminders!"
+    ],
+    formatResponse: (response, _, banners) => {
+      if (banners && banners.length > 0 && !banners[0].isPermanent) {
+        return response + ` Should I remind you about ${banners[0].name} ending?`;
+      }
+      return response;
+    }
   },
 
   capturingRadiance: {
-    patterns: ['capturing radiance', 'radiance', '10%', 'special chance'],
+    patterns: ['capturing radiance', 'radiance', '10%', 'special chance', 'still get featured'],
     responses: [
-      "Oh! You're asking about Capturing Radiance? That's when you lose the 50/50 but still get the featured character! It's a 10% chance!",
-      "Capturing Radiance is Paimon's favorite thing! Even if you lose the 50/50, you still have a small chance (10%) to get the featured character!",
-      "Did you know? When you lose the 50/50, there's still a 10% chance called 'Capturing Radiance' where you get the featured character anyway! Amazing, right?"
+      "Capturing Radiance is when you lose the 50/50 but STILL get the featured character! It's a 10% chance - the simulator shows it too!",
+      "Even when you lose the 50/50, you have a 10% chance of Capturing Radiance, getting the featured character anyway! The simulator shows this mechanic!",
+      "Capturing Radiance gives you a 10% chance to get the featured character even after losing the 50/50! PityPal tracks this in the simulator!",
+      "Did you know? When you lose the 50/50, there's a 10% 'Capturing Radiance' chance to still get the featured character! The simulator shows these moments!"
     ]
   },
 
-  offline: {
-    patterns: ['offline', 'no connection', 'firebase', 'data'],
+  offlineMode: {
+    patterns: ['offline', 'no connection', 'firebase', 'data', 'cached'],
     responses: [
-      "Looks like you're using PityPal in offline mode! Don't worry, Paimon's still here with the cached data!",
-      "No internet connection? No problem! Paimon's using the data that was saved last time you were online.",
-      "Paimon notices we're in offline mode! The app is using its saved data until you reconnect."
+      "PityPal works offline too! When you're in offline mode, it uses cached data from your last online session.",
+      "No internet? No problem! PityPal uses cached data in offline mode. You can toggle this in Settings → Game Content.",
+      "Offline mode uses locally stored banner and event data. You can manually force offline mode in Settings if needed!",
+      "PityPal caches banners and events so you can use it offline! All your wish data is stored locally and works without internet!"
     ]
   },
 
-  analytics: {
-    patterns: ['analytics', 'predict', 'chance', 'model', 'machine learning'],
+  dataManagement: {
+    patterns: ['export', 'backup', 'save data', 'download data', 'backup wishes'],
     responses: [
-      "The Analytics page has some really smart predictions about your pulls! It uses machine learning!",
-      "Want to know your chances of getting a 5★? The Analytics page can predict that with fancy math!",
-      "Paimon thinks the Analytics page is super useful! It can tell you exactly how many pulls until your next 5★!"
+      "You can export your wish data in Settings → Data Management! This creates a JSON file with your complete wish history.",
+      "Want to back up your wishes? Go to Settings → Data Management → Export Data to save everything as a JSON file!",
+      "PityPal lets you export your wish history as JSON from Settings → Data Management. Great for backups or analysis in other tools!",
+      "To save your wish data, use the Export feature in Settings → Data Management. You can import it back later if needed!"
+    ]
+  },
+
+  contentUpdates: {
+    patterns: ['refresh content', 'update banners', 'new content', 'latest banners'],
+    responses: [
+      "PityPal can automatically fetch the latest banners and events! Check Settings → Game Content to control update frequency.",
+      "Need the latest banners? Go to Settings → Game Content and click 'Refresh Content Now'!",
+      "PityPal updates game content automatically unless you're in offline mode. You can manually refresh anytime in Settings!",
+      "To get the newest banners and events, go to Settings → Game Content → Refresh Content Now!"
     ],
-    formatResponse: (response, stats) => {
-      if (stats.currentPage === 'analytics') {
-        return "This page uses statistics and machine learning to predict your future pulls! Make sure to train the model with your wish history for better predictions!";
+    formatResponse: (response, _, __, contentStatus) => {
+      if (contentStatus && contentStatus.contentUpdateAvailable) {
+        return "Paimon notices new content is available! Go to Settings → Game Content and click 'Refresh Content Now' to get the latest banners and events!";
       }
       return response;
     }
   },
-  
+
   gameEvents: {
-    patterns: ['game event', 'festival', 'limited time', 'activity', 'quest'],
+    patterns: ['game event', 'festival', 'limited time', 'activity', 'quest', 'current events', 'active events', 'ongoing events', 'what events', 'which events', 'show events', 'tell me about events'],
     responses: [
       "The current events are: {event_list}",
       "These events are happening right now: {event_list}",
@@ -350,7 +286,6 @@ export const RESPONSE_PATTERNS = {
         return "Hmm, Paimon doesn't see any events active right now! Check back later or refresh the app!";
       }
       
-      // Filter to current events
       const now = new Date();
       const currentEvents = events.filter(event => {
         const startDate = event.startDate ? new Date(event.startDate) : null;
@@ -379,12 +314,59 @@ export const RESPONSE_PATTERNS = {
         eventList += "\n";
       });
       
+      eventList += "Paimon can set reminders for these events too! Just ask!";
+      
       return response.replace('{event_list}', eventList);
     }
   },
-  
+
+  history: {
+    patterns: ['history', 'past wishes', 'wish history', 'previous wishes', 'all wishes'],
+    responses: [
+      "The History page shows all your wishes with details like pity count for each pull and banner type!",
+      "Want to see your wish history? The History page lets you filter by banner type and sort by date!",
+      "Check the History page to see every wish you've made, sorted by date with pity info for each pull!",
+      "Your complete wish history is on the History page, with filters for different banner types and time periods!"
+    ],
+    formatResponse: (response, stats) => {
+      if (stats.currentPage === 'history') {
+        return "You can filter your wishes by banner type using the buttons at the top! The History page also shows the pity count for each pull!";
+      }
+      return response;
+    }
+  },
+
+  paimonHelp: {
+    patterns: ['what can you do', 'paimon help', 'paimon commands', 'how to use paimon'],
+    responses: [
+      "Paimon can help with lots of things! Ask about:\n• Pity tracking (\"What's my pity?\")\n• Banner info (\"Show current banners\")\n• Stats (\"What are my wish stats?\")\n• Reminders (\"Remind me about banner ending\")\n• Navigation (\"Go to simulator\")\n• Content updates (\"Check for updates\")\n• Game events (\"What events are active?\")\n• And more!",
+      "Paimon is your wish tracker companion! Try asking about:\n• Your pity and 50/50 status\n• Current or upcoming banners\n• Setting reminders for events/banners\n• Wish statistics and analytics\n• Using the simulator\n• Navigating to different pages\n• Importing wish history",
+      "Paimon knows everything about your wishes! You can ask about pity, banners, events, stats, or say things like \"Go to simulator\" or \"Set a reminder\" for specific actions!"
+    ]
+  },
+
+  aboutApp: {
+    patterns: ['about app', 'what is pitypal', 'app features', 'how does pitypal work'],
+    responses: [
+      "PityPal is your complete Genshin Impact wish tracker! It imports your wish history, tracks pity across all banner types, uses ML to predict 5★ chances, simulates wishes, and sets reminders for banners/events!",
+      "PityPal helps you track your Genshin wishes! Main features: wish history import, pity tracking, ML prediction, wish simulation, banner/event reminders, and detailed analytics!",
+      "PityPal is a Genshin wish tracker that imports your wish history, calculates pity, predicts your 5★ chances with machine learning, simulates wishes with real game mechanics, and more!",
+      "PityPal combines wish history tracking, pity calculation, ML prediction, and wish simulation to help you plan your Genshin wishing strategy! It also has banner/event reminders!"
+    ]
+  },
+
+  creatorInfo: {
+    patterns: ['who created', 'who made', 'who developed', 'author', 'creator', 'developer'],
+    responses: [
+      "PityPal was created by sarpowsky! Paimon thinks they're super talented! They made this cool app with machine learning and everything!",
+      "Oh! A developer named sarpowsky created PityPal! They even gave Paimon a job as your helper!",
+      "PityPal was made by sarpowsky - they created all these amazing features to help Travelers track their wishes!",
+      "The Traveler sarpowsky created PityPal! Paimon is thankful they made such a useful tool for Genshin players!"
+    ]
+  },
+
   upcomingBanners: {
-    patterns: ['upcoming banner', 'next banner', 'future banner', 'leaked banner', 'next patch'],
+    patterns: ['upcoming banner', 'next banner', 'future banner', 'leaked banner'],
     responses: [
       "According to leaks, here's what might be coming: {upcoming_list}",
       "Paimon's heard some rumors about future banners: {upcoming_list}",
@@ -393,12 +375,11 @@ export const RESPONSE_PATTERNS = {
     ],
     formatResponse: (response, stats, _, __, ___, leaks) => {
       if (!leaks || !leaks.phases || leaks.phases.length === 0) {
-        return "Paimon doesn't have any information about upcoming banners yet! Check the Leaks page for the latest info!";
+        return "Paimon doesn't have info about upcoming banners yet! Check the Leaks page for updates or for the latest rumors!";
       }
       
       let upcomingList = "";
       
-      // Go through each phase from the leaks data
       leaks.phases.forEach((phase, index) => {
         if (phase.banners && phase.banners.length > 0) {
           upcomingList += `📌 Phase ${phase.number || index + 1}`;
@@ -423,86 +404,32 @@ export const RESPONSE_PATTERNS = {
       });
       
       if (!upcomingList) {
-        return "Paimon doesn't have detailed information about upcoming banners yet! Check the Leaks page!";
+        return "Check the Leaks page for the latest information about upcoming banners! Paimon can take you there!";
       }
       
-      upcomingList += "⚠️ Remember, this is based on leaks and could change before release!";
+      upcomingList += "⚠️ Remember, leaks can change before official release!";
       
       return response.replace('{upcoming_list}', upcomingList);
-    }
-  },
-
-  upcomingEvents: {
-    patterns: ['upcoming event', 'next event', 'future event', 'leaked event'],
-    responses: [
-      "These events should be coming in the next update: {upcoming_events}",
-      "Paimon's heard about these upcoming events: {upcoming_events}",
-      "According to leaks, we'll be getting these events: {upcoming_events}",
-      "The next update should bring these events: {upcoming_events}"
-    ],
-    formatResponse: (response, stats, _, __, ___, leaks) => {
-      if (!leaks || !leaks.phases || leaks.phases.length === 0) {
-        return "Paimon doesn't know about any upcoming events yet! Check the Leaks page for the latest info!";
-      }
-      
-      let upcomingEventsList = "";
-      let foundEvents = false;
-      
-      // Go through phases looking for events
-      leaks.phases.forEach((phase, index) => {
-        const events = [];
-        
-        // Different ways events might be structured in the leaks data
-        if (phase.events && Array.isArray(phase.events)) {
-          events.push(...phase.events);
-          foundEvents = true;
-        }
-        
-        if (events.length > 0) {
-          upcomingEventsList += `📌 Phase ${phase.number || index + 1}`;
-          if (phase.dateRange) {
-            upcomingEventsList += ` (${phase.dateRange})`;
-          }
-          upcomingEventsList += ":\n";
-          
-          events.forEach(event => {
-            upcomingEventsList += `• ${event.name || event.title || "Unnamed Event"}\n`;
-            if (event.description) {
-              upcomingEventsList += `  ${event.description.substring(0, 70)}${event.description.length > 70 ? "..." : ""}\n`;
-            }
-          });
-          
-          upcomingEventsList += "\n";
-        }
-      });
-      
-      if (!foundEvents) {
-        upcomingEventsList = "Paimon hasn't heard about specific upcoming events yet, but there should be new ones in the next version!";
-      } else {
-        upcomingEventsList += "⚠️ Remember, this is based on leaks and could change before release!";
-      }
-      
-      return response.replace('{upcoming_events}', upcomingEventsList);
     }
   }
 };
 
-export const HELP_RESPONSES = {
-  home: "On the Home page, you can see:\n• Your current pity status\n• Recent banners\n• Latest events\n• Recent wishes\n\nYou can also import your wish history using the URL bar at the top. Need help with that?",
-  
-  characters: "The Characters page shows all Genshin Impact characters with their rarity and elements. Click on any character to see:\n• Recommended builds\n• Best artifact sets\n• Team compositions\n• Ascension materials",
-  
-  history: "This is your Wish History page. Here you can:\n• View all your wishes sorted by date\n• Filter by banner type\n• Export your wish data\n• See the pity count for each pull",
-  
-  analytics: "The Analytics page shows statistics about your wishes including:\n• Pull rate analysis\n• Pity distribution\n• Banner distribution\n• 5★ and 4★ item analysis\n\nYou can also predict your chances of getting a 5★ based on your current pity!",
-  
-  simulator: "The Wish Simulator lets you practice wishing without spending real primogems! Features include:\n• Accurate banner mechanics and rates\n• Real soft pity and hard pity systems\n• 50/50 and guarantee mechanics\n• Wish animation for single and ten-pulls\n• Capturing Radiance system (10% chance to get featured character when losing 50/50)",
-  
-  settings: "In Settings, you can:\n• Import or export your wish data\n• Change app appearance\n• Check for updates\n• Manage your game content\n• Toggle offline mode\n• Reset your data (be careful with this!)",
 
-  leaks: "The Leaks page shows upcoming content from beta testing, including:\n• Future banners\n• New characters\n• Events coming in the next version\n\nRemember that leaked content might change before the official release!",
+
+export const HELP_RESPONSES = {
+  home: "On the Home page, you can:\n• Import wish history using the URL bar\n• See your current pity and 50/50 status\n• View active banners and events\n• Check recent wishes\n• Access quick statistics\n\nUse the 'How to Import Wishes' button for step-by-step instructions to get your wish URL from the game!",
   
-  default: "This is the Genshin Impact Pity Tracker! You can:\n• Track your wish pity for all banner types\n• Import your wish history\n• Analyze your pull statistics\n• Get predictions for future wishes\n• Set reminders for banners and events\n\nWhat would you like help with?"
+  history: "On the Wish History page, you can:\n• View all your wishes chronologically\n• Filter by banner type (Character, Weapon, Standard)\n• See the pity count for each pull\n• Sort by newest or oldest\n• Export your wish history\n\nEach wish shows its rarity, name, date, banner type and pity count!",
+  
+  analytics: "The Analytics page has three sections:\n• Predictions - ML-powered 5★ pull chance calculator\n• Distribution - Shows your 5★/4★ pity patterns\n• Rate Analysis - Compares your actual rates vs expected\n\nThe ML model can predict exactly when you'll hit 50% and 90% chance for a 5★ pull!",
+  
+  simulator: "The Wish Simulator lets you test pulls without spending primogems! Features:\n• Real banner mechanics including soft pity, hard pity, and 50/50\n• Capturing Radiance system (10% chance when losing 50/50)\n• Pull animations for single and 10-pull wishes\n• Separate pity tracking for each banner type\n• Detailed statistics\n\nTry it to plan your wishing strategy!",
+  
+  settings: "In Settings, you can:\n• Manage app updates and content\n• Toggle offline mode\n• Export/import wish data\n• Reset data if needed\n• Adjust audio\n• Check for updates\n\nThe Firebase settings control how game content (banners/events) is loaded!",
+
+  leaks: "The Leaks page shows:\n• Upcoming banners and characters\n• New version content\n• Future events\n• Map updates\n\nAll information is based on beta testing and may change before official release!",
+  
+  default: "PityPal helps track your Genshin Impact wishes! Key features:\n• Wish history import and tracking\n• Banner pity calculation and 50/50 status\n• ML prediction for 5★ pull chances\n• Wish simulator with real game mechanics\n• Banner and event reminders\n• Detailed analytics and statistics\n\nWhat would you like to know about?"
 };
 
-export const DEFAULT_RESPONSE = "Eh? Paimon's not sure what you mean... Try asking about wishes, banners, or pity! Or say 'help' for some guidance!";
+export const DEFAULT_RESPONSE = "Hmm? Paimon's not sure what you mean... Try asking about your pity, current banners, wish stats, or say 'help' for more options!";

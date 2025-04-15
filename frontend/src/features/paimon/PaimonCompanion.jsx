@@ -453,10 +453,6 @@ const PaimonCompanion = () => {
                           backdrop-blur-sm
                           transition-all duration-300 ease-in-out
                           max-h-[300px] overflow-y-auto">
-              <div className="absolute right-[30px] bottom-[-12px] w-6 h-6 
-                           bg-gray-100/95 rotate-45
-                           border-b border-r border-gray-300/30
-                           shadow-[2px_2px_2px_-1px_rgba(0,0,0,0.05)]"></div>
               <p className="text-gray-800 text-sm whitespace-pre-line leading-relaxed">
                 {message}
               </p>
