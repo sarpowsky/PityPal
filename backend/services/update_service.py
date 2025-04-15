@@ -31,6 +31,9 @@ class UpdateService:
         self._download_callback = None
         self._download_progress = 0
         self._is_downloading = False
+        # Add stored download path
+        self._download_path = None
+        self._extracted_path = None
         
         # Get update configuration
         config_path = Path(__file__).parent / "../.." / "update_config.json"
@@ -304,12 +307,20 @@ class UpdateService:
     
     def get_update_status(self):
         """Get the status of the last update check."""
-        return self.update_info or {
+        status_info = self.update_info or {
             "success": True, 
             "update_available": False,
             "current_version": self.current_version,
             "message": "No update check performed yet"
         }
+        
+        # Include the download path in the status if it exists
+        if self._download_path:
+            status_info["download_path"] = str(self._download_path)
+        if self._extracted_path:
+            status_info["extracted_path"] = str(self._extracted_path)
+            
+        return status_info
     
     def download_update(self, download_url=None, callback=None, progress_callback=None):
         """Download the update in a background thread.
@@ -343,6 +354,10 @@ class UpdateService:
         self._download_progress = 0
         self._is_downloading = True
         
+        # Reset paths
+        self._download_path = None
+        self._extracted_path = None
+        
         # Generate a download ID for tracking
         download_id = f"download_{int(time.time())}"
         
@@ -371,6 +386,9 @@ class UpdateService:
             file_name = os.path.basename(download_url)
             download_path = downloads_dir / file_name
             
+            # Log the download path for debugging
+            logger.info(f"Downloading update to: {download_path}")
+            
             # Download with progress
             response = requests.get(download_url, stream=True, timeout=60)
             response.raise_for_status()
@@ -394,23 +412,42 @@ class UpdateService:
                             except Exception as e:
                                 logger.error(f"Error in progress callback: {e}")
             
+            # Store the download path for later use
+            self._download_path = download_path
+            
+            # Verify the file exists and has content
+            if not self._download_path.exists():
+                raise FileNotFoundError(f"Downloaded file not found at {self._download_path}")
+            
+            file_size = self._download_path.stat().st_size
+            if file_size == 0:
+                raise ValueError(f"Downloaded file is empty: {self._download_path}")
+                
+            logger.info(f"Download completed: {self._download_path} ({file_size} bytes)")
+            
             # If it's a zip file, extract it
             extracted_path = None
             if download_path.suffix.lower() == '.zip':
-                extract_dir = downloads_dir / f"PityPal_{self.update_info.get('latest_version', 'update')}"
-                extract_dir.mkdir(exist_ok=True)
-                
-                with zipfile.ZipFile(download_path, 'r') as zip_ref:
-                    zip_ref.extractall(extract_dir)
-                
-                extracted_path = str(extract_dir)
+                try:
+                    extract_dir = downloads_dir / f"PityPal_{self.update_info.get('latest_version', 'update')}"
+                    extract_dir.mkdir(exist_ok=True)
+                    
+                    with zipfile.ZipFile(download_path, 'r') as zip_ref:
+                        zip_ref.extractall(extract_dir)
+                    
+                    extracted_path = extract_dir
+                    self._extracted_path = extracted_path
+                    logger.info(f"Extracted to: {extracted_path}")
+                except Exception as extract_error:
+                    logger.error(f"Failed to extract update: {extract_error}")
+                    # Continue with the .zip file even if extraction fails
             
             result = {
                 "success": True,
                 "message": "Download completed successfully",
                 "download_id": download_id,
-                "file_path": str(download_path),
-                "extracted_path": extracted_path
+                "file_path": str(self._download_path),
+                "extracted_path": str(self._extracted_path) if self._extracted_path else None
             }
         except Exception as e:
             logger.error(f"Error downloading update: {e}")
@@ -431,49 +468,98 @@ class UpdateService:
     
     def get_download_progress(self):
         """Get the current download progress."""
-        return {
+        result = {
             "success": True,
             "is_downloading": self._is_downloading,
             "progress": self._download_progress
         }
         
+        # Include download path if available and download is complete
+        if self._download_path and not self._is_downloading and self._download_progress >= 100:
+            result["download_path"] = str(self._download_path)
+            result["file_exists"] = self._download_path.exists()
+            result["file_size"] = self._download_path.stat().st_size if self._download_path.exists() else 0
+            
+            if self._extracted_path:
+                result["extracted_path"] = str(self._extracted_path)
+            
+        return result
+        
     def install_update(self, file_path=None):
         """Prepare the update for installation.
         
         Args:
-            file_path (str): Path to the downloaded update file
+            file_path (str): Path to the downloaded update file (optional - will use stored path if not provided)
             
         Returns:
             dict: Result with success status
         """
         try:
+            # Use provided path or fallback to stored path
+            if not file_path and self._download_path:
+                file_path = self._download_path
+            
             if not file_path:
                 return {
                     "success": False,
-                    "error": "No file path provided for installation"
+                    "error": "No file path provided for installation and no download path stored"
                 }
             
-            file_path = Path(file_path)
+            # Convert to Path object if it's a string
+            if isinstance(file_path, str):
+                file_path = Path(file_path)
+            
+            logger.info(f"Installing update from: {file_path}")
+            
             if not file_path.exists():
                 return {
                     "success": False,
-                    "error": f"Update file not found: {file_path}"
+                    "error": f"Update file not found at: {file_path}"
                 }
             
             # Handle different file types
             if file_path.suffix.lower() == '.exe':
-                # For .exe files, simply open them with os.startfile
-                os.startfile(file_path)
+                # For .exe files, simply open them with os.startfile on Windows
+                if platform.system() == "Windows":
+                    os.startfile(file_path)
+                else:
+                    # For other platforms, use appropriate methods
+                    if platform.system() == "Darwin":  # macOS
+                        os.system(f"open '{file_path}'")
+                    else:  # Linux
+                        os.system(f"xdg-open '{file_path}'")
+                
                 return {
                     "success": True,
-                    "message": "Installer launched"
+                    "message": "Installer launched",
+                    "file_path": str(file_path)
                 }
             elif file_path.suffix.lower() == '.zip':
-                # For zip files, we need a different approach
+                # For zip files that were already extracted
+                if self._extracted_path:
+                    # Look for a .exe installer in the extracted folder
+                    installers = list(Path(self._extracted_path).glob("*.exe"))
+                    if installers:
+                        installer_path = installers[0]
+                        if platform.system() == "Windows":
+                            os.startfile(installer_path)
+                        else:
+                            return {
+                                "success": False,
+                                "error": f"Cannot run Windows installer on {platform.system()}"
+                            }
+                        
+                        return {
+                            "success": True,
+                            "message": f"Installer launched from extracted files",
+                            "file_path": str(installer_path)
+                        }
+                
                 return {
                     "success": True,
                     "message": "Update extracted, please run the installer manually",
-                    "file_path": str(file_path)
+                    "file_path": str(file_path),
+                    "extracted_path": str(self._extracted_path) if self._extracted_path else None
                 }
             else:
                 return {

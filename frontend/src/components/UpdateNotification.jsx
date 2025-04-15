@@ -12,6 +12,7 @@ const UpdateNotification = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadResult, setDownloadResult] = useState(null);
+  const [downloadPath, setDownloadPath] = useState(null); // Store the download path
   const { showNotification } = useNotification();
 
   // Poll for download progress
@@ -25,18 +26,43 @@ const UpdateNotification = () => {
           if (result.success) {
             setDownloadProgress(result.progress);
             
-            // If download completed, clear interval
+            // If download completed, clear interval and save the path
             if (!result.is_downloading && result.progress >= 100) {
               clearInterval(progressInterval);
               setIsDownloading(false);
-              setDownloadResult({ success: true });
               
-              // Only keep this notification
-              showNotification(
-                'success', 
-                'Download Complete', 
-                'Update has been downloaded successfully!'
-              );
+              // Save download path for installation
+              if (result.download_path) {
+                console.log("Download completed, path:", result.download_path);
+                setDownloadPath(result.download_path);
+                
+                // Verify file exists
+                if (result.file_exists === false) {
+                  console.error("Downloaded file not found:", result.download_path);
+                  showNotification(
+                    'error',
+                    'Download Error',
+                    'Downloaded file not found'
+                  );
+                } else {
+                  console.log("File verified:", result.file_size, "bytes");
+                  setDownloadResult({ 
+                    success: true,
+                    file_path: result.download_path,
+                    extracted_path: result.extracted_path
+                  });
+                  
+                  // Only keep this notification
+                  showNotification(
+                    'success', 
+                    'Download Complete', 
+                    'Update has been downloaded successfully!'
+                  );
+                }
+              } else {
+                setDownloadResult({ success: true });
+                console.warn("Download complete but no path received");
+              }
             }
           }
         } catch (error) {
@@ -62,6 +88,11 @@ const UpdateNotification = () => {
       
       if (statusResult.success) {
         setUpdateInfo(statusResult);
+        
+        // If there's a download path in the status, save it
+        if (statusResult.download_path) {
+          setDownloadPath(statusResult.download_path);
+        }
         
         // Show notification if there's an update available
         if (statusResult.update_available) {
@@ -152,6 +183,8 @@ const UpdateNotification = () => {
     try {
       setIsDownloading(true);
       setDownloadProgress(0);
+      setDownloadPath(null); // Reset download path
+      setDownloadResult(null); // Reset download result
       
       let downloadUrl = null;
       
@@ -189,16 +222,19 @@ const UpdateNotification = () => {
 
   const handleInstall = async () => {
     try {
-      // Use the file path from the download result or update info
-      const filePath = 
-        (downloadResult && downloadResult.file_path) ||
-        (updateInfo && updateInfo.download_path);
+      console.log("Installation requested");
+      
+      // Use the file path from download result or stored download path
+      const filePath = downloadPath || 
+                      (downloadResult && downloadResult.file_path) ||
+                      (updateInfo && updateInfo.download_path);
       
       if (!filePath) {
+        console.error("No installation file path available");
         showNotification(
           'error', 
           'Installation Error', 
-          'Download file not found'
+          'Download file path not found'
         );
         return;
       }
@@ -238,9 +274,10 @@ const UpdateNotification = () => {
       updateInfo, 
       isDownloading, 
       downloadProgress,
+      downloadPath,
       downloadResult 
     });
-  }, [visible, updateInfo, isDownloading, downloadProgress, downloadResult]);
+  }, [visible, updateInfo, isDownloading, downloadProgress, downloadPath, downloadResult]);
 
   // Don't render if not visible
   if (!visible) return null;
