@@ -88,3 +88,5 @@ firebase-credentials.json
 *.p8
 *.pem
 *.key
+pyinstaller_config.py
+pytest.ini
