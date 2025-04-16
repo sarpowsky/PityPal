@@ -283,7 +283,7 @@ def main():
         )
         
         # Start webview with http_server (but no user_data_path parameter)
-        webview.start(debug=True, http_server=True)
+        webview.start(debug=False, http_server=True)
     except Exception as e:
         logger.error(f"Application startup failed: {e}")
         raise

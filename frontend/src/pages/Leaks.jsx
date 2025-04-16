@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useFirebase } from '../context/FirebaseContext';
 import Icon from '../components/Icon';
 import SafeImage from '../components/SafeImage';
-import { AlertTriangle, Calendar, ArrowLeft, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Calendar, ArrowLeft, RefreshCw, Telescope, MapPin, Compass, Image } from 'lucide-react';
 
 // Character Card Component - Vertical design
 const CharacterCard = ({ character }) => {
@@ -58,7 +58,7 @@ const BannerCard = ({ banner, index }) => {
           <h3 className="text-sm font-medium">{banner.name}</h3>
           {banner.characters && (
             <div className="flex items-center gap-1 mt-1 text-xs text-white/80">
-              <Icon name="crown" size={12} />
+              <Image size={12} />
               <span className="truncate">{banner.characters.join(', ')}</span>
             </div>
           )}
@@ -90,70 +90,6 @@ const MapUpdateCard = ({ update, index }) => {
         </div>
       )}
     </motion.div>
-  );
-};
-
-// Phase Section Component - Restructured layout
-const PhaseSection = ({ phase, index }) => {
-  return (
-    <div className="mb-8 animate-fadeIn" style={{ animationDelay: `${index * 150}ms` }}>
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-genshin">Phase {phase.number}</h2>
-        {phase.dateRange && (
-          <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-sm">
-            <Calendar size={14} className="text-indigo-400" />
-            <span>{phase.dateRange}</span>
-          </div>
-        )}
-      </div>
-      
-      {/* Banners section */}
-      {phase.banners && phase.banners.length > 0 && (
-        <div className="mb-4">
-          <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Icon name="star" size={16} className="text-amber-400" />
-            <span>Banners</span>
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {phase.banners.map((banner, idx) => (
-              <BannerCard key={idx} banner={banner} index={idx} />
-            ))}
-          </div>
-        </div>
-      )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Characters section */}
-        {phase.characters && phase.characters.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Icon name="crown" size={16} className="text-purple-400" />
-              <span>New Characters</span>
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {phase.characters.map((character, idx) => (
-                <CharacterCard key={idx} character={character} />
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Map Updates section */}
-        {phase.mapUpdates && phase.mapUpdates.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-              <Icon name="map" size={16} className="text-emerald-400" />
-              <span>Map Updates</span>
-            </h3>
-            <div className="space-y-4">
-              {phase.mapUpdates.map((update, idx) => (
-                <MapUpdateCard key={idx} update={update} index={idx} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
   );
 };
 
@@ -294,7 +230,7 @@ const Leaks = () => {
               {leaksData.phases[0].banners && leaksData.phases[0].banners.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <Icon name="star" size={16} className="text-amber-400" />
+                    <Telescope size={16} className="text-amber-400" />
                     <span>Banners</span>
                   </h3>
                   <div className="space-y-4">
@@ -310,7 +246,7 @@ const Leaks = () => {
           {/* All Characters (from all phases) */}
           <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-              <Icon name="crown" size={18} className="text-purple-400" />
+              <MapPin size={20} className="text-purple-400" />
               <span>New Characters</span>
             </h3>
             <div className="grid grid-cols-3 gap-2">
@@ -342,7 +278,7 @@ const Leaks = () => {
               {leaksData.phases[1].banners && leaksData.phases[1].banners.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <Icon name="star" size={16} className="text-amber-400" />
+                    <Telescope size={16} className="text-amber-400" />
                     <span>Banners</span>
                   </h3>
                   <div className="space-y-4">
@@ -358,7 +294,7 @@ const Leaks = () => {
           {/* All Map Updates (from all phases) */}
           <div className="bg-black/20 backdrop-blur-sm rounded-xl border border-white/10 p-4">
             <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
-              <Icon name="map" size={18} className="text-emerald-400" />
+              <Compass size={18} className="text-emerald-400" />
               <span>Map Updates</span>
             </h3>
             <div className="space-y-4">
