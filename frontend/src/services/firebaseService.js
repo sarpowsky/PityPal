@@ -91,12 +91,12 @@ class FirebaseService {
       try {
         // Default Firebase configuration
         const firebaseConfig = {
-          apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_API_KEY",
-          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "YOUR_AUTH_DOMAIN",
-          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "YOUR_PROJECT_ID",
-          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "YOUR_STORAGE_BUCKET",
-          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
-          appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_APP_ID"
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDklXVfD-c0ZIStX-Xy5JdtGkpH131hz-w",
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "pitypal-8f302.firebaseapp.com",
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "pitypal-8f302",
+          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "pitypal-8f302.firebasestorage.app",
+          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "873490012990",
+          appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:873490012990:web:9fb9f5d81d3c79099cea6f"
         };
         
         // Initialize Firebase

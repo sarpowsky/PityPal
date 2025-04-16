@@ -210,19 +210,12 @@ class UpdateService:
                 logger.error(f"Error in update check callback: {e}")
     
     def _perform_update_check(self, force=False):
-        """Perform the actual update check against GitHub."""
         try:
-            # Get GitHub token from environment variables
-            github_token = os.environ.get("GITHUB_TOKEN")
-            
             headers = {
                 "Accept": "application/vnd.github.v3+json"
             }
             
-            # Add authentication if token is available
-            if github_token:
-                headers["Authorization"] = f"token {github_token}"
-            
+            # Use public release API only (no auth required for public repos)
             response = requests.get(
                 self.update_url,
                 headers=headers,

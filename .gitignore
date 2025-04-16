@@ -53,7 +53,6 @@ Thumbs.db
 *.log
 .env
 .env.local
-firebase-credentials.json
 pretrained_model.pkl
 fine_tuned_model.pkl
 
@@ -70,13 +69,22 @@ fine_tuned_model.pkl
 .coverage
 htmlcov/
 .pytest_cache/
+backend/__pycache__
+backend/services/__pycache__
+backend/services/pity_predictor/__pycache__
 
 # Firebase
 .firebase/
 firebaserc
 firebase-debug.log
-backend/services/__pycache__/update_service.cpython-311.pyc
-backend/services/__pycache__/update_service.cpython-311.pyc
 
 #unnecessary files
-installer_script
+installer_script.iss
+Output
+Pitypal.spec
+
+# Security files
+firebase-credentials.json
+*.p8
+*.pem
+*.key

@@ -25,15 +25,10 @@ class FirebaseService:
         """Initialize Firebase Admin SDK."""
         if self.initialized:
             return True
-            
-        try:
-            # Check if credentials file exists
-            if not os.path.exists(self.cred_path):
-                logger.error(f"Firebase credentials file not found at {self.cred_path}")
-                return False
                 
-            # Initialize Firebase Admin SDK
-            cred = credentials.Certificate(self.cred_path)
+        try:
+            
+            cred = credentials.ApplicationDefaultCredentials()    
             self.app = firebase_admin.initialize_app(cred, {
                 'storageBucket': os.environ.get('FIREBASE_STORAGE_BUCKET', 'pitypal-app.appspot.com')
             })
