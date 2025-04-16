@@ -74,9 +74,21 @@ export const RESPONSE_PATTERNS = {
         return "Eh? Paimon doesn't see any banners right now! Check back later or refresh the app!";
       }
       
-      const characterBanners = banners.filter(b => b.character && !b.isPermanent);
-      const weaponBanners = banners.filter(b => b.weapons && !b.isPermanent);
-      const permanentBanners = banners.filter(b => b.isPermanent);
+       // Filter out expired banners
+      const now = new Date();
+      const activeBanners = banners.filter(banner => {
+        if (banner.isPermanent) return true;
+        const end = banner.endDate ? new Date(banner.endDate) : null;
+        return !end || now <= end;
+      });
+      
+      if (activeBanners.length === 0) {
+        return "Hmm, all banners have ended! There should be new ones soon, check back later!";
+      }
+      
+      const characterBanners = activeBanners.filter(b => b.character && !b.isPermanent);
+      const weaponBanners = activeBanners.filter(b => b.weapons && !b.isPermanent);
+      const permanentBanners = activeBanners.filter(b => b.isPermanent);
       
       let bannerList = "";
       
@@ -274,7 +286,7 @@ export const RESPONSE_PATTERNS = {
   },
 
   gameEvents: {
-    patterns: ['game event', 'festival', 'limited time', 'activity', 'quest', 'current events', 'active events', 'ongoing events', 'what events', 'which events', 'show events', 'tell me about events'],
+    patterns: ['game event', 'festival', 'event', 'events', 'limited time', 'activity', 'quest', 'current events', 'active events', 'ongoing events', 'what events', 'which events', 'show events', 'tell me about events'],
     responses: [
       "The current events are: {event_list}",
       "These events are happening right now: {event_list}",

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, Upload, Download, Trash2, RotateCw, Bell, BellOff, Loader2, Info, Github, Mail, RefreshCw, Coffee, Linkedin, Heart, Clock, AlertCircle } from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
+import { getAppVersion } from '../utils/versionInfo';
 import { useApp } from '../context/AppContext';
 import { useAudio } from '../features/audio/AudioSystem';
 import { useFirebase } from '../context/FirebaseContext';
@@ -83,6 +84,17 @@ const Settings = () => {
     contentUpdateAvailable,
     isLoading: isFirebaseLoading 
   } = useFirebase();
+
+  // Version info
+  const [versionInfo, setVersionInfo] = useState("2.0.0");
+
+  useEffect(() => {
+    const loadVersion = async () => {
+      const version = await getAppVersion();
+      setVersionInfo(version.display_version);
+    };
+    loadVersion();
+  }, []);
 
   // Load settings when component mounts
   useEffect(() => {
@@ -566,7 +578,7 @@ const Settings = () => {
                 PityPal
               </h2>
               <p className="text-white/70 text-sm">Your companion and Mona basically, for Genshin Impact</p>
-              <div className="text-white/60 text-xs mt-1">Version 1.1</div>
+              <div className="text-white/60 text-xs mt-1">Version {versionInfo}</div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">

@@ -14,6 +14,7 @@ from backend.services.update_service import UpdateService
 from backend.services.pity_predictor.model_trainer_service import ModelTrainerService
 from backend.services.pity_predictor.predictor_service import PredictorService
 from backend.services.firebase_service import firebase_service, initialize_firebase
+from version import VERSION_STRING
 # Import the base model creator
 from backend.services.pity_predictor.create_base_model import create_base_model
 
@@ -27,7 +28,7 @@ class API:
         self.data_service = DataService()
         self.predictor_service = PredictorService()
         self.model_trainer_service = ModelTrainerService()
-        self.update_service = UpdateService(current_version="1.0.0")
+        self.update_service = UpdateService(current_version=VERSION_STRING)
         logger.info("API services initialized")
         
     def import_wishes(self, url, progress_callback=None):
@@ -117,6 +118,16 @@ class API:
         except Exception as e:
             logger.error(f"Failed to reset data: {e}")
             return {"success": False, "error": str(e)}
+        
+    def get_app_version(self):
+        """Return the application version information."""
+        from version import VERSION, VERSION_STRING, DISPLAY_VERSION
+        return {
+            "success": True,
+            "version": VERSION,
+            "version_string": VERSION_STRING,
+            "display_version": DISPLAY_VERSION
+        }
 
     def get_auto_update_setting(self):
         """Get the automatic update check setting."""

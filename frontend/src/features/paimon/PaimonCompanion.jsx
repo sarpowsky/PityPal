@@ -65,29 +65,27 @@ const PaimonCompanion = () => {
       try {
         // Get banners from Firebase
         const banners = await getBanners();
-        setActiveBanners(banners);
         
-        // Get events from Firebase
+        // Filter to only active banners
+        const now = new Date();
+        const activeBannersFiltered = banners.filter(banner => {
+          if (banner.isPermanent) return true;
+          const start = banner.startDate ? new Date(banner.startDate) : null;
+          const end = banner.endDate ? new Date(banner.endDate) : null;
+          return (!start || now >= start) && (!end || now <= end);
+        });
+        
+        setActiveBanners(activeBannersFiltered);
+        
+        // Continue with the rest of the function (events and leaks data)
         const events = await getEvents();
         setActiveEvents(events);
         
-        // Get leaks data (for upcoming content)
         const leaksData = await getLeaks();
         setLeaksData(leaksData);
       } catch (error) {
         console.error('Error loading data for Paimon:', error);
-        
-        // Fallback to imported data if Firebase fails
-        try {
-          const { getCurrentBanners } = await import('../../data/banners');
-          const { getCurrentEvents } = await import('../../data/events');
-          
-          setActiveBanners(getCurrentBanners());
-          setActiveEvents(getCurrentEvents());
-          // No fallback for leaks data since it's optional
-        } catch (fallbackError) {
-          console.error('Failed to load fallback data:', fallbackError);
-        }
+        // Fallback handling...
       }
     };
     

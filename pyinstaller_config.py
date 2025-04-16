@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
+from version import VERSION_STRING
 
 # Defines PyInstaller configuration for creating the Windows executable
 # Hidden imports ensure scikit-learn components are properly included
@@ -11,7 +12,7 @@ from pathlib import Path
 
 # Define application information
 APP_NAME = "PityPal"
-APP_VERSION = "1.0"
+APP_VERSION = VERSION_STRING
 
 # Define paths
 MAIN_PY = "main.py" 
