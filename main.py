@@ -262,15 +262,21 @@ def main():
         # Production URL
         PROD_URL = web_index
 
-        os.environ['DEVELOPMENT'] = 'true' # will remove
-        
-        # Choose the appropriate URL
-        if os.environ.get('DEVELOPMENT') == 'true':
-            url_to_use = DEV_URL
-            logger.info(f"Using development URL: {url_to_use}")
-        else:
+        if getattr(sys, 'frozen', False):
+            # Running in a PyInstaller bundle
             url_to_use = PROD_URL
-            logger.info(f"Using production path: {url_to_use}")
+        elif os.environ.get('DEVELOPMENT') == 'true':
+            # Running in development mode
+            url_to_use = DEV_URL
+        else:
+            # Default to production path
+            url_to_use = PROD_URL
+            
+        # Verify web assets exist when using production URL
+        if url_to_use == PROD_URL and not os.path.exists(web_index):
+            logger.error(f"Web assets not found at {web_index}")
+            fallback_msg = f"<html><body><h1>Error: Web assets not found</h1><p>Could not find required files at {web_index}</p></body></html>"
+            url_to_use = fallback_msg
         
         # Create window using the proper file path
         window = webview.create_window(
