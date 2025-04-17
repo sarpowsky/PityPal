@@ -16,7 +16,9 @@ PityPal is a desktop application designed to track and analyze your Genshin Impa
 - **Wish Simulator**: Test your luck without spending primogems
 - **Banners & Events**: Keep track of active banners and events
 - **Reminders**: Set notifications for banner endings and events
-- **Paimon Assistant**: Get help and information through the built-in Paimon companion
+- **Leaks Section**: View upcoming game content directly in the app
+- **Capturing Radiance System**: 10% chance to get featured characters even when losing 50/50
+- **Offline Mode**: Use cached data when no internet connection is available
 
 ## 📸 Screenshots
 
@@ -70,6 +72,11 @@ PityPal is a desktop application designed to track and analyze your Genshin Impa
   - Guaranteed pity
   - "Capturing Radiance" mechanic (10% chance to get featured character when losing 50/50)
 
+### Viewing Leaks
+- Access the latest leaks for upcoming banners, characters, and events
+- Information is regularly updated via Firebase Remote Config
+- Data is cached for offline viewing
+
 ## 🧪 Technical Details
 
 PityPal is built with:
@@ -77,21 +84,29 @@ PityPal is built with:
 - **Backend**: Python, SQLite
 - **Machine Learning**: scikit-learn for wish prediction
 - **Framework**: PyWebView for desktop integration
+- **Content Delivery**: Firebase Remote Config and Storage
 
 ## 🔮 Future Plans
 
 - Sound integration with wish animations and UI interactions
 - Overall improved UI with additional themes and customization
-- Leak information tracking for upcoming banners and events
-- Character team recommendations based on your inventory
+- Fix for audio system currently present in settings but non-functional
+- Expanded pity tracking for all banner types
+- Comprehensive notification system for various in-game events
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 (GPLv3) - see the [LICENSE](LICENSE) file for details.
 
 ## ⚠️ Disclaimer
 
 PityPal is a fan-made application and is not affiliated with HoYoverse or Genshin Impact. All game assets and references are property of HoYoverse.
+
+## 🔍 Known Issues
+
+- Audio system exists in the settings as a placeholder, but doesn't work currently
+- Current pity counter only shows character-1 and character-2 banners
+- Some network-dependent features may not work correctly in offline mode
 
 ## 🙏 Acknowledgements
 
