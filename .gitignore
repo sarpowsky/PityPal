@@ -81,7 +81,6 @@ firebase-debug.log
 #unnecessary files
 installer_script.iss
 Output
-Pitypal.spec
 
 # Security files
 firebase-credentials.json
