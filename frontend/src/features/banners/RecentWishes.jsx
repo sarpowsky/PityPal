@@ -1,4 +1,4 @@
-// src/features/banners/RecentWishes.jsx
+// src/features/banners/RecentWishes.jsx (Updated)
 import React from 'react';
 import Icon from '../../components/Icon';
 import { useApp } from '../../context/AppContext';
@@ -7,9 +7,9 @@ import { Calendar } from 'lucide-react';
 const WishItem = ({ wish }) => {
   const getRarityColors = (rarity) => {
     switch (rarity) {
-      case 5: return 'text-amber-400';
-      case 4: return 'text-purple-400';
-      default: return 'text-blue-400';
+      case 5: return 'text-white border-white/20 bg-black/40';
+      case 4: return 'text-white border-white/20 bg-black/40';
+      default: return 'text-white border-white/20 bg-black/40';
     }
   };
 
@@ -18,28 +18,27 @@ const WishItem = ({ wish }) => {
   const formattedTime = date.toLocaleTimeString();
 
   return (
-    <div className="group relative rounded-lg bg-black/20 backdrop-blur-sm border border-white/10
-                  hover:bg-black/30 transition-all duration-300 animate-fadeIn">
-      <div className="flex items-center gap-3 p-3">
-        <div className={`flex items-center justify-center ${getRarityColors(wish.rarity)}`}>
-          <div className="font-semibold text-lg">{wish.rarity}★</div>
+    <div className="relative rounded-lg bg-black/30 backdrop-blur-sm border border-white/10
+                  hover:bg-black/40 hover:border-white/20 transition-all duration-300">
+      <div className="flex items-center gap-3 p-2.5">
+        {/* Star rating indicator with consistent styling */}
+        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${getRarityColors(wish.rarity)} border`}>
+          <div className="font-semibold text-sm">{wish.rarity}★</div>
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="font-genshin text-sm truncate">{wish.name}</h4>
-          <div className="flex items-center gap-2 text-xs text-white/60">
-            <Calendar size={12} />
+          <h4 className="font-genshin text-sm truncate text-white/90">{wish.name}</h4>
+          <div className="flex items-center gap-1 text-xs text-white/60">
+            <Calendar size={10} />
             <span>{formattedDate}</span>
-            <span>•</span>
-            <span>{formattedTime}</span>
-            <span>•</span>
-            <span>{wish.bannerType}</span>
+            <span className="text-white/40 mx-0.5">•</span>
+            <span className="truncate">{wish.bannerType}</span>
           </div>
         </div>
 
         {wish.pity > 0 && (
-          <div className="px-2 py-1 rounded-full text-xs bg-white/10">
-            Pity {wish.pity}
+          <div className="px-2 py-0.5 rounded-full text-xs bg-black/30 border border-white/10 text-white/80">
+            {wish.pity}
           </div>
         )}
       </div>
@@ -52,9 +51,9 @@ const RecentWishes = () => {
 
   if (state.wishes.loading) {
     return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
+      <div className="space-y-2 px-3 py-2">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-14 bg-black/20 rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -62,16 +61,19 @@ const RecentWishes = () => {
 
   if (!state.wishes.history.length) {
     return (
-      <div className="text-center py-8 text-white/60">
-        <p>No wishes recorded yet</p>
+      <div className="h-full flex flex-col items-center justify-center text-white/60 py-4">
+        <Icon name="info" size={28} className="mb-2 text-white/40" />
+        <p className="text-center text-sm">No wishes recorded yet</p>
+        <p className="text-xs text-white/40 mt-1">Import your wishes to see them here</p>
       </div>
     );
   }
 
+  // Show the 5 most recent wishes
   const recentWishes = state.wishes.history.slice(0, 5);
-
+  
   return (
-    <div className="space-y-2">
+    <div className="px-3 py-2 space-y-2 animate-fadeIn">
       {recentWishes.map(wish => (
         <WishItem key={wish.id} wish={wish} />
       ))}
