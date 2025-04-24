@@ -17,7 +17,6 @@ PityPal is a desktop application designed to track and analyze your Genshin Impa
 - **Banners & Events**: Keep track of active banners and events
 - **Reminders**: Set notifications for banner endings and events
 - **Leaks Section**: View upcoming game content directly in the app
-- **Capturing Radiance System**: 10% chance to get featured characters even when losing 50/50
 - **Offline Mode**: Use cached data when no internet connection is available
 
 ## 📸 Screenshots
@@ -70,7 +69,7 @@ PityPal is a desktop application designed to track and analyze your Genshin Impa
   - Soft pity rates
   - 50/50 system
   - Guaranteed pity
-  - "Capturing Radiance" mechanic (10% chance to get featured character when losing 50/50)
+  - "Capturing Radiance" mechanic as in the game (10% chance to get featured character when losing 50/50)
 
 ### Viewing Leaks
 - Access the latest leaks for upcoming banners, characters, and events
