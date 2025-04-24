@@ -5,12 +5,10 @@ import { useApp } from '../../context/AppContext';
 import { Calendar } from 'lucide-react';
 
 const WishItem = ({ wish }) => {
-  const getRarityColors = (rarity) => {
-    switch (rarity) {
-      case 5: return 'text-white border-white/20 bg-black/40';
-      case 4: return 'text-white border-white/20 bg-black/40';
-      default: return 'text-white border-white/20 bg-black/40';
-    }
+  const rarityColors = {
+    3: 'text-blue-400',
+    4: 'text-purple-400',
+    5: 'text-amber-400'
   };
 
   const date = new Date(wish.time);
@@ -19,28 +17,31 @@ const WishItem = ({ wish }) => {
 
   return (
     <div className="relative rounded-lg bg-black/30 backdrop-blur-sm border border-white/10
-                  hover:bg-black/40 hover:border-white/20 transition-all duration-300">
-      <div className="flex items-center gap-3 p-2.5">
-        {/* Star rating indicator with consistent styling */}
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${getRarityColors(wish.rarity)} border`}>
-          <div className="font-semibold text-sm">{wish.rarity}★</div>
+                  hover:bg-black/40 hover:border-white/20 transition-all duration-300 animate-fadeIn">
+      <div className="flex items-center gap-3 p-3">
+        {/* Colored circle indicator instead of image */}
+        <div className="w-8 h-8 rounded-full flex items-center justify-center"
+             style={{ backgroundColor: `${rarityColors[wish.rarity].replace('text', 'bg')}` }}>
+          <span className="text-white font-medium text-xs">{wish.rarity}★</span>
         </div>
         
         <div className="flex-1 min-w-0">
-          <h4 className="font-genshin text-sm truncate text-white/90">{wish.name}</h4>
-          <div className="flex items-center gap-1 text-xs text-white/60">
-            <Calendar size={10} />
-            <span>{formattedDate}</span>
-            <span className="text-white/40 mx-0.5">•</span>
-            <span className="truncate">{wish.bannerType}</span>
+          <h3 className={`text-sm font-medium ${rarityColors[wish.rarity]}`}>{wish.name}</h3>
+          <div className="flex items-center gap-2 text-xs text-white/60">
+            <div className="flex items-center gap-1">
+              <Calendar size={12} />
+              <span>{formattedDate}</span>
+            </div>
+            <span>•</span>
+            <span>{wish.bannerType}</span>
           </div>
         </div>
-
-        {wish.pity > 0 && (
-          <div className="px-2 py-0.5 rounded-full text-xs bg-black/30 border border-white/10 text-white/80">
-            {wish.pity}
-          </div>
-        )}
+        
+        <div className="px-3 py-1 rounded-full text-xs
+                     bg-gradient-to-r from-indigo-500/20 to-purple-500/20 
+                     border border-purple-500/30">
+          Pity {wish.pity || '0'}
+        </div>
       </div>
     </div>
   );

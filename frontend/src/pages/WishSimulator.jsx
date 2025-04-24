@@ -25,10 +25,13 @@ const InfoCard = ({ title, children }) => (
   </div>
 );
 
-const StatCard = ({ label, value, color = "indigo" }) => (
-  <div className={`p-3 rounded-lg bg-${color}-500/10 border border-${color}-500/20 text-center`}>
-    <div className="text-xs text-white/60">{label}</div>
-    <div className="text-lg font-genshin">{value}</div>
+const StatCard = ({ label, value, icon = null }) => (
+  <div className="p-3 rounded-lg bg-black/20 border border-white/10 text-center hover:bg-black/30 transition-colors">
+    <div className="text-xs text-white/60 mb-1">{label}</div>
+    <div className="text-lg font-genshin">
+      {icon && <span className="mr-1">{icon}</span>}
+      {value}
+    </div>
   </div>
 );
 
@@ -351,40 +354,32 @@ const WishSimulator = () => {
           
           {/* Statistics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <StatCard label="Pulls" value={stats.totalPulls} />
+            <StatCard label="Total Pulls" value={stats.totalPulls.toLocaleString()} />
+            <StatCard label="Primogems Spent" value={stats.spent.toLocaleString()} />
             <StatCard 
               label="5★ Rate" 
               value={`${stats.totalPulls ? (stats.fiveStars / stats.totalPulls * 100).toFixed(1) : '0.0'}%`} 
-              color="amber" 
             />
             <StatCard 
               label="4★ Rate" 
               value={`${stats.totalPulls ? (stats.fourStars / stats.totalPulls * 100).toFixed(1) : '0.0'}%`} 
-              color="purple" 
             />
-            <StatCard 
-              label="Primogems" 
-              value={stats.spent.toLocaleString()} 
-            />
+            {stats.qiqiPulls > 0 && (
+              <StatCard 
+                label="Qiqi Pulls" 
+                value={stats.qiqiPulls} 
+              />
+            )}
           </div>
-          
-          {/* Special Stats */}
-          {(stats.qiqiPulls > 0 || stats.capturingRadiance > 0) && (
-            <div className="grid grid-cols-2 gap-2">
-              {stats.qiqiPulls > 0 && (
-                <StatCard 
-                  label="Qiqi Pulls" 
-                  value={stats.qiqiPulls} 
-                  color="blue" 
-                />
-              )}
-              {stats.capturingRadiance > 0 && (
-                <StatCard 
-                  label="Capturing Radiance" 
-                  value={stats.capturingRadiance} 
-                  color="yellow" 
-                />
-              )}
+
+          {/* Capturing Radiance indicator */}
+          {stats.capturingRadiance > 0 && (
+            <div className="mt-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center gap-2">
+              <Sparkles size={18} className="text-yellow-400" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-yellow-400">Capturing Radiance</div>
+                <div className="text-xs text-white/60">Triggered {stats.capturingRadiance} times</div>
+              </div>
             </div>
           )}
           

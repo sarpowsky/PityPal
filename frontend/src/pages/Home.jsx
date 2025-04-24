@@ -12,27 +12,9 @@ import RecentWishes from '../features/banners/RecentWishes';
 import UrlImporter from '../components/UrlImporter';
 import ImportGuideModal from '../components/ImportGuideModal';
 import RemindersButton from '../components/reminders/RemindersButton';
+import StatCard from '../components/StatCard';
 import { calculateRateComparison } from '../services/analyticsService';
 import { AlertTriangle, Sparkles } from 'lucide-react';
-
-const StatCard = ({ icon, label, value }) => (
-  <div className="backdrop-blur-sm rounded-xl shadow-lg border border-white/10 
-                  hover:shadow-xl hover:border-white/20 transition-all duration-300
-                  bg-black/30 p-4 group">
-    <div className="flex items-center gap-4">
-      <div className="p-2 rounded-lg bg-black/30 group-hover:bg-black/40 transition-colors">
-        <Icon name={icon} size={36} className="text-white/80 group-hover:text-white transition-colors" />
-      </div>
-      <div>
-        <div className="text-xs text-white/60 mb-1">{label}</div>
-        <div className="text-lg font-semibold group-hover:text-white text-white/90
-                      transition-colors duration-300">
-          {value}
-        </div>
-      </div>
-    </div>
-  </div>
-);
 
 const LeaksButton = () => (
   <Link to="/leaks" className="flex items-center gap-2 px-4 py-2 rounded-xl 
@@ -144,10 +126,9 @@ const Home = () => {
           <button
             onClick={() => setShowGuide(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl 
-                     bg-black/30 backdrop-blur-sm hover:bg-black/40 border border-white/10 
-                     text-sm transition-colors"
-          >
-            <Icon name="info" size={24} />
+                     bg-amber-500/20 backdrop-blur-sm hover:bg-amber-500/30 border border-amber-500/30 
+                     text-sm text-amber-400 transition-all duration-300">
+            <Icon name="info" size={24} className="text-amber-400" />
             <span>How to Import Wishes</span>
           </button>
         </div>
@@ -159,7 +140,7 @@ const Home = () => {
           </div>
         )}
 
-        <div className="max-w-2xl mx-auto mb-4 transform hover:translate-y-[-2px] transition-transform duration-300">
+        <div className="max-w-2xl mx-auto mb-4 transform transition-transform duration-300">
           <UrlImporter />
         </div>
 
@@ -196,16 +177,14 @@ const Home = () => {
 
           <div className="col-span-4">
             <div className="h-full backdrop-blur-sm rounded-xl border border-white/10 
-                          bg-black/30 overflow-hidden transform hover:translate-y-[-2px] 
-                          transition-all duration-300 hover:shadow-lg">
+                          bg-black/30 overflow-hidden transform transition-all duration-300">
               <PityTracker />
             </div>
           </div>
 
           <div className="col-span-4">
             <div className="h-full backdrop-blur-sm rounded-xl border border-white/10 
-                          bg-black/30 overflow-hidden transform hover:translate-y-[-2px] 
-                          transition-all duration-300 hover:shadow-lg">
+                          bg-black/30 overflow-hidden transform transition-all duration-300">
               <div className="p-3 border-b border-white/10">
                 <h2 className="text-sm font-genshin">Recent Wishes</h2>
               </div>
