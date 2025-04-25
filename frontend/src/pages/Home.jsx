@@ -118,7 +118,7 @@ const Home = () => {
           {/* Centered title */}
           <h1 className="text-5xl font-genshin animate-gradient-text bg-gradient-to-r 
                          from-indigo-300 via-purple-300 to-pink-300 
-                         text-transparent bg-clip-text ml-[-20px]">
+                         text-transparent bg-clip-text ml-[-30px]">
             PityPal
           </h1>
           

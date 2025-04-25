@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../components/Icon';
 import { useApp } from '../../context/AppContext';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Info } from 'lucide-react';
 
 const AnimatedNumber = ({ value, className = "" }) => (
   <div className={`tabular-nums transition-all duration-300 ${className}`}>
@@ -139,7 +139,8 @@ const PityTracker = () => {
       hardPity: 90,
       baseRate: 0.6,
       hasGuarantee: true,
-      guaranteedText: pityStats.guaranteed ? 'Guaranteed Featured' : '50/50 Chance'
+      guaranteedText: pityStats.guaranteed ? 'Guaranteed Featured' : '50/50',
+      softPityIncrease: 7 // ~7% increase per pull after soft pity
     },
     'weapon': {
       label: 'Weapon Banner',
@@ -148,7 +149,8 @@ const PityTracker = () => {
       hardPity: 80,
       baseRate: 0.7,
       hasGuarantee: true,
-      guaranteedText: pityStats.guaranteed ? 'Guaranteed Featured' : '75/25 Chance'
+      guaranteedText: pityStats.guaranteed ? 'Guaranteed Featured' : '75/25',
+      softPityIncrease: 7 // ~7% increase per pull after soft pity
     },
     'permanent': {
       label: 'Standard Banner',
@@ -156,7 +158,8 @@ const PityTracker = () => {
       softPity: 74,
       hardPity: 90,
       baseRate: 0.6,
-      hasGuarantee: false
+      hasGuarantee: false,
+      softPityIncrease: 7 // ~7% increase per pull after soft pity
     }
   };
   
@@ -221,7 +224,7 @@ const PityTracker = () => {
     if (pityStats.guaranteed) {
       return "bg-emerald-500/20 border-emerald-500/30 text-emerald-400";
     }
-    return "bg-amber-500/20 border-amber-500/30 text-amber-400";
+    return "bg-red-500/20 border-red-500/30 text-red-400";
   };
 
   return (
@@ -273,17 +276,17 @@ const PityTracker = () => {
             {/* 5★ chance indicator */}
             <div className="px-4 py-2 rounded-lg bg-black/30 border border-white/10">
               <div className="flex items-center gap-2">
-                <Icon name="star" size={16} className="text-amber-400" />
-                <span className="text-xs text-white/70">5★ Chance:</span>
+                <Icon name="star" size={29} className="text-amber-400" />
+                <span className="text-s text-white/70">5★ Chance:</span>
                 <span className="text-sm font-semibold">{probability}%</span>
               </div>
             </div>
             
             {/* Guarantee status - only for banners with guarantee */}
             {currentConfig.hasGuarantee && (
-              <div className={`px-4 py-2 rounded-lg text-xs border ${getGuaranteeStatusColor()}`}>
+              <div className={`px-4 py-2 rounded-lg text-sm border ${getGuaranteeStatusColor()}`}>
                 <div className="flex items-center gap-2">
-                  <Icon name="shield" size={16} className={pityStats.guaranteed ? "text-emerald-400" : "text-amber-400"} />
+                  <Icon name="status" size={27} className={pityStats.guaranteed ? "text-emerald-400" : "text-red-400"} />
                   <span className="font-semibold">{currentConfig.guaranteedText}</span>
                 </div>
               </div>
@@ -296,13 +299,18 @@ const PityTracker = () => {
       <div className="px-3 pb-2">
         <div className="bg-black/30 rounded-lg p-3 border border-white/10">
           <div className="relative h-3 bg-black/40 rounded-full overflow-hidden">
-            {/* Progress fill */}
+            {/* Progress fill with enhanced transition */}
             <div 
-              className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+              className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-700 ease-in-out"
               style={{ width: `${Math.min(100, (pityStats.current / hardPity) * 100)}%` }} 
             />
             
-            {/* Key points markers */}
+            {/* Animated glow effect for more fluid feeling */}
+            <div 
+              className="absolute left-0 top-0 bottom-0 bg-white/10 w-full animate-pulse-slow opacity-30"
+            />
+            
+            {/* Key points markers with enhanced transitions */}
             {[
               { value: 0, label: 'Start' },
               { value: softPity, label: 'Soft' },
@@ -310,14 +318,14 @@ const PityTracker = () => {
             ].map((point, index) => (
               <div 
                 key={index}
-                className="absolute top-0 bottom-0 w-0.5 bg-white/40"
+                className="absolute top-0 bottom-0 w-0.5 bg-white/40 transition-all duration-700 ease-in-out"
                 style={{ left: `${(point.value / hardPity) * 100}%` }} 
               />
             ))}
             
-            {/* Current position marker */}
+            {/* Current position marker with enhanced transition */}
             <div 
-              className="absolute top-0 bottom-0 w-1 bg-white"
+              className="absolute top-0 bottom-0 w-1 bg-white transition-all duration-700 ease-in-out shadow-md shadow-white/30"
               style={{ left: `${Math.min(100, (pityStats.current / hardPity) * 100)}%` }} 
             />
           </div>
@@ -328,10 +336,29 @@ const PityTracker = () => {
             <div>{softPity} (Soft)</div>
             <div>{hardPity} (Hard)</div>
           </div>
+          
+          {/* Simplified tooltip about soft pity rate increase */}
+          <div className="flex items-center justify-center mt-2 text-xs text-white/60 gap-1.5">
+            <Info size={12} className="text-indigo-400" />
+            <span>Soft pity increases 5★ chance by ~{currentConfig.softPityIncrease}% per pull</span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
+// Add this style to your CSS or use this inline style section
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+  }
+  .animate-pulse-slow {
+    animation: pulse-slow 3s ease-in-out infinite;
+  }
+`;
+document.head.appendChild(style);
 
 export default PityTracker;

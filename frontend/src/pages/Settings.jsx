@@ -1,6 +1,7 @@
 // Path: frontend/src/pages/Settings.jsx
 import React, { useState, useEffect } from 'react';
-import { Volume2, Upload, Download, Trash2, RotateCw, Bell, BellOff, Loader2, Info, Github, Mail, RefreshCw, Coffee, Linkedin, Heart, Clock, AlertCircle } from 'lucide-react';
+import { Volume2, Upload, Download, Trash2, RotateCw, Bell, BellOff, Loader2, Info, Github, 
+  Mail, Coffee, Linkedin, Heart, Clock, Globe} from 'lucide-react';
 import { useDataManagement } from '../features/settings/useDataManagement';
 import { getAppVersion } from '../utils/versionInfo';
 import { useApp } from '../context/AppContext';
@@ -637,6 +638,19 @@ const Settings = () => {
             </div>
             
             <div className="flex items-center justify-center gap-3 mt-3">
+
+             <a 
+                href="https://pitypal.netlify.app" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 
+                      hover:bg-white/10 border border-white/10 
+                      text-white/80 transition-colors text-xs"
+              >
+                <Globe size={14} />
+                <span>Website</span>
+              </a>
+
               <a 
                 href="https://github.com/sarpowsky" 
                 target="_blank"
