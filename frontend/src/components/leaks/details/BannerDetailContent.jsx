@@ -5,11 +5,11 @@ import SafeImage from '../../../components/SafeImage';
 const BannerDetailContent = ({ banner }) => {
   return (
     <div className="space-y-4">
-      <div className="relative h-48 rounded-lg overflow-hidden">
+      <div className="relative h-80 rounded-lg overflow-hidden">
         <SafeImage
           src={banner.image}
           alt={banner.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           fallbackSrc="/images/banners/placeholder.png"
         />
       </div>

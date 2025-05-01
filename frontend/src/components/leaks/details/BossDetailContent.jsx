@@ -6,7 +6,7 @@ import SafeImage from '../../../components/SafeImage';
 const BossDetailContent = ({ boss }) => {
   return (
     <div className="space-y-4">
-      <div className="relative h-64 rounded-lg overflow-hidden">
+      <div className="relative h-96 rounded-lg overflow-hidden">
         <SafeImage
           src={boss.image}
           alt={boss.name}

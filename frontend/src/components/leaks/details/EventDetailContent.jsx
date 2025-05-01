@@ -6,11 +6,11 @@ import SafeImage from '../../../components/SafeImage';
 const EventDetailContent = ({ event }) => {
   return (
     <div className="space-y-4">
-      <div className="relative h-48 rounded-lg overflow-hidden">
+      <div className="relative h-80 rounded-lg overflow-hidden">
         <SafeImage
           src={event.image}
           alt={event.name}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           fallbackSrc="/images/events/placeholder.png"
         />
       </div>

@@ -7,7 +7,7 @@ const QuestDetailContent = ({ quest }) => {
   return (
     <div className="space-y-4">
       {quest.image && (
-        <div className="relative h-48 rounded-lg overflow-hidden">
+        <div className="relative h-90 rounded-lg overflow-hidden">
           <SafeImage
             src={quest.image}
             alt={quest.title}
