@@ -1,24 +1,41 @@
 // Path: src/components/leaks/VersionSelector.jsx
 import ReactDOM from 'react-dom';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 const VersionSelector = ({ versions, selectedVersion, onSelectVersion }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [buttonRect, setButtonRect] = useState(null);
+  const [dropdownStyle, setDropdownStyle] = useState({});
   const buttonRef = useRef(null);
   
+  // Calculate and set dropdown position
+  const updatePosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: `${rect.bottom}px`,
+        left: `${rect.left}px`,
+        zIndex: 99999
+      });
+    }
+  };
+  
+  // Toggle dropdown and update position
   const toggleDropdown = () => {
     if (!isOpen && buttonRef.current) {
-      setButtonRect(buttonRef.current.getBoundingClientRect());
+      updatePosition();
     }
     setIsOpen(!isOpen);
   };
   
-  const handleVersionClick = (version) => {
-    onSelectVersion(version);
-    setIsOpen(false);
-  };
+  // Update position on scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    window.addEventListener('scroll', updatePosition);
+    return () => window.removeEventListener('scroll', updatePosition);
+  }, [isOpen]);
   
   return (
     <div className="relative">
@@ -33,20 +50,16 @@ const VersionSelector = ({ versions, selectedVersion, onSelectVersion }) => {
         <ChevronDown size={16} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
-      {isOpen && buttonRect && ReactDOM.createPortal(
+      {isOpen && ReactDOM.createPortal(
         <div 
-          className="fixed bg-gray-900/95 backdrop-blur-sm rounded-lg border border-white/10 shadow-xl overflow-hidden w-56"
-          style={{
-            top: `${buttonRect.bottom + window.scrollY}px`,
-            left: `${buttonRect.left + window.scrollX}px`,
-            zIndex: 99999
-          }}
+          className="bg-gray-900/95 backdrop-blur-sm rounded-lg border border-white/10 shadow-xl overflow-hidden w-56"
+          style={dropdownStyle}
         >
           <div className="max-h-48 overflow-y-auto">
             {versions.map((version) => (
               <button
                 key={version.version}
-                onClick={() => handleVersionClick(version)}
+                onClick={() => onSelectVersion(version)}
                 className={`w-full text-left px-4 py-2 hover:bg-white/10 transition-colors
                           ${selectedVersion.version === version.version ? 'bg-white/10' : ''}`}
               >
