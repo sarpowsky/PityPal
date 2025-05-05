@@ -5,7 +5,10 @@ import Icon from '../components/Icon';
 import { useNotification } from '../context/NotificationContext';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { LineChart, BarChart2, PieChart, HelpCircle, Brain, Loader } from 'lucide-react';
+import { 
+  LineChart, BarChart2, PieChart, HelpCircle, Brain, Loader, 
+  Zap, Info, AlertCircle 
+} from 'lucide-react';
 
 // Import analytics components
 import DistributionChart from '../components/analytics/DistributionChart';
@@ -28,6 +31,23 @@ const BannerInfoCard = ({ title, children }) => (
       <div className="text-xs text-white/70">{children}</div>
     </div>
   </div>
+);
+
+const DiamondIcon = ({ className, size = 24 }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M2.7 10.5H21.3L12 21.5L2.7 10.5Z" />
+    <path d="M12 2.5L21.3 10.5H2.7L12 2.5Z" />
+  </svg>
 );
 
 const Analytics = () => {
@@ -116,6 +136,96 @@ const Analytics = () => {
     } catch (err) {
       setError(`Error: ${err.message}`);
       showNotification('error', 'Prediction Error', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSimplePrediction = () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Get thresholds for this banner type
+      const softPity = getSoftPity();
+      const hardPity = getHardPity();
+      
+      // Calculate pulls needed and probabilities using game mechanics
+      const pullsNeeded = Math.min(numPulls, hardPity - currentPity);
+      const predictions = [];
+      let cumulativeProbability = 0;
+      
+      // Determine base rate based on banner type
+      let baseRate;
+      if (currentBanner === 'weapon') {
+        baseRate = 0.007; // 0.7% for weapon banner
+      } else if (currentBanner === 'permanent') {
+        baseRate = 0.006; // 0.6% for standard banner
+      } else {
+        baseRate = 0.006; // 0.6% for all character banners
+      }
+      
+      for (let i = 0; i < pullsNeeded; i++) {
+        const pull = currentPity + i + 1;
+        let probability;
+        
+        if (pull >= hardPity) {
+          // Hard pity is 100%
+          probability = 1.0;
+        } else if (pull >= softPity) {
+          // Soft pity formula (approximated from game data)
+          const softPityProgress = (pull - softPity) / (hardPity - softPity);
+          probability = 0.2 + softPityProgress * 0.6; // Ramps from 20% to 80%
+        } else {
+          // Base rate
+          probability = baseRate;
+        }
+        
+        // Calculate new cumulative probability
+        cumulativeProbability = 1 - (1 - cumulativeProbability) * (1 - probability);
+        
+        predictions.push({
+          pull: pull,
+          probability: probability,
+          cumulative: cumulativeProbability
+        });
+      }
+      
+      // Find pull with 50% and 90% chance
+      const pull50 = predictions.find(p => p.cumulative >= 0.5);
+      const pull90 = predictions.find(p => p.cumulative >= 0.9);
+      
+      // Create a simplified result (without chart image)
+      const simplePrediction = {
+        success: true,
+        predictions: predictions,
+        summary: {
+          current_pity: currentPity,
+          guaranteed: isGuaranteed,
+          banner_type: currentBanner,
+          pull_50pct: pull50 ? pull50.pull : null,
+          pull_90pct: pull90 ? pull90.pull : null,
+          insights: [
+            `Current pity: ${currentPity}`,
+            isGuaranteed && currentBanner.startsWith('character') ? 
+              "You're guaranteed to get the featured character on your next 5★!" : 
+              currentBanner.startsWith('character') ? 
+                "You're on 50/50 for your next 5★." :
+                "Pity calculated for this banner type.",
+            `Soft pity begins at ${softPity} pulls.`,
+            `Hard pity is at ${hardPity} pulls.`,
+            pull50 ? `50% chance at pull ${pull50.pull} (${pull50.pull - currentPity} more pulls)` : '',
+            pull90 ? `90% chance at pull ${pull90.pull} (${pull90.pull - currentPity} more pulls)` : '',
+            `100% chance at pull ${hardPity} (${hardPity - currentPity} more pulls)`
+          ].filter(Boolean)
+        }
+      };
+      
+      setPredictions(simplePrediction);
+      showNotification('success', 'Calculation Complete', 'Your wish probability has been calculated based on game mechanics');
+    } catch (err) {
+      setError(`Error: ${err.message}`);
+      showNotification('error', 'Calculation Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -302,30 +412,30 @@ const Analytics = () => {
                           onClick={handleTrainModel}
                           disabled={isTraining || loading}
                           className="px-6 py-2 rounded-lg bg-gradient-to-r 
-                                   from-blue-500 to-cyan-500 hover:from-blue-600 
-                                   hover:to-cyan-600 text-white font-medium disabled:opacity-50
-                                   disabled:cursor-not-allowed flex items-center gap-2"
+                                  from-indigo-500 to-purple-500 hover:from-indigo-600 
+                                  hover:to-purple-600 text-white font-medium disabled:opacity-50
+                                  disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {isTraining ? (
                             <>
                               <Loader className="animate-spin" size={16} />
-                              <span>Training...</span>
+                              <span>Training ML Model...</span>
                             </>
                           ) : (
                             <>
                               <Brain size={16} />
-                              <span>Train Model</span>
+                              <span>Generate ML Prediction</span>
                             </>
                           )}
                         </button>
                         
                         <button
-                          onClick={handlePrediction}
+                          onClick={handleSimplePrediction}
                           disabled={loading || isTraining}
                           className="px-6 py-2 rounded-lg bg-gradient-to-r 
-                                   from-indigo-500 to-purple-500 hover:from-indigo-600 
-                                   hover:to-purple-600 text-white font-medium disabled:opacity-50
-                                   disabled:cursor-not-allowed flex items-center gap-2"
+                                  from-blue-500 to-cyan-500 hover:from-blue-600 
+                                  hover:to-cyan-600 text-white font-medium disabled:opacity-50
+                                  disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {loading ? (
                             <>
@@ -333,7 +443,10 @@ const Analytics = () => {
                               <span>Calculating...</span>
                             </>
                           ) : (
-                            <span>Generate Prediction</span>
+                            <>
+                              <Zap size={16} />
+                              <span>Quick Game-Based Calculation</span>
+                            </>
                           )}
                         </button>
                       </div>
@@ -407,21 +520,68 @@ const Analytics = () => {
                       </motion.div>
                     </div>
                     
-                    {/* Chart */}
-                    <motion.div 
+                    {/* Enhanced Insights Card */}
+                    <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
+                      transition={{ delay: 0.35 }}
                       className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-genshin">Prediction Chart</h2>
-                        <div className="px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-sm text-indigo-400">
-                          {getBannerName(predictions.summary.banner_type)}
-                        </div>
+                      <h2 className="text-lg font-genshin mb-4">Prediction Insights</h2>
+                      
+                      <div className="space-y-3">
+                        {predictions.summary.insights ? (
+                          predictions.summary.insights.map((insight, idx) => (
+                            <div key={idx} className="flex items-start gap-3">
+                              <div className="rounded-full bg-indigo-500/20 p-1 mt-0.5">
+                                <Info size={14} className="text-indigo-400" />
+                              </div>
+                              <p className="text-white/80">{insight}</p>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-white/60">No additional insights available.</p>
+                        )}
                       </div>
                       
-                      {predictions.chart_image && (
+                      {predictions.summary.primogems_50pct && (
+                        <div className="mt-4 px-4 py-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                          <div className="flex items-center gap-2">
+                            <DiamondIcon className="text-indigo-400" size={20} />
+                            <p className="text-indigo-300 font-medium">
+                              Estimated primogems needed: {predictions.summary.primogems_50pct} - {predictions.summary.primogems_90pct || "?"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {predictions.summary.confidence_interval > 0 && (
+                        <div className="mt-4 flex items-start gap-3">
+                          <div className="rounded-full bg-purple-500/20 p-1 mt-0.5">
+                            <AlertCircle size={14} className="text-purple-400" />
+                          </div>
+                          <p className="text-white/80">
+                            The ML model predicts a confidence interval of ±{predictions.summary.confidence_interval} pulls around these estimates.
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                    
+                    {/* Chart */}
+                    {predictions.chart_image && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <h2 className="text-lg font-genshin">Prediction Chart</h2>
+                          <div className="px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-sm text-indigo-400">
+                            {getBannerName(predictions.summary.banner_type)}
+                          </div>
+                        </div>
+                        
                         <div className="flex justify-center">
                           <img 
                             src={`data:image/png;base64,${predictions.chart_image}`} 
@@ -429,19 +589,23 @@ const Analytics = () => {
                             className="max-w-full rounded-lg border border-white/10"
                           />
                         </div>
-                      )}
-                      
-                      <div className="mt-4 text-sm text-white/60">
-                        <p className="flex items-start gap-2">
-                          <span className="w-3 h-3 bg-blue-500 rounded-full shrink-0 mt-1"></span>
-                          <span>The <strong>blue bars</strong> show the probability of getting a 5★ on each specific pull.</span>
-                        </p>
-                        <p className="flex items-start gap-2 mt-2">
-                          <span className="w-3 h-3 bg-green-500 rounded-full shrink-0 mt-1"></span>
-                          <span>The <strong>green line</strong> shows your cumulative probability of getting a 5★ by that pull number.</span>
-                        </p>
-                      </div>
-                    </motion.div>
+                        
+                        <div className="mt-4 text-sm text-white/60">
+                          <p className="flex items-start gap-2">
+                            <span className="w-3 h-3 bg-blue-500 rounded-full shrink-0 mt-1"></span>
+                            <span>The <strong>blue bars</strong> show the probability of getting a 5★ on each specific pull.</span>
+                          </p>
+                          <p className="flex items-start gap-2 mt-2">
+                            <span className="w-3 h-3 bg-green-500 rounded-full shrink-0 mt-1"></span>
+                            <span>The <strong>green line</strong> shows your cumulative probability of getting a 5★ by that pull number.</span>
+                          </p>
+                          <p className="flex items-start gap-2 mt-2">
+                            <span className="w-3 h-3 bg-yellow-500 rounded-full shrink-0 mt-1"></span>
+                            <span>The <strong>soft pity zone</strong> (starts at {getSoftPity()}) is where your 5★ chances increase significantly.</span>
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 )}
               </TabsContent>

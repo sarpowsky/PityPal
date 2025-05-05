@@ -118,7 +118,7 @@ class ModelTrainerService:
             return None
 
     def fine_tune_model(self, model, processed_df, feature_names, weight_user_data=5):
-        """Fine-tune the pre-trained model with user data."""
+        """Fine-tune the pre-trained model with user data with enhanced weighting."""
         try:
             # Make a deep copy of the model to avoid modifying the original
             fine_tuned_model = copy.deepcopy(model)
@@ -131,8 +131,16 @@ class ModelTrainerService:
             sample_weight = np.ones(len(y)) * weight_user_data
             
             # Give more weight to 5-star pulls (they're rare)
-            five_star_weight = 10.0  # Even more weight for 5-star pulls
+            five_star_weight = 18.0  # Increased from 10.0 to 18.0 for higher emphasis
             sample_weight[y == 1] *= five_star_weight
+            
+            # Give higher weight to samples in the soft pity zone
+            soft_pity_mask = processed_df['in_soft_pity'] == 1
+            sample_weight[soft_pity_mask] *= 2.5  # Emphasize soft pity zone
+            
+            # Additional weight for samples near hard pity
+            near_hard_pity_mask = processed_df['pity_ratio'] > 0.9
+            sample_weight[near_hard_pity_mask] *= 3.0  # Strong emphasis on near-hard-pity samples
             
             # Fine-tune the model
             fine_tuned_model.fit(X, y, sample_weight=sample_weight)
@@ -140,6 +148,11 @@ class ModelTrainerService:
             logger.info(f"Fine-tuned model with {len(processed_df)} user wishes")
             logger.info(f"Number of 5-star pulls in user data: {y.sum()}")
             logger.info(f"5-star rate in user data: {y.mean():.4f}")
+            
+            # Additional insights for debugging
+            if y.sum() > 0:
+                soft_pity_5stars = sum((processed_df['in_soft_pity'] == 1) & (y == 1))
+                logger.info(f"5-stars in soft pity zone: {soft_pity_5stars} ({soft_pity_5stars/y.sum()*100:.1f}%)")
             
             return fine_tuned_model
         except Exception as e:

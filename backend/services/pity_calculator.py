@@ -31,6 +31,7 @@ class PityCalculator:
         return self.calculate_banner_pity(wishes, banner_type)
 
     def calculate_banner_pity(self, wishes: List[Dict], banner_type: str) -> Dict:
+        # Handle all character banners together
         if banner_type.startswith('character'):
             banner_wishes = [w for w in wishes if w['bannerType'].startswith('character')]
         else:
