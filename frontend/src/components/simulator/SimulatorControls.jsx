@@ -17,7 +17,7 @@ const SimulatorControls = ({
         <h2 className="text-lg font-genshin mb-4">Simulator Controls</h2>
         
         <div className="grid grid-cols-1 gap-4">
-          {/* Status Panel - Redesigned */}
+          {/* Status Panel */}
           <div className="grid grid-cols-3 gap-3">
             {/* 5★ Pity Card */}
             <div className="p-3 rounded-lg border border-white/10 relative overflow-hidden
@@ -49,7 +49,7 @@ const SimulatorControls = ({
               </div>
             </div>
             
-            {/* Status Card - Modified as requested */}
+            {/* Status Card */}
             <div className="p-3 rounded-lg border border-white/10 relative overflow-hidden
                          bg-gradient-to-br from-black/40 to-black/20 group
                          hover:border-white/20 transition-all duration-300
@@ -71,20 +71,7 @@ const SimulatorControls = ({
             </div>
           </div>
           
-          {/* Capturing Radiance Info - Smaller */}
-          <div className="flex items-start gap-1.5 p-1.5 rounded-lg bg-yellow-500/5 border border-yellow-500/15">
-            <div className="p-0.5 rounded-full bg-yellow-500/15 mt-0.5">
-              <Icon name="info" size={14} className="text-yellow-400" />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-yellow-400">Capturing Radiance System</p>
-              <p className="text-xs text-white/70 text-[11px]">
-                When you lose the 50/50, there's a 10% chance of triggering "Capturing Radiance" which will still give you the featured 5★ character!
-              </p>
-            </div>
-          </div>
-          
-          {/* Wish Buttons - Original design */}
+          {/* Wish Buttons */}
           <div className="grid grid-cols-1 gap-2">
             <div className="flex gap-3">
               <button

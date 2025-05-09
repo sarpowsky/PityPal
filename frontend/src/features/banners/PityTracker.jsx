@@ -63,6 +63,29 @@ const PityTracker = () => {
   const { state } = useApp();
   const [currentBannerType, setCurrentBannerType] = useState('character');
   const [permanentBannerData, setPermanentBannerData] = useState(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showChancePanel, setShowChancePanel] = useState(true);
+  const [showStatusPanel, setShowStatusPanel] = useState(true);
+  
+  // Handle animations when changing banners
+  useEffect(() => {
+    if (isTransitioning) {
+      setShowChancePanel(false);
+      setShowStatusPanel(false);
+    } else {
+      // Show panels with a slight delay when transition ends
+      setTimeout(() => setShowChancePanel(true), 150);
+      setTimeout(() => setShowStatusPanel(true), 300);
+    }
+  }, [isTransitioning]);
+
+  // Initial animation on mount
+  useEffect(() => {
+    setShowChancePanel(false);
+    setShowStatusPanel(false);
+    setTimeout(() => setShowChancePanel(true), 150);
+    setTimeout(() => setShowStatusPanel(true), 300);
+  }, []);
   
   // Calculate permanent banner pity separately from history
   useEffect(() => {
@@ -167,17 +190,31 @@ const PityTracker = () => {
   
   // Navigation handlers
   const handleNextBanner = () => {
+    setIsTransitioning(true);
+    
     const order = ['character', 'weapon', 'permanent'];
     const currentIndex = order.indexOf(currentBannerType);
     const nextIndex = (currentIndex + 1) % order.length;
-    setCurrentBannerType(order[nextIndex]);
+    
+    // Set state after a short delay to allow for transition
+    setTimeout(() => {
+      setCurrentBannerType(order[nextIndex]);
+      setIsTransitioning(false);
+    }, 300);
   };
   
   const handlePrevBanner = () => {
+    setIsTransitioning(true);
+    
     const order = ['character', 'weapon', 'permanent'];
     const currentIndex = order.indexOf(currentBannerType);
     const prevIndex = (currentIndex - 1 + order.length) % order.length;
-    setCurrentBannerType(order[prevIndex]);
+    
+    // Set state after a short delay to allow for transition
+    setTimeout(() => {
+      setCurrentBannerType(order[prevIndex]);
+      setIsTransitioning(false);
+    }, 300);
   };
   
   // Calculate probability
@@ -228,26 +265,35 @@ const PityTracker = () => {
   };
 
   return (
-    <div className="w-full h-full backdrop-blur-sm transition-all duration-300">
+    <div className="w-full h-full backdrop-blur-sm">
       {/* Header with centered banner switcher */}
-      <div className="p-3">
+      <div className="p-3 relative z-10">
         <div className="flex items-center justify-center">
-          {/* Banner type switcher */}
-          <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-black/30 border border-white/10">
+          {/* Banner type switcher with improved transitions */}
+          <div className={`flex items-center gap-3 px-4 py-2 rounded-lg bg-black/30 border border-white/10 
+                        transition-all duration-500 ${isTransitioning ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
             <button
               onClick={handlePrevBanner}
+              disabled={isTransitioning}
               className="p-1 rounded-lg bg-black/40 hover:bg-black/50 transition-colors"
             >
               <ChevronLeft size={14} className="text-white/80" />
             </button>
             
             <div className="flex items-center justify-center w-36">
-              <Icon name={currentConfig.icon} size={20} className="text-white/80 mr-2" />
-              <div className="text-sm font-medium text-center">{currentConfig.label}</div>
+              <Icon 
+                name={currentConfig.icon} 
+                size={20} 
+                className={`text-white/80 mr-2 transition-all duration-500 ${isTransitioning ? 'opacity-0 scale-0' : 'opacity-100 scale-100'}`} 
+              />
+              <div className="text-sm font-medium text-center">
+                {currentConfig.label}
+              </div>
             </div>
             
             <button
               onClick={handleNextBanner}
+              disabled={isTransitioning}
               className="p-1 rounded-lg bg-black/40 hover:bg-black/50 transition-colors"
             >
               <ChevronRight size={14} className="text-white/80" />
@@ -257,36 +303,43 @@ const PityTracker = () => {
       </div>
       
       {/* Main centered circular progress */}
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 relative z-10">
         <div className="flex flex-col items-center">
           {/* Pity status indicator */}
           <div className={`mb-1 px-4 py-1 rounded-full ${getPityStatusColor()}`}>
             <div className="text-xs">{pityStatus}</div>
           </div>
           
+          {/* Background icon that changes with banner type - moved slightly higher */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 -mt-6 pointer-events-none z-0">
+            <div className={`transition-all duration-500 ease-in-out opacity-10 ${isTransitioning ? 'opacity-0 scale-75 blur-sm' : 'opacity-10 scale-100 blur-none'}`}>
+              <Icon name={currentConfig.icon} size={100} />
+            </div>
+          </div>
+          
           {/* Circular progress */}
           <CircularProgress 
             value={pityStats.current} 
             max={hardPity} 
-            className="my-1"
+            className="my-1 z-10 relative"
           />
           
           {/* Probability and guarantee indicators */}
           <div className="flex items-center mt-2 gap-2">
-            {/* 5★ chance indicator */}
-            <div className="px-4 py-2 rounded-lg bg-black/30 border border-white/10">
+            {/* 5★ chance indicator with fade-in animation */}
+            <div className={`px-4 py-2 rounded-lg bg-black/30 border border-white/10 transition-all duration-500 ease-in-out ${showChancePanel ? 'opacity-100 scale-100 blur-none' : 'opacity-0 scale-75 blur-sm'}`}>
               <div className="flex items-center gap-2">
-                <Icon name="star" size={29} className="text-amber-400" />
-                <span className="text-s text-white/70">5★ Chance:</span>
-                <span className="text-sm font-semibold">{probability}%</span>
+                <Icon name="star" size={28} className="text-amber-400" />
+                <span className="text-xs text-white/70">5★ Chance:</span>
+                <span className="text-xs font-semibold">{probability}%</span>
               </div>
             </div>
             
-            {/* Guarantee status - only for banners with guarantee */}
+            {/* Guarantee status */}
             {currentConfig.hasGuarantee && (
-              <div className={`px-4 py-2 rounded-lg text-sm border ${getGuaranteeStatusColor()}`}>
+              <div className={`px-4 py-2 rounded-lg text-xs border ${getGuaranteeStatusColor()} transition-all duration-500 ease-in-out ${showStatusPanel ? 'opacity-100 scale-100 blur-none' : 'opacity-0 scale-75 blur-sm'}`}>
                 <div className="flex items-center gap-2">
-                  <Icon name="status" size={27} className={pityStats.guaranteed ? "text-emerald-400" : "text-red-400"} />
+                  <Icon name="status" size={25} className={pityStats.guaranteed ? "text-emerald-400" : "text-red-400"} />
                   <span className="font-semibold">{currentConfig.guaranteedText}</span>
                 </div>
               </div>
@@ -296,7 +349,7 @@ const PityTracker = () => {
       </div>
       
       {/* Progress bar */}
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 relative z-10">
         <div className="bg-black/30 rounded-lg p-3 border border-white/10">
           <div className="relative h-3 bg-black/40 rounded-full overflow-hidden">
             {/* Progress fill with enhanced transition */}
@@ -325,7 +378,7 @@ const PityTracker = () => {
             
             {/* Current position marker with enhanced transition */}
             <div 
-              className="absolute top-0 bottom-0 w-1 bg-white transition-all duration-700 ease-in-out shadow-md shadow-white/30"
+              className="absolute top-0 bottom-0 w-1 bg-white shadow-md shadow-white/30 transition-all duration-700 ease-in-out"
               style={{ left: `${Math.min(100, (pityStats.current / hardPity) * 100)}%` }} 
             />
           </div>
@@ -348,7 +401,6 @@ const PityTracker = () => {
   );
 };
 
-// Add this style to your CSS or use this inline style section
 const style = document.createElement('style');
 style.textContent = `
   @keyframes pulse-slow {
