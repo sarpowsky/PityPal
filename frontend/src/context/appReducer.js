@@ -38,6 +38,14 @@ export const initialState = {
         wishes_to_soft: 0,
         wishes_to_hard: 0,
         probability: 0
+      },
+      permanent: {
+        current: 0,
+        guaranteed: false,
+        pity_type: null,
+        wishes_to_soft: 0,
+        wishes_to_hard: 0,
+        probability: 0
       }
     },
     stats: {

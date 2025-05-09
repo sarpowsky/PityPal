@@ -43,12 +43,29 @@ class API:
         
     def predict_wishes(self, current_pity, banner_type, guaranteed=False, pulls=40):
         try:
+            # We'll keep UI-level normalization of character banners
+            # The predictor_service will handle model-level compatibility
             result = self.predictor_service.predict(
                 current_pity, banner_type, guaranteed, pulls
             )
             return result
         except Exception as e:
             logger.error(f"Failed to predict wishes: {e}")
+            return {"success": False, "error": str(e)}
+    
+    def generate_quick_prediction_chart(self, current_pity, banner_type, guaranteed, prediction_data):
+        """Generate a chart for quick predictions based on game mechanics."""
+        try:
+            # Normalize character banner types
+            if banner_type.startswith('character-'):
+                banner_type = 'character'
+                
+            result = self.predictor_service.generate_quick_prediction_chart(
+                current_pity, banner_type, guaranteed, prediction_data
+            )
+            return result
+        except Exception as e:
+            logger.error(f"Failed to generate prediction chart: {e}")
             return {"success": False, "error": str(e)}
     
     def train_prediction_model(self):
@@ -77,17 +94,15 @@ class API:
     def calculate_pity(self):
         try:
             history = self.wish_service.get_history()
-            character_pity = self.pity_calculator.calculate(history, 'character')
-            weapon_pity = self.pity_calculator.calculate(history, 'weapon')
+            # Use the new consolidated method to ensure consistent naming
+            pity_data = self.pity_calculator.calculate_all_banner_pities(history)
             stats = self.pity_calculator.calculate_stats(history)
             
+            # Return with consistent naming
+            pity_data['stats'] = stats
             return {
                 "success": True,
-                "data": {
-                    "character": character_pity,
-                    "weapon": weapon_pity,
-                    "stats": stats
-                }
+                "data": pity_data
             }
         except Exception as e:
             logger.error(f"Failed to calculate pity: {e}")
