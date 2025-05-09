@@ -49,11 +49,14 @@ export const updatePityAndStats = async (dispatch) => {
       throw new Error(result.error);
     }
 
+    console.log('[appActions] Pity data from backend:', result.data);
+    
     dispatch({
       type: ActionTypes.UPDATE_PITY,
       payload: {
         character: result.data.character,
-        weapon: result.data.weapon
+        weapon: result.data.weapon,
+        permanent: result.data.permanent
       }
     });
 

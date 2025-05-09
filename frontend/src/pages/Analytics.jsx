@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { 
   LineChart, BarChart2, PieChart, HelpCircle, Brain, Loader, 
-  Zap, Info, AlertCircle 
+  Zap, Info, AlertCircle
 } from 'lucide-react';
 
 // Import analytics components
@@ -53,7 +53,7 @@ const DiamondIcon = ({ className, size = 24 }) => (
 const Analytics = () => {
   const { state } = useApp();
   const { showNotification } = useNotification();
-  const [currentBanner, setCurrentBanner] = useState('character-1');
+  const [currentBanner, setCurrentBanner] = useState('character');
   const [currentPity, setCurrentPity] = useState(0);
   const [isGuaranteed, setIsGuaranteed] = useState(false);
   const [numPulls, setNumPulls] = useState(40);
@@ -63,6 +63,7 @@ const Analytics = () => {
   const [showInfoCard, setShowInfoCard] = useState(true);
   const [activeTab, setActiveTab] = useState('predictions');
   const [isTraining, setIsTraining] = useState(false);
+  const [quickMode, setQuickMode] = useState(false);
 
   // Calculate analytics data from wish history
   const analyticsData = useMemo(() => {
@@ -75,18 +76,68 @@ const Analytics = () => {
     };
   }, [state.wishes?.history]);
 
-  // Update current pity when state.wishes.pity changes
+  // Update current pity whenever state.wishes.pity changes or banner type changes
+  // This runs on initial load and when wishes data is updated
   useEffect(() => {
     if (state.wishes?.pity) {
-      if (currentBanner.startsWith('character') && state.wishes.pity.character) {
-        setCurrentPity(state.wishes.pity.character.current || 0);
-        setIsGuaranteed(state.wishes.pity.character.guaranteed || false);
-      } else if (currentBanner === 'weapon' && state.wishes.pity.weapon) {
-        setCurrentPity(state.wishes.pity.weapon.current || 0);
-        setIsGuaranteed(state.wishes.pity.weapon.guaranteed || false);
+      updatePityFromState(currentBanner);
+    }
+  }, [state.wishes?.pity, currentBanner]); // Depend on both pity changes and banner changes
+
+  // Handler for banner type change
+  const handleBannerChange = (e) => {
+    const newBanner = e.target.value;
+    setCurrentBanner(newBanner);
+    
+    // Force immediate pity update when banner changes
+    if (state.wishes?.pity) {
+      updatePityFromState(newBanner);
+    }
+  };
+
+  // Helper function to update pity from state.wishes.pity
+  const updatePityFromState = (bannerType) => {
+    if (state.wishes?.pity) {
+      // Map frontend banner type to backend banner type if needed
+      // Frontend uses 'permanent' for Standard Banner
+      // Backend could be using 'permanent' or 'standard' - we'll check both
+      let backendBannerTypes = [bannerType];
+      
+      // Add additional mappings if needed
+      if (bannerType === 'permanent') {
+        backendBannerTypes.push('standard'); // Try alternative name if used by backend
+      } else if (bannerType === 'standard') {
+        backendBannerTypes.push('permanent'); // Try alternative name if used by backend
+      }
+      
+      // Try to find pity data using all possible banner type names
+      let pityData = null;
+      for (const type of backendBannerTypes) {
+        if (state.wishes.pity[type]) {
+          pityData = state.wishes.pity[type];
+          break;
+        }
+      }
+      
+      if (pityData) {
+        // If pity data exists for this banner, update the state
+        setCurrentPity(pityData.current);
+        
+        // Set guaranteed status based on banner type
+        if (bannerType === 'permanent' || bannerType === 'standard') {
+          // Standard/Permanent banner never has guarantee
+          setIsGuaranteed(false);
+        } else {
+          // Character and weapon banners can have guarantee
+          setIsGuaranteed(pityData.guaranteed || false);
+        }
+      } else {
+        // If no pity data exists for this banner, reset to defaults
+        setCurrentPity(0);
+        setIsGuaranteed(false);
       }
     }
-  }, [state.wishes?.pity, currentBanner]);
+  };
 
   const handleTrainModel = async () => {
     setIsTraining(true);
@@ -112,6 +163,7 @@ const Analytics = () => {
   const handlePrediction = async () => {
     setLoading(true);
     setError(null);
+    setQuickMode(false);
     
     try {
       const result = await window.pywebview.api.predict_wishes(
@@ -141,9 +193,10 @@ const Analytics = () => {
     }
   };
 
-  const handleSimplePrediction = () => {
+  const handleSimplePrediction = async () => {
     setLoading(true);
     setError(null);
+    setQuickMode(true);
     
     try {
       // Get thresholds for this banner type
@@ -194,30 +247,79 @@ const Analytics = () => {
       // Find pull with 50% and 90% chance
       const pull50 = predictions.find(p => p.cumulative >= 0.5);
       const pull90 = predictions.find(p => p.cumulative >= 0.9);
+
+      // Calculate primogems needed
+      const primogems50pct = pull50 ? (pull50.pull - currentPity) * 160 : null;
+      const primogems90pct = pull90 ? (pull90.pull - currentPity) * 160 : null;
       
-      // Create a simplified result (without chart image)
+      // Generate chart image using backend API
+      const chartResult = await window.pywebview.api.generate_quick_prediction_chart(
+        currentPity,
+        currentBanner,
+        isGuaranteed,
+        predictions
+      );
+      
+      // Create enhanced insights
+      const insights = [];
+      
+      if (currentPity >= softPity) {
+        insights.push(`You're in soft pity (starts at ${softPity})! Your 5★ chances are significantly increased.`);
+      } else if (currentPity >= softPity - 10) {
+        insights.push(`You're getting close to soft pity at ${softPity} pulls. Just ${softPity - currentPity} more pulls!`);
+      } else {
+        insights.push(`You're at ${currentPity} pity. Soft pity begins at ${softPity} pulls.`);
+      }
+      
+      if (isGuaranteed && currentBanner === 'character') {
+        insights.push("You're guaranteed to get the featured character on your next 5★!");
+      } else if (currentBanner === 'character') {
+        insights.push("You're on 50/50 for your next 5★ (plus 10% Capturing Radiance chance if you lose 50/50).");
+      }
+      
+      if (pull50) {
+        const pulls50 = pull50.pull - currentPity;
+        insights.push(`You have a 50% chance of getting a 5★ within ${pulls50} pulls (pity ${pull50.pull}).`);
+        
+        if (primogems50pct) {
+          insights.push(`That's about ${primogems50pct} primogems for a 50% chance.`);
+        }
+      }
+      
+      if (pull90) {
+        const pulls90 = pull90.pull - currentPity;
+        insights.push(`You have a 90% chance of getting a 5★ within ${pulls90} pulls (pity ${pull90.pull}).`);
+        
+        if (primogems90pct) {
+          insights.push(`That's about ${primogems90pct} primogems for a 90% chance.`);
+        }
+      }
+      
+      const remainingToHard = hardPity - currentPity;
+      if (remainingToHard > 0) {
+        insights.push(`You're guaranteed a 5★ within ${remainingToHard} pulls at hard pity (${hardPity}).`);
+      } else {
+        insights.push(`You've reached hard pity (${hardPity})! Your next pull will 100% be a 5★!`);
+      }
+      
+      // Determine confidence interval (simplified)
+      const confidenceInterval = pull90 && pull50 ? Math.max(1, Math.floor((pull90.pull - pull50.pull) / 2)) : 1;
+      
+      // Create a simplified result with chart image
       const simplePrediction = {
         success: true,
         predictions: predictions,
+        chart_image: chartResult.success ? chartResult.chart_image : null,
         summary: {
           current_pity: currentPity,
           guaranteed: isGuaranteed,
           banner_type: currentBanner,
           pull_50pct: pull50 ? pull50.pull : null,
           pull_90pct: pull90 ? pull90.pull : null,
-          insights: [
-            `Current pity: ${currentPity}`,
-            isGuaranteed && currentBanner.startsWith('character') ? 
-              "You're guaranteed to get the featured character on your next 5★!" : 
-              currentBanner.startsWith('character') ? 
-                "You're on 50/50 for your next 5★." :
-                "Pity calculated for this banner type.",
-            `Soft pity begins at ${softPity} pulls.`,
-            `Hard pity is at ${hardPity} pulls.`,
-            pull50 ? `50% chance at pull ${pull50.pull} (${pull50.pull - currentPity} more pulls)` : '',
-            pull90 ? `90% chance at pull ${pull90.pull} (${pull90.pull - currentPity} more pulls)` : '',
-            `100% chance at pull ${hardPity} (${hardPity - currentPity} more pulls)`
-          ].filter(Boolean)
+          confidence_interval: confidenceInterval,
+          primogems_50pct: primogems50pct,
+          primogems_90pct: primogems90pct,
+          insights: insights
         }
       };
       
@@ -232,11 +334,11 @@ const Analytics = () => {
   };
 
   const getSoftPity = () => {
-    return currentBanner.includes('weapon') ? 63 : 74;
+    return currentBanner === 'weapon' ? 63 : 74;
   };
 
   const getHardPity = () => {
-    return currentBanner.includes('weapon') ? 80 : 90;
+    return currentBanner === 'weapon' ? 80 : 90;
   };
 
   const getColorForPull = (pull) => {
@@ -250,8 +352,7 @@ const Analytics = () => {
 
   const getBannerName = (type) => {
     switch(type) {
-      case 'character-1': return 'Character Event';
-      case 'character-2': return 'Character Event (2nd Banner)';
+      case 'character': return 'Character Event';
       case 'weapon': return 'Weapon Banner';
       case 'permanent': return 'Standard Banner';
       default: return type;
@@ -318,7 +419,7 @@ const Analytics = () => {
               <TabsContent value="predictions" className="space-y-6">
                 {/* Configuration Panel */}
                 <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">Prediction Settings</h2>
+                  <h2 className="text-lg font-genshin mb-4">Advanced Prediction Settings</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
@@ -326,13 +427,12 @@ const Analytics = () => {
                         <label className="block text-sm font-medium text-white/80 mb-1">Banner Type</label>
                         <select 
                           value={currentBanner}
-                          onChange={(e) => setCurrentBanner(e.target.value)}
+                          onChange={handleBannerChange}
                           className="w-full px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm
                                    border border-white/10 text-white focus:outline-none
                                    focus:border-purple-500/50"
                         >
-                          <option value="character-1">Character Event Banner</option>
-                          <option value="character-2">Character Event Banner 2</option>
+                          <option value="character">Character Event Banner</option>
                           <option value="weapon">Weapon Banner</option>
                           <option value="permanent">Standard Banner</option>
                         </select>
@@ -362,7 +462,7 @@ const Analytics = () => {
                     </div>
                     
                     <div className="space-y-4">
-                      {currentBanner.startsWith('character') && (
+                      {currentBanner === 'character' && (
                         <div>
                           <label className="block text-sm font-medium text-white/80 mb-1">Guarantee Status</label>
                           <div className="flex gap-4 mt-1">
@@ -445,7 +545,7 @@ const Analytics = () => {
                           ) : (
                             <>
                               <Zap size={16} />
-                              <span>Quick Game-Based Calculation</span>
+                              <span>Game-Based Calculation</span>
                             </>
                           )}
                         </button>
@@ -464,6 +564,15 @@ const Analytics = () => {
                 {/* Prediction Results */}
                 {predictions && !loading && (
                   <div className="space-y-6">
+                    {/* Prediction Mode Indicator */}
+                    <div className="flex items-center justify-center gap-2">
+                      <div className={`px-3 py-1 rounded-full text-sm ${quickMode ? 
+                        'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 
+                        'bg-purple-500/20 text-purple-400 border border-purple-500/30'}`}>
+                        {quickMode ? 'Game Mechanics Calculation' : 'Machine Learning Prediction'}
+                      </div>
+                    </div>
+                    
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <motion.div 
@@ -476,7 +585,9 @@ const Analytics = () => {
                           <div className="text-xs text-white/60 mb-1">CURRENT PITY</div>
                           <div className="text-3xl font-genshin">{predictions.summary.current_pity}</div>
                           <div className="text-sm text-white/80 mt-1">
-                            {predictions.summary.guaranteed ? 'Guaranteed Featured 5★' : '50/50 Chance'}
+                            {currentBanner === 'character' ? 
+                              (predictions.summary.guaranteed ? 'Guaranteed Featured 5★' : '50/50 Chance') :
+                              `${getBannerName(predictions.summary.banner_type)}`}
                           </div>
                         </div>
                       </motion.div>
@@ -561,7 +672,10 @@ const Analytics = () => {
                             <AlertCircle size={14} className="text-purple-400" />
                           </div>
                           <p className="text-white/80">
-                            The ML model predicts a confidence interval of ±{predictions.summary.confidence_interval} pulls around these estimates.
+                            {quickMode ? 
+                              `There's a confidence interval of approximately ±${predictions.summary.confidence_interval} pulls around these estimates based on game mechanics.` :
+                              `The ML model predicts a confidence interval of ±${predictions.summary.confidence_interval} pulls around these estimates based on your pull history.`
+                            }
                           </p>
                         </div>
                       )}
@@ -590,19 +704,27 @@ const Analytics = () => {
                           />
                         </div>
                         
-                        <div className="mt-4 text-sm text-white/60">
-                          <p className="flex items-start gap-2">
-                            <span className="w-3 h-3 bg-blue-500 rounded-full shrink-0 mt-1"></span>
-                            <span>The <strong>blue bars</strong> show the probability of getting a 5★ on each specific pull.</span>
-                          </p>
-                          <p className="flex items-start gap-2 mt-2">
-                            <span className="w-3 h-3 bg-green-500 rounded-full shrink-0 mt-1"></span>
-                            <span>The <strong>green line</strong> shows your cumulative probability of getting a 5★ by that pull number.</span>
-                          </p>
-                          <p className="flex items-start gap-2 mt-2">
-                            <span className="w-3 h-3 bg-yellow-500 rounded-full shrink-0 mt-1"></span>
-                            <span>The <strong>soft pity zone</strong> (starts at {getSoftPity()}) is where your 5★ chances increase significantly.</span>
-                          </p>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/60">
+                          <div>
+                            <p className="flex items-start gap-2">
+                              <span className="w-3 h-3 bg-blue-500 rounded-full shrink-0 mt-1"></span>
+                              <span>The <strong>blue bars</strong> show the probability of getting a 5★ on each specific pull.</span>
+                            </p>
+                            <p className="flex items-start gap-2 mt-2">
+                              <span className="w-3 h-3 bg-green-500 rounded-full shrink-0 mt-1"></span>
+                              <span>The <strong>green line</strong> shows your cumulative probability of getting a 5★ by that pull number.</span>
+                            </p>
+                          </div>
+                          <div>
+                            <p className="flex items-start gap-2">
+                              <span className="w-3 h-3 bg-yellow-500 rounded-full shrink-0 mt-1"></span>
+                              <span>The <strong>soft pity zone</strong> (starts at {getSoftPity()}) is where your 5★ chances increase significantly.</span>
+                            </p>
+                            <p className="flex items-start gap-2 mt-2">
+                              <span className="w-3 h-3 bg-red-500 rounded-full shrink-0 mt-1"></span>
+                              <span>The <strong>hard pity</strong> ({getHardPity()}) guarantees a 5★ item.</span>
+                            </p>
+                          </div>
                         </div>
                       </motion.div>
                     )}

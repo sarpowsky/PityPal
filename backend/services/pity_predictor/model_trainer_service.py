@@ -39,8 +39,26 @@ class ModelTrainerService:
             banner_types = df['bannerType'].unique()
             all_processed = []
             
+            # Normalize banner types - treat all character banners as one type
+            banner_map = {}
             for banner in banner_types:
-                banner_df = df[df['bannerType'] == banner].copy()
+                if banner.startswith('character-'):
+                    banner_map[banner] = 'character'
+                else:
+                    banner_map[banner] = banner
+            
+            # Group banners by normalized types
+            grouped_banners = {}
+            for banner in banner_types:
+                normalized = banner_map[banner]
+                if normalized not in grouped_banners:
+                    grouped_banners[normalized] = []
+                grouped_banners[normalized].extend(df[df['bannerType'] == banner].to_dict('records'))
+            
+            # Process each normalized banner group
+            for banner_type, banner_wishes in grouped_banners.items():
+                banner_df = pd.DataFrame(banner_wishes)
+                banner_df['bannerType'] = banner_type  # Set normalized type
                 
                 # Calculate pity for each pull
                 banner_df['pity'] = 1
@@ -53,6 +71,9 @@ class ModelTrainerService:
                 # Standard characters (for 50/50 system)
                 standard_characters = ["Diluc", "Jean", "Keqing", "Mona", "Qiqi", "Tighnari", "Dehya"]
                 
+                # Sort by time for pity calculation
+                banner_df = banner_df.sort_values('time')
+                
                 for i, (idx, row) in enumerate(banner_df.iterrows()):
                     banner_df.at[idx, 'since_last_5star'] = pity_counter
                     banner_df.at[idx, 'guaranteed'] = guarantee
@@ -61,7 +82,7 @@ class ModelTrainerService:
                     
                     if row['rarity'] == 5:
                         # Check if it was a standard character on character banner
-                        if banner.startswith('character') and row['name'] in standard_characters:
+                        if banner_type == 'character' and row['name'] in standard_characters:
                             guarantee = True
                         else:
                             guarantee = False
@@ -77,13 +98,13 @@ class ModelTrainerService:
             
             # Add banner-specific soft and hard pity thresholds
             processed_df['soft_pity'] = np.where(
-                processed_df['bannerType'].str.contains('weapon'),
+                processed_df['bannerType'] == 'weapon',
                 63,  # Weapon banner soft pity
                 74   # Character banner soft pity
             )
             
             processed_df['hard_pity'] = np.where(
-                processed_df['bannerType'].str.contains('weapon'),
+                processed_df['bannerType'] == 'weapon',
                 80,  # Weapon banner hard pity
                 90   # Character banner hard pity
             )
@@ -91,6 +112,15 @@ class ModelTrainerService:
             # Add features for pity zones
             processed_df['in_soft_pity'] = (processed_df['since_last_5star'] >= processed_df['soft_pity']).astype(int)
             processed_df['pity_ratio'] = processed_df['since_last_5star'] / processed_df['hard_pity']
+            
+            # Add enhanced piecewise probability features
+            processed_df['near_soft_pity'] = ((processed_df['since_last_5star'] >= processed_df['soft_pity'] - 5) & 
+                                            (processed_df['since_last_5star'] < processed_df['soft_pity'])).astype(int)
+            processed_df['mid_soft_pity'] = ((processed_df['since_last_5star'] >= processed_df['soft_pity']) & 
+                                          (processed_df['since_last_5star'] < processed_df['soft_pity'] + 5)).astype(int)
+            processed_df['late_soft_pity'] = ((processed_df['since_last_5star'] >= processed_df['soft_pity'] + 5) & 
+                                           (processed_df['since_last_5star'] < processed_df['hard_pity'])).astype(int)
+            processed_df['near_hard_pity'] = (processed_df['since_last_5star'] >= processed_df['hard_pity'] - 3).astype(int)
             
             # Handle new banner types by making a copy of the encoder and refitting if needed
             user_banner_types = set(processed_df['bannerType'].unique())
@@ -130,17 +160,31 @@ class ModelTrainerService:
             # Create sample weights to give more importance to user data
             sample_weight = np.ones(len(y)) * weight_user_data
             
-            # Give more weight to 5-star pulls (they're rare)
-            five_star_weight = 18.0  # Increased from 10.0 to 18.0 for higher emphasis
+            # Determine if this is a small dataset
+            is_small_dataset = len(processed_df) < 500
+            dataset_size_factor = 1.5 if is_small_dataset else 1.0
+            
+            # Enhanced weighting for rare events in small datasets
+            five_star_weight = 20.0 * dataset_size_factor  # Increased from 18.0 to 20.0 and scaled for small datasets
             sample_weight[y == 1] *= five_star_weight
             
-            # Give higher weight to samples in the soft pity zone
+            # Give higher weight to samples in different pity zones
+            # Scale factors are higher for small datasets
+            near_soft_pity_mask = processed_df['near_soft_pity'] == 1
+            sample_weight[near_soft_pity_mask] *= 2.0 * dataset_size_factor  # Higher weight as approaching soft pity
+            
             soft_pity_mask = processed_df['in_soft_pity'] == 1
-            sample_weight[soft_pity_mask] *= 2.5  # Emphasize soft pity zone
+            sample_weight[soft_pity_mask] *= 3.0 * dataset_size_factor  # Emphasize soft pity zone
+            
+            mid_soft_pity_mask = processed_df['mid_soft_pity'] == 1
+            sample_weight[mid_soft_pity_mask] *= 3.5 * dataset_size_factor  # Early soft pity phase
+            
+            late_soft_pity_mask = processed_df['late_soft_pity'] == 1
+            sample_weight[late_soft_pity_mask] *= 4.0 * dataset_size_factor  # Late soft pity phase
             
             # Additional weight for samples near hard pity
-            near_hard_pity_mask = processed_df['pity_ratio'] > 0.9
-            sample_weight[near_hard_pity_mask] *= 3.0  # Strong emphasis on near-hard-pity samples
+            near_hard_pity_mask = processed_df['near_hard_pity'] == 1
+            sample_weight[near_hard_pity_mask] *= 5.0 * dataset_size_factor  # Strong emphasis on near-hard-pity samples
             
             # Fine-tune the model
             fine_tuned_model.fit(X, y, sample_weight=sample_weight)
@@ -153,6 +197,14 @@ class ModelTrainerService:
             if y.sum() > 0:
                 soft_pity_5stars = sum((processed_df['in_soft_pity'] == 1) & (y == 1))
                 logger.info(f"5-stars in soft pity zone: {soft_pity_5stars} ({soft_pity_5stars/y.sum()*100:.1f}%)")
+                
+                # Log banner-specific statistics
+                for banner in processed_df['bannerType'].unique():
+                    banner_mask = processed_df['bannerType'] == banner
+                    banner_5stars = sum(banner_mask & (y == 1))
+                    banner_count = sum(banner_mask)
+                    if banner_count > 0:
+                        logger.info(f"Banner {banner}: {banner_5stars} 5-stars in {banner_count} pulls ({banner_5stars/banner_count*100:.2f}%)")
             
             return fine_tuned_model
         except Exception as e:
@@ -197,8 +249,13 @@ class ModelTrainerService:
                     "error": "Failed to process wish data for training."
                 }
             
+            # If this is a small dataset, increase the user data weight
+            dataset_size = len(processed_df)
+            user_data_weight = 10.0 if dataset_size < 300 else 5.0
+            logger.info(f"Using user data weight of {user_data_weight} for dataset size {dataset_size}")
+            
             # Fine-tune the model
-            fine_tuned_model = self.fine_tune_model(model, processed_df, feature_names)
+            fine_tuned_model = self.fine_tune_model(model, processed_df, feature_names, weight_user_data=user_data_weight)
             if fine_tuned_model is None:
                 return {
                     "success": False,
@@ -217,7 +274,12 @@ class ModelTrainerService:
             
             return {
                 "success": True,
-                "message": f"Successfully trained model using {len(processed_df)} wishes."
+                "message": f"Successfully trained model using {len(processed_df)} wishes.",
+                "stats": {
+                    "total_wishes": len(processed_df),
+                    "five_stars": int(processed_df['is_5star'].sum()),
+                    "rate": float(processed_df['is_5star'].mean())
+                }
             }
             
         except Exception as e:
