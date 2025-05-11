@@ -126,9 +126,12 @@ const Home = () => {
           <button
             onClick={() => setShowGuide(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl 
-                     bg-amber-500/20 backdrop-blur-sm hover:bg-amber-500/30 border border-amber-500/30 
-                     text-sm text-amber-400 transition-all duration-300">
-            <Icon name="info" size={24} className="text-amber-400" />
+                     bg-gradient-to-br from-amber-600/20 to-amber-500/30 backdrop-blur-sm 
+                     hover:from-amber-600/30 hover:to-amber-500/40 
+                     border border-amber-500/40 hover:border-amber-400/50
+                     text-sm font-medium text-amber-300 transition-all duration-300
+                     shadow-sm hover:shadow-amber-500/20">
+            <Icon name="info" size={20} className="text-amber-400" />
             <span>How to Import Wishes</span>
           </button>
         </div>

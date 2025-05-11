@@ -1,6 +1,7 @@
 // Path: frontend/src/components/ImportGuideModal.jsx
 import React, { useState } from 'react';
 import Icon from './Icon';
+import { motion } from 'framer-motion';
 
 const ImportGuideModal = ({ onClose }) => {
   const [copySuccess, setCopySuccess] = useState('');
@@ -20,7 +21,12 @@ const ImportGuideModal = ({ onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] 
                   flex items-center justify-center p-4">
-      <div className="relative w-full max-w-5xl bg-gradient-to-b from-gray-900/95 to-black/95 
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.2 }}
+        className="relative w-full max-w-5xl bg-gradient-to-b from-gray-900/95 to-black/95 
                     rounded-2xl border border-white/10 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
@@ -146,7 +152,7 @@ const ImportGuideModal = ({ onClose }) => {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
