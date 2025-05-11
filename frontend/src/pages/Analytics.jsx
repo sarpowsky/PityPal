@@ -5,15 +5,12 @@ import Icon from '../components/Icon';
 import { useNotification } from '../context/NotificationContext';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { 
-  LineChart, BarChart2, PieChart, HelpCircle, Brain, Loader, 
-  Zap, Info, AlertCircle
-} from 'lucide-react';
+import { LineChart, BarChart2, PieChart } from 'lucide-react';
 
 // Import analytics components
-import DistributionChart from '../components/analytics/DistributionChart';
-import RateComparisonChart from '../components/analytics/RateComparisonChart';
-import BannerDistributionChart from '../components/analytics/BannerDistributionChart';
+import PredictionsTab from '../components/analytics/PredictionsTab';
+import DistributionTab from '../components/analytics/DistributionTab';
+import RatesTab from '../components/analytics/RatesTab';
 
 // Import analytics services
 import { 
@@ -23,6 +20,7 @@ import {
   calculateItemTypeDistribution
 } from '../services/analyticsService';
 
+// Define BannerInfoCard component inline to fix import issues
 const BannerInfoCard = ({ title, children }) => (
   <div className="p-4 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-start gap-2">
     <Icon name="info" className="text-indigo-400 mt-0.5 shrink-0" size={16} />
@@ -31,23 +29,6 @@ const BannerInfoCard = ({ title, children }) => (
       <div className="text-xs text-white/70">{children}</div>
     </div>
   </div>
-);
-
-const DiamondIcon = ({ className, size = 24 }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M2.7 10.5H21.3L12 21.5L2.7 10.5Z" />
-    <path d="M12 2.5L21.3 10.5H2.7L12 2.5Z" />
-  </svg>
 );
 
 const Analytics = () => {
@@ -416,519 +397,37 @@ const Analytics = () => {
               </TabsList>
 
               {/* Predictions Tab */}
-              <TabsContent value="predictions" className="space-y-6">
-                {/* Configuration Panel */}
-                <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">Advanced Prediction Settings</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-1">Banner Type</label>
-                        <select 
-                          value={currentBanner}
-                          onChange={handleBannerChange}
-                          className="w-full px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm
-                                   border border-white/10 text-white focus:outline-none
-                                   focus:border-purple-500/50"
-                        >
-                          <option value="character">Character Event Banner</option>
-                          <option value="weapon">Weapon Banner</option>
-                          <option value="permanent">Standard Banner</option>
-                        </select>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-1">Current Pity</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="number" 
-                            min="0" 
-                            max="90"
-                            value={currentPity}
-                            onChange={(e) => setCurrentPity(parseInt(e.target.value) || 0)}
-                            className="w-full px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm
-                                     border border-white/10 text-white focus:outline-none
-                                     focus:border-purple-500/50"
-                          />
-                          <div className={`px-3 py-1.5 rounded-lg border text-sm
-                                        ${currentPity >= getSoftPity() 
-                                          ? 'bg-purple-500/20 border-purple-500/40 text-purple-400'
-                                          : 'bg-white/5 border-white/10 text-white/60'}`}>
-                            {currentPity >= getSoftPity() ? 'Soft Pity' : 'Base Rate'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      {currentBanner === 'character' && (
-                        <div>
-                          <label className="block text-sm font-medium text-white/80 mb-1">Guarantee Status</label>
-                          <div className="flex gap-4 mt-1">
-                            <label className="inline-flex items-center">
-                              <input
-                                type="radio"
-                                className="form-radio"
-                                name="guarantee"
-                                checked={!isGuaranteed}
-                                onChange={() => setIsGuaranteed(false)}
-                              />
-                              <span className="ml-2 text-white/80">50/50 Chance</span>
-                            </label>
-                            <label className="inline-flex items-center">
-                              <input
-                                type="radio"
-                                className="form-radio"
-                                name="guarantee"
-                                checked={isGuaranteed}
-                                onChange={() => setIsGuaranteed(true)}
-                              />
-                              <span className="ml-2 text-white/80">Guaranteed Featured</span>
-                            </label>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-white/80 mb-1">Prediction Range</label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          max="90"
-                          value={numPulls}
-                          onChange={(e) => setNumPulls(parseInt(e.target.value) || 1)}
-                          className="w-full px-4 py-2 rounded-lg bg-black/20 backdrop-blur-sm
-                                   border border-white/10 text-white focus:outline-none
-                                   focus:border-purple-500/50"
-                        />
-                        <span className="text-xs text-white/60 mt-1 block">
-                          Predict chances for the next {numPulls} pulls
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-end mt-2 gap-2">
-                        <button
-                          onClick={handleTrainModel}
-                          disabled={isTraining || loading}
-                          className="px-6 py-2 rounded-lg bg-gradient-to-r 
-                                  from-indigo-500 to-purple-500 hover:from-indigo-600 
-                                  hover:to-purple-600 text-white font-medium disabled:opacity-50
-                                  disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                          {isTraining ? (
-                            <>
-                              <Loader className="animate-spin" size={16} />
-                              <span>Training ML Model...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Brain size={16} />
-                              <span>Generate ML Prediction</span>
-                            </>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={handleSimplePrediction}
-                          disabled={loading || isTraining}
-                          className="px-6 py-2 rounded-lg bg-gradient-to-r 
-                                  from-blue-500 to-cyan-500 hover:from-blue-600 
-                                  hover:to-cyan-600 text-white font-medium disabled:opacity-50
-                                  disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                          {loading ? (
-                            <>
-                              <Loader className="animate-spin" size={16} />
-                              <span>Calculating...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Zap size={16} />
-                              <span>Game-Based Calculation</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Error message */}
-                {error && (
-                  <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/40 text-red-400">
-                    {error}
-                  </div>
-                )}
-
-                {/* Prediction Results */}
-                {predictions && !loading && (
-                  <div className="space-y-6">
-                    {/* Prediction Mode Indicator */}
-                    <div className="flex items-center justify-center gap-2">
-                      <div className={`px-3 py-1 rounded-full text-sm ${quickMode ? 
-                        'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 
-                        'bg-purple-500/20 text-purple-400 border border-purple-500/30'}`}>
-                        {quickMode ? 'Game Mechanics Calculation' : 'Machine Learning Prediction'}
-                      </div>
-                    </div>
-                    
-                    {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="p-4 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10"
-                      >
-                        <div className="text-center">
-                          <div className="text-xs text-white/60 mb-1">CURRENT PITY</div>
-                          <div className="text-3xl font-genshin">{predictions.summary.current_pity}</div>
-                          <div className="text-sm text-white/80 mt-1">
-                            {currentBanner === 'character' ? 
-                              (predictions.summary.guaranteed ? 'Guaranteed Featured 5★' : '50/50 Chance') :
-                              `${getBannerName(predictions.summary.banner_type)}`}
-                          </div>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="p-4 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10"
-                      >
-                        <div className="text-center">
-                          <div className="text-xs text-white/60 mb-1">50% CHANCE AT</div>
-                          <div className="text-3xl font-genshin">
-                            {predictions.summary.pull_50pct ?? '—'}
-                          </div>
-                          <div className="text-sm text-white/80 mt-1">
-                            {predictions.summary.pull_50pct ? 
-                              `${predictions.summary.pull_50pct - predictions.summary.current_pity} more pulls needed` :
-                              'Beyond prediction range'}
-                          </div>
-                        </div>
-                      </motion.div>
-                      
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="p-4 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10"
-                      >
-                        <div className="text-center">
-                          <div className="text-xs text-white/60 mb-1">90% CHANCE AT</div>
-                          <div className="text-3xl font-genshin">
-                            {predictions.summary.pull_90pct ?? '—'}
-                          </div>
-                          <div className="text-sm text-white/80 mt-1">
-                            {predictions.summary.pull_90pct ? 
-                              `${predictions.summary.pull_90pct - predictions.summary.current_pity} more pulls needed` :
-                              'Beyond prediction range'}
-                          </div>
-                        </div>
-                      </motion.div>
-                    </div>
-                    
-                    {/* Enhanced Insights Card */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35 }}
-                      className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6"
-                    >
-                      <h2 className="text-lg font-genshin mb-4">Prediction Insights</h2>
-                      
-                      <div className="space-y-3">
-                        {predictions.summary.insights ? (
-                          predictions.summary.insights.map((insight, idx) => (
-                            <div key={idx} className="flex items-start gap-3">
-                              <div className="rounded-full bg-indigo-500/20 p-1 mt-0.5">
-                                <Info size={14} className="text-indigo-400" />
-                              </div>
-                              <p className="text-white/80">{insight}</p>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-white/60">No additional insights available.</p>
-                        )}
-                      </div>
-                      
-                      {predictions.summary.primogems_50pct && (
-                        <div className="mt-4 px-4 py-3 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                          <div className="flex items-center gap-2">
-                            <DiamondIcon className="text-indigo-400" size={20} />
-                            <p className="text-indigo-300 font-medium">
-                              Estimated primogems needed: {predictions.summary.primogems_50pct} - {predictions.summary.primogems_90pct || "?"}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {predictions.summary.confidence_interval > 0 && (
-                        <div className="mt-4 flex items-start gap-3">
-                          <div className="rounded-full bg-purple-500/20 p-1 mt-0.5">
-                            <AlertCircle size={14} className="text-purple-400" />
-                          </div>
-                          <p className="text-white/80">
-                            {quickMode ? 
-                              `There's a confidence interval of approximately ±${predictions.summary.confidence_interval} pulls around these estimates based on game mechanics.` :
-                              `The ML model predicts a confidence interval of ±${predictions.summary.confidence_interval} pulls around these estimates based on your pull history.`
-                            }
-                          </p>
-                        </div>
-                      )}
-                    </motion.div>
-                    
-                    {/* Chart */}
-                    {predictions.chart_image && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6"
-                      >
-                        <div className="flex items-center justify-between mb-4">
-                          <h2 className="text-lg font-genshin">Prediction Chart</h2>
-                          <div className="px-3 py-1 rounded-lg bg-indigo-500/20 border border-indigo-500/30 text-sm text-indigo-400">
-                            {getBannerName(predictions.summary.banner_type)}
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-center">
-                          <img 
-                            src={`data:image/png;base64,${predictions.chart_image}`} 
-                            alt="Prediction Chart" 
-                            className="max-w-full rounded-lg border border-white/10"
-                          />
-                        </div>
-                        
-                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-white/60">
-                          <div>
-                            <p className="flex items-start gap-2">
-                              <span className="w-3 h-3 bg-blue-500 rounded-full shrink-0 mt-1"></span>
-                              <span>The <strong>blue bars</strong> show the probability of getting a 5★ on each specific pull.</span>
-                            </p>
-                            <p className="flex items-start gap-2 mt-2">
-                              <span className="w-3 h-3 bg-green-500 rounded-full shrink-0 mt-1"></span>
-                              <span>The <strong>green line</strong> shows your cumulative probability of getting a 5★ by that pull number.</span>
-                            </p>
-                          </div>
-                          <div>
-                            <p className="flex items-start gap-2">
-                              <span className="w-3 h-3 bg-yellow-500 rounded-full shrink-0 mt-1"></span>
-                              <span>The <strong>soft pity zone</strong> (starts at {getSoftPity()}) is where your 5★ chances increase significantly.</span>
-                            </p>
-                            <p className="flex items-start gap-2 mt-2">
-                              <span className="w-3 h-3 bg-red-500 rounded-full shrink-0 mt-1"></span>
-                              <span>The <strong>hard pity</strong> ({getHardPity()}) guarantees a 5★ item.</span>
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
+              <TabsContent value="predictions">
+                <PredictionsTab 
+                  currentBanner={currentBanner}
+                  handleBannerChange={handleBannerChange}
+                  currentPity={currentPity}
+                  setCurrentPity={setCurrentPity}
+                  isGuaranteed={isGuaranteed}
+                  setIsGuaranteed={setIsGuaranteed}
+                  numPulls={numPulls}
+                  setNumPulls={setNumPulls}
+                  handleTrainModel={handleTrainModel}
+                  handleSimplePrediction={handleSimplePrediction}
+                  isTraining={isTraining}
+                  loading={loading}
+                  error={error}
+                  predictions={predictions}
+                  quickMode={quickMode}
+                  getSoftPity={getSoftPity}
+                  getHardPity={getHardPity}
+                  getBannerName={getBannerName}
+                />
               </TabsContent>
 
               {/* Distribution Tab */}
-              <TabsContent value="distribution" className="space-y-6">
-                {/* 5★ Pity Distribution */}
-                <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">5★ Pity Distribution</h2>
-                  <p className="text-sm text-white/60 mb-4">
-                    This chart shows how many pulls it took to get your 5★ items. Higher bars indicate more frequent pity values.
-                  </p>
-                  
-                  <DistributionChart 
-                    data={analyticsData.pullDistribution.fiveStars} 
-                    type="5★"
-                    color="#FFB938"
-                  />
-                  
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Average 5★ Pity</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fiveStars.length > 0 
-                          ? (
-                              analyticsData.pullDistribution.fiveStars.reduce(
-                                (sum, item) => sum + (item.pity * item.count), 0
-                              ) / 
-                              analyticsData.pullDistribution.fiveStars.reduce(
-                                (sum, item) => sum + item.count, 0
-                              )
-                            ).toFixed(1) 
-                          : '0'}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Most Common Pity</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fiveStars.length > 0 
-                          ? analyticsData.pullDistribution.fiveStars.reduce(
-                              (max, item) => item.count > max.count ? item : max, 
-                              analyticsData.pullDistribution.fiveStars[0]
-                            ).pity 
-                          : '0'}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Total 5★ Pulls</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fiveStars.reduce(
-                          (sum, item) => sum + item.count, 0
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 4★ Pity Distribution */}
-                <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">4★ Pity Distribution</h2>
-                  <p className="text-sm text-white/60 mb-4">
-                    This chart shows how many pulls it took to get your 4★ items. The guaranteed 4★ is at pity 10.
-                  </p>
-                  
-                  <DistributionChart 
-                    data={analyticsData.pullDistribution.fourStars} 
-                    type="4★"
-                    color="#A480CF"
-                  />
-                  
-                  <div className="mt-4 grid grid-cols-3 gap-4">
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Average 4★ Pity</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fourStars.length > 0 
-                          ? (
-                              analyticsData.pullDistribution.fourStars.reduce(
-                                (sum, item) => sum + (item.pity * item.count), 0
-                              ) / 
-                              analyticsData.pullDistribution.fourStars.reduce(
-                                (sum, item) => sum + item.count, 0
-                              )
-                            ).toFixed(1) 
-                          : '0'}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Most Common Pity</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fourStars.length > 0 
-                          ? analyticsData.pullDistribution.fourStars.reduce(
-                              (max, item) => item.count > max.count ? item : max, 
-                              analyticsData.pullDistribution.fourStars[0]
-                            ).pity 
-                          : '0'}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-lg bg-black/20 border border-white/10">
-                      <p className="text-xs text-white/60">Total 4★ Pulls</p>
-                      <p className="text-xl font-genshin mt-1">
-                        {analyticsData.pullDistribution.fourStars.reduce(
-                          (sum, item) => sum + item.count, 0
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+              <TabsContent value="distribution">
+                <DistributionTab analyticsData={analyticsData} />
               </TabsContent>
 
               {/* Rates Tab */}
-              <TabsContent value="rates" className="space-y-6">
-                {/* Rate Comparison Card */}
-                <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">Pull Rates Comparison</h2>
-                  <p className="text-sm text-white/60 mb-4">
-                    Compare your actual pull rates with the expected probabilities from the game.
-                  </p>
-                  
-                  <RateComparisonChart data={analyticsData.rateComparison} />
-                  
-                  <div className="mt-6 grid grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-sm font-medium text-white/80 mb-2">Your 5★ Rate</h3>
-                      <div className="flex items-center gap-2">
-                        <div className="text-xl font-genshin">
-                          {(analyticsData.rateComparison.actual.fiveStar * 100).toFixed(2)}%
-                        </div>
-                        <div className={`px-2 py-1 rounded-lg text-xs ${
-                          analyticsData.rateComparison.actual.fiveStar > analyticsData.rateComparison.expected.fiveStar
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {analyticsData.rateComparison.actual.fiveStar > analyticsData.rateComparison.expected.fiveStar
-                            ? `${((analyticsData.rateComparison.actual.fiveStar / analyticsData.rateComparison.expected.fiveStar - 1) * 100).toFixed(1)}% better`
-                            : `${((1 - analyticsData.rateComparison.actual.fiveStar / analyticsData.rateComparison.expected.fiveStar) * 100).toFixed(1)}% worse`
-                          }
-                        </div>
-                        <div className="text-xs text-white/60">
-                          (Expected: {(analyticsData.rateComparison.expected.fiveStar * 100).toFixed(2)}%)
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-white/80 mb-2">Your 4★ Rate</h3>
-                      <div className="flex items-center gap-2">
-                        <div className="text-xl font-genshin">
-                          {(analyticsData.rateComparison.actual.fourStar * 100).toFixed(2)}%
-                        </div>
-                        <div className={`px-2 py-1 rounded-lg text-xs ${
-                          analyticsData.rateComparison.actual.fourStar > analyticsData.rateComparison.expected.fourStar
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {analyticsData.rateComparison.actual.fourStar > analyticsData.rateComparison.expected.fourStar
-                            ? `${((analyticsData.rateComparison.actual.fourStar / analyticsData.rateComparison.expected.fourStar - 1) * 100).toFixed(1)}% better`
-                            : `${((1 - analyticsData.rateComparison.actual.fourStar / analyticsData.rateComparison.expected.fourStar) * 100).toFixed(1)}% worse`
-                          }
-                        </div>
-                        <div className="text-xs text-white/60">
-                          (Expected: {(analyticsData.rateComparison.expected.fourStar * 100).toFixed(2)}%)
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Banner Distribution */}
-                <div className="bg-black/30 backdrop-blur-sm rounded-xl border border-white/10 p-6">
-                  <h2 className="text-lg font-genshin mb-4">Wish Distribution by Banner</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <BannerDistributionChart data={analyticsData.bannerDistribution} />
-                    
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-medium text-white/80">Pull Summary</h3>
-                      
-                      <div className="space-y-2">
-                        {analyticsData.bannerDistribution.map((item, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-black/20 border border-white/10">
-                            <div>
-                              <p className="text-sm font-medium">{item.type}</p>
-                            </div>
-                            <div className="text-sm">
-                              <span className="text-white">{item.count}</span>
-                              <span className="text-white/60 ml-2">({(item.percentage * 100).toFixed(1)}%)</span>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                          <div>
-                            <p className="text-sm font-medium text-indigo-400">Total Wishes</p>
-                          </div>
-                          <div className="text-sm font-bold">
-                            {analyticsData.bannerDistribution.reduce((sum, item) => sum + item.count, 0)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <TabsContent value="rates">
+                <RatesTab analyticsData={analyticsData} />
               </TabsContent>
             </Tabs>
           </div>

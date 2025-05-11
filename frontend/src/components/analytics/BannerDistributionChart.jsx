@@ -2,13 +2,13 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Sector } from 'recharts';
 
-// Enhanced color palette with better visual distinction
+// Enhanced color palette with better visual distinction and more vibrant colors
 const COLORS = [
-  '#8884d8', // Purple for Character
-  '#83a6ed', // Blue for Character-2
-  '#8dd1e1', // Teal for Weapon
-  '#a4de6c', // Green for Permanent
-  '#ffc658', // Yellow/Gold for Chronicled
+  '#9c7cf4', // Vibrant Purple for Character
+  '#5b9eff', // Bright Blue for Character-2
+  '#50e3c2', // Teal for Weapon
+  '#7cfc00', // Bright Green for Permanent
+  '#ffcd3c', // Golden Yellow for Chronicled
 ];
 
 // Define banner type display names
@@ -42,51 +42,36 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-// Custom active shape for enhanced visual feedback when hovering
+// Custom active shape for enhanced visual feedback when hovering (without text)
 const renderActiveShape = (props) => {
-  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
-  const displayName = BANNER_NAMES[payload.type] || payload.type;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   
   return (
     <g>
+      {/* Enhanced inner sector with glow effect */}
       <Sector
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 6}
+        outerRadius={outerRadius + 8}
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
+        opacity={0.9}
+        stroke={fill}
+        strokeWidth={2}
       />
+      {/* Outer ring for better highlighting */}
       <Sector
         cx={cx}
         cy={cy}
         startAngle={startAngle}
         endAngle={endAngle}
-        innerRadius={outerRadius + 8}
-        outerRadius={outerRadius + 10}
+        innerRadius={outerRadius + 10}
+        outerRadius={outerRadius + 12}
         fill={fill}
+        opacity={0.7}
       />
-      <text 
-        x={cx} 
-        y={cy - 5} 
-        dy={8} 
-        textAnchor="middle" 
-        fill="#fff"
-        style={{ fontWeight: 'bold', fontSize: '14px' }}
-      >
-        {displayName}
-      </text>
-      <text 
-        x={cx} 
-        y={cy + 15} 
-        dy={8} 
-        textAnchor="middle" 
-        fill="#fff"
-        style={{ fontSize: '12px' }}
-      >
-        {`${(percent * 100).toFixed(1)}%`}
-      </text>
     </g>
   );
 };
@@ -102,8 +87,9 @@ const CustomLegend = (props) => {
         return (
           <li key={`item-${index}`} className="flex items-center gap-2">
             <div 
-              className="w-3 h-3 rounded-full" 
+              className="w-3 h-3 rounded-full shadow-sm" 
               style={{ backgroundColor: entry.color }}
+              // Add subtle glow effect to legend dots
             />
             <span className="text-sm text-white/80">
               {`${displayName} (${(entry.payload.percentage * 100).toFixed(1)}%)`}
@@ -150,22 +136,22 @@ const BannerDistributionChart = ({ data }) => {
             data={processedData}
             cx="50%"
             cy="50%"
-            innerRadius={40}
-            outerRadius={70}
-            paddingAngle={3}
+            innerRadius={45}  // Increased inner radius for more pronounced donut
+            outerRadius={75}  // Increased outer radius for larger pie
+            paddingAngle={4}  // Slightly increased padding angle for better segment separation
             dataKey="count"
             nameKey="type"
             onMouseEnter={onPieEnter}
             onMouseLeave={onPieLeave}
-            animationDuration={500}
+            animationDuration={800}  // Longer animation for smoother effect
             animationBegin={0}
           >
             {processedData.map((entry, index) => (
               <Cell 
                 key={`cell-${index}`} 
                 fill={COLORS[index % COLORS.length]} 
-                stroke="rgba(255,255,255,0.1)"
-                strokeWidth={1}
+                stroke="rgba(255,255,255,0.15)"  // Lighter stroke for better contrast
+                strokeWidth={2}  // Thicker stroke for more defined segments
               />
             ))}
           </Pie>
