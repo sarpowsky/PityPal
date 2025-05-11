@@ -7,8 +7,8 @@ Update this file when releasing a new version
 
 # Version information
 VERSION = {
-    'major': 2,
-    'minor': 1,
+    'major': 3,
+    'minor': 0,
     'patch': 0,
     'build': 0,
 }
